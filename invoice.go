@@ -14,6 +14,14 @@ import (
 	"github.com/stripe/stripe-go/v81"
 )
 
+type Reverter struct {
+	regime         *tax.RegimeDef
+	namespace      uuid.UUID
+	pricesInclude  bool
+	CustomerExempt bool
+	IssueDate      cal.Date
+}
+
 // ToInvoice converts a GOBL bill.Invoice into a stripe invoice object.
 func ToInvoice(inv *bill.Invoice) (*stripe.Invoice, error) {
 	return nil, nil
@@ -45,8 +53,8 @@ func FromInvoice(doc *stripe.Invoice, namespace uuid.UUID) (*bill.Invoice, error
 
 	// We are assuming the attribute has_more is false, it is used if there is another page of items after this one to fetch
 	inv.Lines = FromLines(doc.Lines.Data, customerExempt, inv.IssueDate)
+	inv.Tax = FromTax(doc)
 
-	// After this one we run some tests to check if the invoice is valid
 	// For the tax we need to check if price includes tax or not
 
 	return inv, nil
@@ -82,4 +90,44 @@ func newExchangeRates(curr currency.Code, regime *tax.RegimeDef) []*currency.Exc
 	}
 
 	return []*currency.ExchangeRate{rate}
+}
+
+func FromTax(doc *stripe.Invoice) *bill.Tax {
+	var t *bill.Tax
+
+	if len(doc.TotalTaxAmounts) == 0 {
+		return nil
+	}
+
+	if len(doc.TotalTaxAmounts) == 1 {
+		t = new(bill.Tax)
+		t.PricesInclude = extractTaxCat(doc.TotalTaxAmounts[0].TaxRate.TaxType)
+		return t
+	}
+
+	for _, taxes := range doc.TotalTaxAmounts {
+		if taxes.Inclusive {
+			if extractTaxCat(taxes.TaxRate.TaxType) == tax.CategoryVAT {
+				t = new(bill.Tax)
+				t.PricesInclude = tax.CategoryVAT
+				return t
+			}
+		}
+	}
+
+	return nil
+}
+
+// extractTaxCat extracts the tax category from a Stripe tax type.
+func extractTaxCat(taxType stripe.TaxRateTaxType) cbc.Code {
+	switch taxType {
+	case stripe.TaxRateTaxTypeVAT:
+		return tax.CategoryVAT
+	case stripe.TaxRateTaxTypeSalesTax:
+		return tax.CategoryST
+	case stripe.TaxRateTaxTypeGST:
+		return tax.CategoryGST
+	default:
+		return ""
+	}
 }

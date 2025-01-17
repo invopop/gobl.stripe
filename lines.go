@@ -124,20 +124,6 @@ func newTaxCombo(taxAmount *stripe.InvoiceTotalTaxAmount, issueDate cal.Date) *t
 	return tc
 }
 
-// extractTaxCat extracts the tax category from a Stripe tax type.
-func extractTaxCat(taxType stripe.TaxRateTaxType) cbc.Code {
-	switch taxType {
-	case stripe.TaxRateTaxTypeVAT:
-		return tax.CategoryVAT
-	case stripe.TaxRateTaxTypeSalesTax:
-		return tax.CategoryST
-	case stripe.TaxRateTaxTypeGST:
-		return tax.CategoryGST
-	default:
-		return ""
-	}
-}
-
 // lookupRateValue looks up a tax rate and value from a regime definition.
 func lookupRateValue(sRate float64, country l10n.Code, cat cbc.Code, issueDate cal.Date) (rate *tax.RateDef, val *tax.RateValueDef) {
 	regimeDef := tax.RegimeDefFor(country)

@@ -9,14 +9,6 @@ import (
 	"github.com/stripe/stripe-go/v81"
 )
 
-/*
-Not used (for now)
-const (
-	SelfIssuer  = "self"
-	OtherIssuer = "account"
-)
-*/
-
 // FromTaxIDToTax converts a stripe tax ID object into a GOBL tax identity, if possible.
 func FromTaxIDToTax(taxID *stripe.TaxID) *tax.Identity {
 	var tid *tax.Identity
