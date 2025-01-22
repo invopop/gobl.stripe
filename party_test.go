@@ -20,7 +20,29 @@ func TestFromTaxIDToTax(t *testing.T) {
 		expected *tax.Identity
 	}{
 		{
-			name: "EU VAT",
+			name: "with explicit country",
+			taxID: &stripe.TaxID{
+				Country: "DE",
+				Value:   "123456789",
+			},
+			expected: &tax.Identity{
+				Country: "DE",
+				Code:    "123456789",
+			},
+		},
+		{
+			name: "with country from type",
+			taxID: &stripe.TaxID{
+				Type:  "es_cif",
+				Value: "A12345678",
+			},
+			expected: &tax.Identity{
+				Country: "ES",
+				Code:    "A12345678",
+			},
+		},
+		{
+			name: "EU VAT - no explicit country",
 			taxID: &stripe.TaxID{
 				Type:  "eu_vat",
 				Value: "DE123456789",
@@ -42,9 +64,9 @@ func TestFromTaxIDToTax(t *testing.T) {
 			},
 		},
 		{
-			name: "Unsupported Type",
+			name: "with invalid type",
 			taxID: &stripe.TaxID{
-				Type:  "us_ein",
+				Type:  "invalid_type",
 				Value: "123456789",
 			},
 			expected: nil,
@@ -85,86 +107,263 @@ func TestFromTaxIDToOrg(t *testing.T) {
 	}
 }
 
+func validStripeCustomer() *stripe.Customer {
+	return &stripe.Customer{
+		ID:     "cus_RY7TdAXokervKd",
+		Object: "customer",
+		Address: &stripe.Address{
+			City:       "Berlin",
+			Country:    "DE",
+			Line1:      "Unter den Linden 1",
+			Line2:      "",
+			PostalCode: "10117",
+			State:      "BE",
+		},
+		Balance:       -17998,
+		Created:       1736350312,
+		Currency:      "eur",
+		Delinquent:    false,
+		Description:   "Test account",
+		Email:         "me.unselfish@me.com",
+		InvoicePrefix: "255RTCB4",
+		Livemode:      false,
+		Metadata:      map[string]string{},
+		Name:          "Test Customer",
+		Phone:         "+4915155555555",
+		TaxExempt:     "none",
+		PreferredLocales: []string{
+			"en-GB",
+		},
+		Shipping: &stripe.ShippingDetails{
+			Address: &stripe.Address{
+				City:       "Berlin",
+				Country:    "DE",
+				Line1:      "Unter den Linden 1",
+				Line2:      "",
+				PostalCode: "10117",
+				State:      "BE",
+			},
+			Name:  "Test Customer",
+			Phone: "+4915155555555",
+		},
+		TaxIDs: &stripe.TaxIDList{
+			Data: []*stripe.TaxID{
+				{
+					ID:       "txi_1Qf1TJQhcl5B85YlZjE6rVvJ",
+					Object:   "tax_id",
+					Country:  "DE",
+					Created:  1736351225,
+					Livemode: false,
+					Type:     "eu_vat",
+					Value:    "DE282741168",
+					Verification: &stripe.TaxIDVerification{
+						Status:          "verified",
+						VerifiedAddress: "123 TEST STREET",
+						VerifiedName:    "TEST",
+					},
+				},
+			},
+		},
+	}
+}
+
 func TestFromCustomer(t *testing.T) {
-	taxType := stripe.TaxIDTypeEUVAT
 	tests := []struct {
 		name     string
-		doc      *stripe.Invoice
+		input    *stripe.Customer
 		expected *org.Party
 	}{
 		{
-			"complete customer data",
-			&stripe.Invoice{
-				CustomerAddress: &stripe.Address{
+			name: "with all fields",
+			input: &stripe.Customer{
+				Name:  "Test Company",
+				Email: "test@example.com",
+				Phone: "+1234567890",
+				Address: &stripe.Address{
 					City:       "Berlin",
 					Country:    "DE",
-					Line1:      "Street 123",
-					Line2:      "Apt 4",
-					PostalCode: "10115",
-					State:      "BE",
+					Line1:      "Test Street 1",
+					Line2:      "Floor 2",
+					PostalCode: "12345",
+					State:      "Berlin",
 				},
-				CustomerEmail: "test@example.com",
-				CustomerName:  "Test Customer",
-				CustomerPhone: "+491234567890",
-				CustomerTaxIDs: []*stripe.InvoiceCustomerTaxID{
-					{Type: &taxType, Value: "DE123456789"},
+				TaxIDs: &stripe.TaxIDList{
+					Data: []*stripe.TaxID{
+						{
+							Type:  "de_stn",
+							Value: "123456789",
+						},
+					},
 				},
 			},
-			&org.Party{
+			expected: &org.Party{
+				Name: "Test Company",
 				Addresses: []*org.Address{
 					{
 						Locality:    "Berlin",
 						Country:     "DE",
-						Street:      "Street 123",
-						StreetExtra: "Apt 4",
-						Code:        cbc.Code("10115"),
-						State:       cbc.Code("BE"),
+						Street:      "Test Street 1",
+						StreetExtra: "Floor 2",
+						Code:        "12345",
+						State:       "Berlin",
 					},
 				},
 				Emails: []*org.Email{
-					{Address: "test@example.com"},
+					{
+						Address: "test@example.com",
+					},
 				},
-				Name: "Test Customer",
 				Telephones: []*org.Telephone{
-					{Number: "+491234567890"},
+					{
+						Number: "+1234567890",
+					},
+				},
+				Identities: []*org.Identity{
+					{
+						Key:  de.IdentityKeyTaxNumber,
+						Code: "123456789",
+					},
+				},
+			},
+		},
+		{
+			name:  "German customer",
+			input: validStripeCustomer(),
+			expected: &org.Party{
+				Name: "Test Customer",
+				Addresses: []*org.Address{
+					{
+						Locality:    "Berlin",
+						Country:     "DE",
+						Street:      "Unter den Linden 1",
+						StreetExtra: "",
+						Code:        "10117",
+						State:       "BE",
+					},
+				},
+				Emails: []*org.Email{
+					{
+						Address: "me.unselfish@me.com",
+					},
+				},
+				Telephones: []*org.Telephone{
+					{
+						Number: "+4915155555555",
+					},
 				},
 				TaxID: &tax.Identity{
-					Country: l10n.TaxCountryCode("DE"),
-					Code:    cbc.Code("123456789"),
+					Country: "DE",
+					Code:    "282741168",
 				},
+			},
+		},
+		{
+			name: "with minimal fields",
+			input: &stripe.Customer{
+				Name: "Test Company",
+			},
+			expected: &org.Party{
+				Name: "Test Company",
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := goblstripe.FromCustomer(tt.doc)
+			result := goblstripe.FromCustomer(tt.input)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
 
-func TestFromSupplier(t *testing.T) {
-	invoice := &stripe.Invoice{
-		AccountName: "Test Supplier",
-		AccountTaxIDs: []*stripe.TaxID{
-			{Type: "eu_vat", Value: "DE987654321"},
+func TestFromAddress(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    *stripe.Address
+		expected *org.Address
+	}{
+		{
+			name: "with all fields",
+			input: &stripe.Address{
+				City:       "Berlin",
+				Country:    "DE",
+				Line1:      "Test Street 1",
+				Line2:      "Floor 2",
+				PostalCode: "12345",
+				State:      "Berlin",
+			},
+			expected: &org.Address{
+				Locality:    "Berlin",
+				Country:     "DE",
+				Street:      "Test Street 1",
+				StreetExtra: "Floor 2",
+				Code:        "12345",
+				State:       "Berlin",
+			},
+		},
+		{
+			name: "with minimal fields",
+			input: &stripe.Address{
+				City:    "Berlin",
+				Country: "DE",
+			},
+			expected: &org.Address{
+				Locality: "Berlin",
+				Country:  "DE",
+			},
 		},
 	}
 
-	expected := &org.Party{
-		Name: "Test Supplier",
-		TaxID: &tax.Identity{
-			Country: l10n.TaxCountryCode("DE"),
-			Code:    cbc.Code("987654321"),
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := goblstripe.FromAddress(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestFromEmail(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected *org.Email
+	}{
+		{
+			name:  "valid email",
+			input: "test@example.com",
+			expected: &org.Email{
+				Address: "test@example.com",
+			},
 		},
 	}
 
-	result := goblstripe.FromSupplier(invoice)
-	if result.Name != expected.Name {
-		t.Errorf("expected name %v, got %v", expected.Name, result.Name)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := goblstripe.FromEmail(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
 	}
-	if result.TaxID == nil || *result.TaxID != *expected.TaxID {
-		t.Errorf("expected tax ID %v, got %v", expected.TaxID, result.TaxID)
+}
+
+func TestFromTelephone(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected *org.Telephone
+	}{
+		{
+			name:  "valid phone number",
+			input: "+1234567890",
+			expected: &org.Telephone{
+				Number: "+1234567890",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := goblstripe.FromTelephone(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
 	}
 }
