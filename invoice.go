@@ -75,18 +75,15 @@ func FromInvoice(doc *stripe.Invoice, namespace uuid.UUID) (*bill.Invoice, error
 	inv := new(bill.Invoice)
 	inv.Type = bill.InvoiceTypeStandard
 
-	if doc.AccountCountry == "" {
-		return nil, fmt.Errorf("missing account country")
-	}
-	inv.Regime = tax.WithRegime(l10n.TaxCountryCode(doc.AccountCountry)) //The country of the business associated with this invoice, most often the business creating the invoice.
-	if inv.Regime.RegimeDef() == nil {
-		return nil, fmt.Errorf("missing regime definition for %s", doc.AccountCountry)
+	regimeDef, err := regimeFromInvoice(doc)
+	if err != nil {
+		return nil, err
 	}
 
-	if doc.AccountName == "" {
-		return nil, fmt.Errorf("missing account name")
+	inv.UUID, err = uuidFromInvoice(doc, namespace)
+	if err != nil {
+		return nil, err
 	}
-	inv.UUID = invoiceUUID(namespace, doc.AccountName, doc.ID)
 
 	inv.Code = cbc.Code(doc.ID) //Sequential code used to identify this invoice in tax declarations.
 
@@ -96,17 +93,17 @@ func FromInvoice(doc *stripe.Invoice, namespace uuid.UUID) (*bill.Invoice, error
 	}
 
 	inv.Currency = FromCurrency(doc.Currency)
-	inv.ExchangeRates = newExchangeRates(inv.Currency, inv.Regime.RegimeDef())
+	inv.ExchangeRates = newExchangeRates(inv.Currency, regimeDef)
 
-	inv.Supplier = newSupplier(doc)
+	inv.Supplier = newSupplierFromInvoice(doc)
 	if doc.Customer != nil {
 		inv.Customer = FromCustomer(doc.Customer)
 	} else {
-		inv.Customer = newCustomer(doc)
+		inv.Customer = newCustomerFromInvoice(doc)
 	}
 
-	inv.Lines = FromLines(doc.Lines.Data)
-	inv.Tax = FromTax(doc)
+	inv.Lines = FromInvoiceLines(doc.Lines.Data)
+	inv.Tax = taxFromInvoiceTaxAmounts(doc.TotalTaxAmounts)
 	inv.Ordering = newOrdering(doc)
 	inv.Delivery = newDelivery(doc)
 	inv.Payment = newPayment(doc)
@@ -119,24 +116,68 @@ func FromInvoice(doc *stripe.Invoice, namespace uuid.UUID) (*bill.Invoice, error
 	return inv, nil
 }
 
-func FromCreditNote(doc *stripe.CreditNote) (*bill.Invoice, error) {
-	// Credit note: post_payment_credit_notes_amount, pre_payment_credit_notes_amount
-	// Preceding field
+// FromCreditNote converts a stripe credit note object into a GOBL bill.Invoice.
+// The namespace is the UUID of the enrollment.
+func FromCreditNote(doc *stripe.CreditNote, namespace uuid.UUID) (*bill.Invoice, error) {
 	inv := new(bill.Invoice)
 	inv.Type = bill.InvoiceTypeCreditNote
+
+	regimeDef, err := regimeFromInvoice(doc.Invoice)
+	if err != nil {
+		return nil, err
+	}
+
+	inv.UUID, err = uuidFromInvoice(doc.Invoice, namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	inv.Code = cbc.Code(doc.ID) //Sequential code used to identify this credit note in tax declarations.
+
+	inv.IssueDate = cal.DateOf(time.Unix(doc.Created, 0).UTC()) //Date when the credit note was created
+	if doc.EffectiveAt != 0 {
+		inv.OperationDate = newDateFromTS(doc.EffectiveAt) // Date when the operation defined by the credit note became effective
+	}
+
+	inv.Currency = FromCurrency(doc.Currency)
+	inv.ExchangeRates = newExchangeRates(inv.Currency, regimeDef)
+
+	inv.Supplier = newSupplierFromInvoice(doc.Invoice)
+	if doc.Customer != nil {
+		inv.Customer = FromCustomer(doc.Customer)
+	}
+
+	inv.Lines = FromCreditNoteLines(doc.Lines.Data, inv.Currency)
+	inv.Tax = taxFromCreditNoteTaxAmounts(doc.TaxAmounts)
+	inv.Preceding = []*org.DocumentRef{newPrecedingFromInvoice(doc.Invoice, string(doc.Reason))}
 
 	return inv, nil
 }
 
-func invoiceUUID(ns uuid.UUID, site string, cbID string) uuid.UUID {
+// uuidFromInvoice generates a UUID for an invoice based on the namespace, site, and stripe Invoice ID.
+func uuidFromInvoice(doc *stripe.Invoice, namespace uuid.UUID) (uuid.UUID, error) {
+	if doc.AccountName == "" {
+		return uuid.Empty, fmt.Errorf("missing account name")
+	}
+	return invoiceUUID(namespace, doc.AccountName, doc.ID), nil
+}
+
+// invoiceUUID generates a UUID for a UUID based on the namespace, site, and stripe Invoice ID.
+func invoiceUUID(ns uuid.UUID, site string, stID string) uuid.UUID {
 	if ns == uuid.Empty {
 		return uuid.Empty
 	}
 
-	base := site + ":" + cbID
+	base := site + ":" + stID
 	return uuid.V3(ns, []byte(base))
 }
 
+// FromCurrency converts a stripe currency into a GOBL currency code.
+func FromCurrency(curr stripe.Currency) currency.Code {
+	return currency.Code(strings.ToUpper(string(curr)))
+}
+
+// newExchangeRates creates the exchange rates for the invoice.
 func newExchangeRates(curr currency.Code, regime *tax.RegimeDef) []*currency.ExchangeRate {
 	if curr == regime.Currency {
 		// The invoice's and the regime's currency are the same. No exchange rate needed.
@@ -153,17 +194,36 @@ func newExchangeRates(curr currency.Code, regime *tax.RegimeDef) []*currency.Exc
 	return []*currency.ExchangeRate{rate}
 }
 
-func FromTax(doc *stripe.Invoice) *bill.Tax {
+// taxFromInvoiceTaxAmounts creates a tax object from the tax amounts in an invoice.
+func taxFromInvoiceTaxAmounts(taxAmounts []*stripe.InvoiceTotalTaxAmount) *bill.Tax {
 	var t *bill.Tax
 
-	if len(doc.TotalTaxAmounts) == 0 {
+	if len(taxAmounts) == 0 {
 		return nil
 	}
 
 	// We just check the first tax
-	if doc.TotalTaxAmounts[0].Inclusive {
+	if taxAmounts[0].Inclusive {
 		t = new(bill.Tax)
-		t.PricesInclude = extractTaxCat(doc.TotalTaxAmounts[0].TaxRate.TaxType)
+		t.PricesInclude = extractTaxCat(taxAmounts[0].TaxRate.TaxType)
+		return t
+	}
+
+	return nil
+}
+
+// taxFromCreditNoteTaxAmounts creates a tax object from the tax amounts in a credit note.
+func taxFromCreditNoteTaxAmounts(taxAmounts []*stripe.CreditNoteTaxAmount) *bill.Tax {
+	var t *bill.Tax
+
+	if len(taxAmounts) == 0 {
+		return nil
+	}
+
+	// We just check the first tax
+	if taxAmounts[0].Inclusive {
+		t = new(bill.Tax)
+		t.PricesInclude = extractTaxCat(taxAmounts[0].TaxRate.TaxType)
 		return t
 	}
 
@@ -184,12 +244,14 @@ func extractTaxCat(taxType stripe.TaxRateTaxType) cbc.Code {
 	}
 }
 
+// newOrdering creates an ordering object from an invoice.
 func newOrdering(doc *stripe.Invoice) *bill.Ordering {
 	ordering := new(bill.Ordering)
 	ordering.Period = newOrderingPeriod(doc.Lines.Data)
 	return ordering
 }
 
+// newOrderingPeriod creates an ordering period from invoice line items.
 func newOrderingPeriod(lines []*stripe.InvoiceLineItem) *cal.Period {
 	from := lines[0].Period.Start
 	to := lines[0].Period.End
@@ -207,6 +269,7 @@ func newOrderingPeriod(lines []*stripe.InvoiceLineItem) *cal.Period {
 	}
 }
 
+// newDelivery creates a delivery object from an invoice.
 func newDelivery(doc *stripe.Invoice) *bill.Delivery {
 	if doc.ShippingDetails != nil {
 		return FromShippingDetailsToDelivery(doc.ShippingDetails)
@@ -220,6 +283,7 @@ func newDelivery(doc *stripe.Invoice) *bill.Delivery {
 	return nil
 }
 
+// FromShippingDetailsToDelivery converts a stripe shipping details object into a GOBL delivery object.
 func FromShippingDetailsToDelivery(shipping *stripe.ShippingDetails) *bill.Delivery {
 	receiver := newReceiver(shipping)
 	if receiver.Validate() != nil {
@@ -230,6 +294,7 @@ func FromShippingDetailsToDelivery(shipping *stripe.ShippingDetails) *bill.Deliv
 	}
 }
 
+// newReceiver creates a receiver object from shipping details.
 func newReceiver(shipping *stripe.ShippingDetails) *org.Party {
 	return &org.Party{
 		Name:       shipping.Name,
@@ -238,13 +303,8 @@ func newReceiver(shipping *stripe.ShippingDetails) *org.Party {
 	}
 }
 
+// newPayment creates a GOBL payment object from a Stripe invoice.
 func newPayment(doc *stripe.Invoice) *bill.Payment {
-	// Collection method: Either charge_automatically, or send_invoice. When
-	//charging automatically, Stripe will attempt to pay this invoice using the
-	//default source attached to the customer. When sending an invoice, Stripe
-	//will email this invoice to the customer with payment instructions.
-	// due_date: The date on which payment for this invoice is due. This value
-	//will be null for invoices where collection_method=charge_automatically.
 	var p *bill.Payment
 
 	if terms := newPaymentTerms(doc); terms != nil {
@@ -270,6 +330,7 @@ func newPayment(doc *stripe.Invoice) *bill.Payment {
 	return p
 }
 
+// newPaymentTerms creates a payment terms object from a Stripe invoice.
 func newPaymentTerms(doc *stripe.Invoice) *pay.Terms {
 	if doc.Paid {
 		return nil
@@ -285,6 +346,7 @@ func newPaymentTerms(doc *stripe.Invoice) *pay.Terms {
 	}
 }
 
+// newPaymentInstructions creates a payment instructions object from a Stripe invoice.
 func newPaymentInstructions(doc *stripe.Invoice) *pay.Instructions {
 	if doc.Paid {
 		return nil
@@ -309,6 +371,7 @@ func newPaymentInstructions(doc *stripe.Invoice) *pay.Instructions {
 	return instructions
 }
 
+// newPaymentAdvances creates a payment advances object from a Stripe invoice.
 func newPaymentAdvances(doc *stripe.Invoice) []*pay.Advance {
 	if doc.Paid || doc.AmountPaid == 0 {
 		return nil
@@ -329,11 +392,13 @@ func newPaymentAdvances(doc *stripe.Invoice) []*pay.Advance {
 	return []*pay.Advance{advance}
 }
 
+// newDateFromTS creates a cal date object from a Unix timestamp.
 func newDateFromTS(ts int64) *cal.Date {
 	d := cal.DateOf(time.Unix(ts, 0).UTC())
 	return &d
 }
 
+// currencyAmount creates a currency amount object from a value and a currency code.
 func currencyAmount(val int64, curr currency.Code) num.Amount {
 	var exp uint32 = 2
 	if slices.Contains(zeroDecimalCurrencies, curr) {
@@ -343,10 +408,30 @@ func currencyAmount(val int64, curr currency.Code) num.Amount {
 	return num.MakeAmount(val, exp)
 }
 
-func FromCurrency(curr stripe.Currency) currency.Code {
-	return currency.Code(strings.ToUpper(string(curr)))
-}
-
+// isCustomerExempt checks if a customer is exempt from taxes.
 func isCustomerExempt(doc *stripe.Invoice) bool {
 	return *doc.CustomerTaxExempt == stripe.CustomerTaxExemptExempt || *doc.CustomerTaxExempt == stripe.CustomerTaxExemptReverse
+}
+
+// regimeFromInvoice creates a tax regime definition from a Stripe invoice.
+func regimeFromInvoice(doc *stripe.Invoice) (*tax.RegimeDef, error) {
+	if doc.AccountCountry == "" {
+		return nil, fmt.Errorf("missing account country")
+	}
+	regime := tax.WithRegime(l10n.TaxCountryCode(doc.AccountCountry)) //The country of the business associated with this invoice, most often the business creating the invoice.
+	if regime.RegimeDef() == nil {
+		return nil, fmt.Errorf("missing regime definition for %s", doc.AccountCountry)
+	}
+
+	return regime.RegimeDef(), nil
+}
+
+// newPrecedingFromInvoice creates a document reference from a Stripe invoice.
+func newPrecedingFromInvoice(doc *stripe.Invoice, reason string) *org.DocumentRef {
+	return &org.DocumentRef{
+		Type:      bill.InvoiceTypeStandard,
+		IssueDate: newDateFromTS(doc.Created),
+		Code:      cbc.Code(doc.ID),
+		Reason:    reason,
+	}
 }

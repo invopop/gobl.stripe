@@ -127,8 +127,8 @@ func FromCustomer(customer *stripe.Customer) *org.Party {
 	return customerParty
 }
 
-// newCustomer creates the customer data from the invoice object
-func newCustomer(doc *stripe.Invoice) *org.Party {
+// newCustomerFromInvoice creates the customer data from the invoice object
+func newCustomerFromInvoice(doc *stripe.Invoice) *org.Party {
 	/*
 		Here, we will assume that the customer data is already in the invoice object
 		in fields like customer_name, customer_email, etc.
@@ -152,22 +152,22 @@ func newCustomer(doc *stripe.Invoice) *org.Party {
 
 	if doc.CustomerTaxIDs != nil {
 		// In Stripe there are 2 objects for the taxID: stripe.TaxID and stripe.CustomerTaxID
-		stripeTaxId := &stripe.TaxID{
+		stripeTaxID := &stripe.TaxID{
 			Type:  *doc.CustomerTaxIDs[0].Type,
 			Value: doc.CustomerTaxIDs[0].Value,
 		}
 
-		if slices.Contains(orgIDKeys, stripeTaxId.Type) {
-			customerParty.Identities[0] = FromTaxIDToOrg(stripeTaxId)
+		if slices.Contains(orgIDKeys, stripeTaxID.Type) {
+			customerParty.Identities[0] = FromTaxIDToOrg(stripeTaxID)
 		} else {
-			customerParty.TaxID = FromTaxIDToTax(stripeTaxId)
+			customerParty.TaxID = FromTaxIDToTax(stripeTaxID)
 		}
 	}
 
 	return customerParty
 }
 
-func newSupplier(doc *stripe.Invoice) *org.Party {
+func newSupplierFromInvoice(doc *stripe.Invoice) *org.Party {
 	/*
 		Here we have 2 options:
 		- Do a call to the API here to fetch the supplier (account) tax id
@@ -187,11 +187,11 @@ func newSupplier(doc *stripe.Invoice) *org.Party {
 			supplierParty = new(org.Party)
 		}
 		// When we have several accounttaxids, we assume the first one is the main one
-		accountTaxId := doc.AccountTaxIDs[0]
-		if slices.Contains(orgIDKeys, accountTaxId.Type) {
-			supplierParty.Identities[0] = FromTaxIDToOrg(accountTaxId)
+		accountTaxID := doc.AccountTaxIDs[0]
+		if slices.Contains(orgIDKeys, accountTaxID.Type) {
+			supplierParty.Identities[0] = FromTaxIDToOrg(accountTaxID)
 		} else {
-			supplierParty.TaxID = FromTaxIDToTax(accountTaxId)
+			supplierParty.TaxID = FromTaxIDToTax(accountTaxID)
 		}
 	}
 
@@ -200,6 +200,7 @@ func newSupplier(doc *stripe.Invoice) *org.Party {
 	return supplierParty
 }
 
+// FromAddress converts a stripe address object into a GOBL address object.
 func FromAddress(address *stripe.Address) *org.Address {
 	return &org.Address{
 		Locality:    address.City,
@@ -211,12 +212,14 @@ func FromAddress(address *stripe.Address) *org.Address {
 	}
 }
 
+// FromEmail converts a string into a GOBL email object.
 func FromEmail(email string) *org.Email {
 	return &org.Email{
 		Address: email,
 	}
 }
 
+// FromTelephone converts a string into a GOBL telephone object.
 func FromTelephone(phone string) *org.Telephone {
 	return &org.Telephone{
 		Number: phone,

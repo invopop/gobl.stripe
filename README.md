@@ -16,13 +16,20 @@ In some cases, a new GOBL object is created that does not correspond to any spec
 - `newOrdering` creates a new `Ordering` object not from a similar object but from the whole `Invoice`.
 
 ## Expanded fields
-To get all the required information, they request to the invoice must be done expanding the following fields:
+To get all the required information, they request to the invoice must be done expanding the following fields.
+
+### For Invoices
 - account_tax_ids
 - customer.tax_ids
 - lines.data.discounts
 - lines.data.tax_amounts.tax_rate
 - total_amounts.tax_rate
 - payment_intent
+
+### For Credit Notes
+- invoice.account_tax_ids
+- customer.tax_ids
+- lines.data.tax_amounts.tax_rate
 
 ## Assumptions/Things to consider for future versions
 
@@ -49,7 +56,7 @@ For the moment, we consider there are no discounts on the general invoice, but o
 
 ### Not supported yet
 - Proration
-- Charges (*bill.Charge)
+- Charges (*bill.Charge). If needed for delivering goods we could add the shipping charges. 
 
 For tags and more we can use the `metadata` or `custom_fields` field
 

@@ -332,6 +332,92 @@ func TestValidate(t *testing.T) {
 	require.NoError(t, err)
 }
 
+// Credit Notes
+
+func validCreditNote() *stripe.CreditNote {
+	return &stripe.CreditNote{
+		ID:       "cn_123",
+		Currency: stripe.CurrencyEUR,
+		Invoice: &stripe.Invoice{
+			ID:             "inv_123",
+			AccountName:    "Test Account",
+			AccountCountry: "DE",
+			AccountTaxIDs: []*stripe.TaxID{
+				{
+					Type:    "eu_vat",
+					Value:   "DE813495425",
+					Country: "DE",
+				},
+			},
+			Created: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
+		},
+		Created:     time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
+		EffectiveAt: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
+		Amount:      22989,
+		Customer:    validStripeCustomer(),
+		Lines: &stripe.CreditNoteLineItemList{
+			Data: []*stripe.CreditNoteLineItem{
+				{
+					ID:              "cnli_1Qk7SqQhcl5B85YlliBbmPiN",
+					Object:          "credit_note_line_item",
+					Amount:          10294,
+					Description:     "Unused time on 2000 × Pro Plan after 08 Jan 2025",
+					DiscountAmounts: []*stripe.CreditNoteLineItemDiscountAmount{},
+					Livemode:        false,
+					TaxAmounts: []*stripe.CreditNoteTaxAmount{
+						{
+							Amount:    2162,
+							Inclusive: false,
+							TaxRate: &stripe.TaxRate{
+								TaxType:    stripe.TaxRateTaxTypeVAT,
+								Country:    "ES",
+								Percentage: 21.0,
+							},
+							TaxableAmount: 10294,
+						},
+					},
+					TaxRates: []*stripe.TaxRate{},
+					Type:     stripe.CreditNoteLineItemTypeInvoiceLineItem,
+				},
+			},
+		},
+		TaxAmounts: []*stripe.CreditNoteTaxAmount{
+			{
+				Amount:    2162,
+				Inclusive: false,
+				TaxRate: &stripe.TaxRate{
+					TaxType:    stripe.TaxRateTaxTypeVAT,
+					Country:    "ES",
+					Percentage: 21.0,
+				},
+				TaxableAmount: 10294,
+			},
+		},
+		Reason: stripe.CreditNoteReasonOrderChange,
+	}
+}
+
+func TestFromCreditNote(t *testing.T) {
+	s := validCreditNote()
+	gi, err := goblstripe.FromCreditNote(s, uuid.MustParse(namespace))
+	require.NoError(t, err)
+
+	assert.Equal(t, "cn_123", gi.Code.String())
+	assert.Equal(t, "Test Account", gi.Supplier.Name)
+	assert.Equal(t, "86f836a6-47ee-302e-90df-2ad86a2f7060", gi.UUID.String())
+	assert.Equal(t, cal.MakeDate(2024, 1, 1), gi.IssueDate)
+	assert.Equal(t, cal.NewDate(2024, 1, 1), gi.OperationDate)
+	assert.Equal(t, currency.EUR, gi.Currency)
+	assert.Equal(t, "Test Customer", gi.Customer.Name)
+	assert.Equal(t, l10n.DE.Tax(), gi.Customer.TaxID.Country)
+	assert.Equal(t, "282741168", gi.Customer.TaxID.Code.String())
+	assert.Equal(t, "Unused time on 2000 × Pro Plan after 08 Jan 2025", gi.Lines[0].Item.Name)
+	assert.Equal(t, currency.EUR, gi.Lines[0].Item.Currency)
+	assert.Equal(t, num.MakeAmount(10294, 2), gi.Lines[0].Item.Price)
+	assert.Equal(t, "order_change", gi.Preceding[0].Reason)
+	assert.Nil(t, gi.Tax)
+}
+
 // Below is a full test suite for the FromInvoice function. It is commented out
 // because there are some fields in GOBL that cannot be set by the function,
 // e.g. total in Totals

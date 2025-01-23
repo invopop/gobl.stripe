@@ -1,6 +1,6 @@
 module github.com/invopop/gobl.stripe
 
-go 1.23.4
+go 1.22.3
 
 require (
 	github.com/invopop/gobl v0.208.0

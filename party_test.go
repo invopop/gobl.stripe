@@ -119,7 +119,7 @@ func validStripeCustomer() *stripe.Customer {
 			PostalCode: "10117",
 			State:      "BE",
 		},
-		Balance:       -17998,
+		Balance:       0,
 		Created:       1736350312,
 		Currency:      "eur",
 		Delinquent:    false,
