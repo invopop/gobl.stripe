@@ -75,6 +75,8 @@ func FromInvoice(doc *stripe.Invoice, namespace uuid.UUID) (*bill.Invoice, error
 	inv := new(bill.Invoice)
 	inv.Type = bill.InvoiceTypeStandard
 
+	// TODO: Add support for reverse charge invoices
+
 	regimeDef, err := regimeFromInvoice(doc)
 	if err != nil {
 		return nil, err
@@ -332,7 +334,7 @@ func newPayment(doc *stripe.Invoice) *bill.Payment {
 
 // newPaymentTerms creates a payment terms object from a Stripe invoice.
 func newPaymentTerms(doc *stripe.Invoice) *pay.Terms {
-	if doc.Paid {
+	if doc.Paid || doc.DueDate == 0 {
 		return nil
 	}
 
@@ -353,6 +355,14 @@ func newPaymentInstructions(doc *stripe.Invoice) *pay.Instructions {
 	}
 
 	var instructions *pay.Instructions
+	if doc.PaymentIntent == nil {
+		return nil
+	}
+
+	if doc.PaymentIntent.PaymentMethodTypes == nil {
+		return nil
+	}
+
 	for _, method := range doc.PaymentIntent.PaymentMethodTypes {
 		for _, def := range paymentMethodDefinitions {
 			if method == def.Key {

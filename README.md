@@ -2,6 +2,162 @@
 
 Convert GOBL documents to and from the Stripe API format.
 
+# Usage
+
+## Go Package
+
+### Stripe -> GOBL conversion
+
+Invoice: 
+```go
+package main
+
+import (
+    "fmt"
+    "os"
+    "json"
+
+    goblstripe "github.com/invopop/gobl.stripe"
+    "github.com/invopop/gobl/uuid"
+    "github.com/stripe/stripe-go/v81"
+)
+
+const (
+    //namespace used to give a significant uuid to the invoice
+	namespace = "550e8400-e29b-41d4-a716-446655440000"
+)
+
+func main{
+    data, _ := os.ReadFile("examples/stripe.gobl/stripe_basic_invoice.json")
+
+    s := new(stripe.Invoice)
+    if err := json.Unmarshal(data, s); err != nil {
+		fmt.Errorf("failed to unmarshal JSON: %w", err)
+	}
+
+    gi, err := goblstripe.FromInvoice(s, uuid.MustParse(namespace))
+    if err != nil {
+        fmt.Errorf("error in conversion: %w", err)
+    }
+
+    // Now you can use the GOBL invoice (*bill.Invoice object) returned.
+}
+
+```
+
+Credit Note: 
+```go
+package main
+
+import (
+    "fmt"
+    "os"
+    "json"
+
+    goblstripe "github.com/invopop/gobl.stripe"
+    "github.com/invopop/gobl/uuid"
+    "github.com/stripe/stripe-go/v81"
+)
+
+const (
+    //namespace used to give a significant uuid to the invoice
+	namespace = "550e8400-e29b-41d4-a716-446655440000"
+)
+
+func main{
+    data, _ := os.ReadFile("examples/stripe.gobl/stripe_basic_invoice.json")
+
+    s := new(stripe.CreditNote)
+    if err := json.Unmarshal(data, s); err != nil {
+		fmt.Errorf("failed to unmarshal JSON: %w", err)
+	}
+
+    gi, err := goblstripe.FromCreditNote(s, uuid.MustParse(namespace))
+    if err != nil {
+        fmt.Errorf("error in conversion: %w", err)
+    }
+
+    // Now you can use the GOBL invoice (*bill.Invoice object) returned.
+}
+
+```
+
+### Listen to Stripe Events + Stripe -> GOBL conversion
+
+Coming soon ...
+
+## Command line
+The GOBL <-> Stripe package also includes a command line helper. You can install it manually in your Go environment (from this main directory) with:
+
+```bash
+go install ./cmd/gobl.tin
+```
+
+### Stripe -> GOBL conversion
+
+Coming soon ...
+
+### Listen to Stripe Events + Stripe -> GOBL conversion
+
+With the `revert` command you will be able to:  
+1. Listen to Stripe events (e.g., invoice finalized or credit note created).  
+2. Convert the event data into GOBL format.  
+3. Save the output as a JSON file.
+
+#### Testing Locally with Stripe CLI
+
+To test this functionality locally, use the **Stripe CLI**, which you can install by following these [instructions](https://docs.stripe.com/stripe-cli).
+
+---
+
+#### Step 1: Set Up Stripe CLI to Forward Events
+
+Choose a port to forward events to (e.g., port `5276` in this example), and run the following command:  
+
+```bash
+stripe listen --forward-to localhost:5276/webhook
+```
+
+#### Step 2: Start the `revert` command
+
+In another terminal tab, set up the local port to listen for events by running:
+
+```bash
+gobl.stripe revert -p 5276
+```
+
+When this command is running, you’ll see a confirmation message like this:
+```sh
+2025/01/24 17:00:30 Listening on port 5276
+```
+
+#### Step 3: Trigger a Stripe Event
+
+To test, trigger a Stripe event. You can do these in several ways:
+
+1. **From the command line**
+For example, to trigger an `invoice.finalized` event, run:
+
+```bash
+stripe trigger invoice.finalized
+```
+
+This will generate the most basic type of invoice. 
+
+2. **From the Stripe Dashboard**
+
+You can manually create and finalize invoices from the [Stripe Dashboard](https://support.stripe.com/topics/dashboard).
+
+3. **From the Stripe API**
+
+You can also create and finalize invoices using the [Stripe API](https://docs.stripe.com/api/invoices/object).
+
+#### Step 4: Review the Output
+
+Once an event is triggered, the `revert` command generates 2 JSON files in the same directory:
+- `stripe_{id}.json`: Contains the Stripe event data
+- `gobl_{id}.json`: Contains the corresponding GOBL-converted data.
+
 ## Naming
 
 All method or definition names in the `goblstripe` package should primarily reference the Stripe API objects that will be generated or parsed, suffixed with the verb representing the intent, e.g.:
@@ -23,7 +179,7 @@ To get all the required information, they request to the invoice must be done ex
 - customer.tax_ids
 - lines.data.discounts
 - lines.data.tax_amounts.tax_rate
-- total_amounts.tax_rate
+- total_tax_amounts.tax_rate
 - payment_intent
 
 ### For Credit Notes

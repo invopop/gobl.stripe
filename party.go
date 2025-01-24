@@ -111,7 +111,7 @@ func FromCustomer(customer *stripe.Customer) *org.Party {
 		customerParty.Telephones = append(customerParty.Telephones, FromTelephone(customer.Phone))
 	}
 
-	if customer.TaxIDs != nil {
+	if customer.TaxIDs != nil && customer.TaxIDs.Data != nil && len(customer.TaxIDs.Data) > 0 {
 		if customerParty == nil {
 			customerParty = new(org.Party)
 		}
