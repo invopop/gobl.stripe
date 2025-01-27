@@ -1,0 +1,126 @@
+{
+  "$regime": "ES",
+  "$tags": [
+    "reverse-charge"
+  ],
+  "uuid": "75589fe6-7cdc-339e-9e2c-fdfec415502a",
+  "type": "standard",
+  "code": "in_1QlplgQhcl5B85YlxMDvdR0f",
+  "issue_date": "2025-01-27",
+  "op_date": "2025-01-27",
+  "currency": "EUR",
+  "supplier": {
+    "name": "Invopop Development",
+    "tax_id": {
+      "country": "ES",
+      "code": "A12345678"
+    }
+  },
+  "customer": {
+    "name": "Peter The Panda",
+    "tax_id": {
+      "country": "BE",
+      "code": "0123456789"
+    },
+    "addresses": [
+      {
+        "street": "Calle Pradillo",
+        "street_extra": "42",
+        "locality": "Madrid",
+        "state": "M",
+        "code": "28002",
+        "country": "ES"
+      }
+    ],
+    "emails": [
+      {
+        "addr": "peterthepanda@jungle.com"
+      }
+    ]
+  },
+  "lines": [
+    {
+      "i": 1,
+      "quantity": "1",
+      "item": {
+        "name": "Chargebee Addon",
+        "currency": "EUR",
+        "price": "300.00",
+        "meta": {
+          "stripe-date-from": "2025-01-21",
+          "stripe-date-to": "2025-01-21"
+        }
+      },
+      "sum": "300.00",
+      "taxes": [
+        {
+          "cat": "VAT",
+          "rate": "standard",
+          "percent": "21.0%"
+        }
+      ],
+      "total": "300.00"
+    },
+    {
+      "i": 2,
+      "quantity": "2",
+      "item": {
+        "name": "Physical good",
+        "currency": "EUR",
+        "price": "70.00",
+        "meta": {
+          "stripe-date-from": "2025-01-20",
+          "stripe-date-to": "2025-01-20"
+        }
+      },
+      "sum": "140.00",
+      "discounts": [
+        {
+          "reason": "First_coupon",
+          "percent": "10.0%",
+          "amount": "14.00"
+        }
+      ],
+      "taxes": [
+        {
+          "cat": "VAT",
+          "rate": "standard",
+          "percent": "21.0%"
+        }
+      ],
+      "total": "126.00"
+    }
+  ],
+  "ordering": {},
+  "totals": {
+    "sum": "426.00",
+    "total": "426.00",
+    "taxes": {
+      "categories": [
+        {
+          "code": "VAT",
+          "rates": [
+            {
+              "key": "standard",
+              "base": "426.00",
+              "percent": "21.0%",
+              "amount": "89.46"
+            }
+          ],
+          "amount": "89.46"
+        }
+      ],
+      "sum": "89.46"
+    },
+    "tax": "89.46",
+    "total_with_tax": "515.46",
+    "payable": "515.46"
+  },
+  "notes": [
+    {
+      "key": "legal",
+      "src": "reverse-charge",
+      "text": "Reverse Charge / Inversión del sujeto pasivo."
+    }
+  ]
+}

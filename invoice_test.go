@@ -332,6 +332,60 @@ func TestValidate(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestReverseCharge(t *testing.T) {
+	s := validStripeInvoice()
+	s.Customer.TaxExempt = stripe.CustomerTaxExemptReverse
+	s.Customer.TaxIDs = &stripe.TaxIDList{
+		Data: []*stripe.TaxID{
+			{
+				Type:    "eu_vat",
+				Value:   "FR123456789",
+				Country: "FR",
+			},
+		},
+	}
+	s.Lines = &stripe.InvoiceLineItemList{
+		Data: []*stripe.InvoiceLineItem{
+			{
+				ID:                 "il_1Qf1WLQhcl5B85YleQz6ZuEfd",
+				Amount:             10000,
+				AmountExcludingTax: 10000,
+				Currency:           stripe.CurrencyEUR,
+				Quantity:           2000,
+				Price: &stripe.Price{
+					BillingScheme: stripe.PriceBillingSchemeTiered,
+					Currency:      stripe.CurrencyEUR,
+					TaxBehavior:   stripe.PriceTaxBehaviorExclusive,
+					UnitAmount:    0,
+				},
+				Period: &stripe.Period{
+					Start: 1736351413,
+					End:   1739029692,
+				},
+				Description: "Time on 2000 × Pro Plan after 08 Jan 2025",
+				TaxAmounts: []*stripe.InvoiceTotalTaxAmount{
+					{
+						Inclusive: false,
+						TaxRate: &stripe.TaxRate{
+							TaxType:    stripe.TaxRateTaxTypeVAT,
+							Country:    "DE",
+							Percentage: 0,
+						},
+						TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonReverseCharge,
+						TaxableAmount:    10000,
+					},
+				},
+				UnitAmountExcludingTax: 5,
+			},
+		},
+	}
+
+	gi, err := goblstripe.FromInvoice(s, uuid.MustParse(namespace))
+	require.NoError(t, err)
+
+	assert.Equal(t, tax.TagReverseCharge, gi.Tags.List[0])
+}
+
 // Credit Notes
 
 func validCreditNote() *stripe.CreditNote {

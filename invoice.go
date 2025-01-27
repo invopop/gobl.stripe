@@ -100,6 +100,7 @@ func FromInvoice(doc *stripe.Invoice, namespace uuid.UUID) (*bill.Invoice, error
 	inv.Supplier = newSupplierFromInvoice(doc)
 	if doc.Customer != nil {
 		inv.Customer = FromCustomer(doc.Customer)
+		inv.Tags = newTags(doc.Customer)
 	} else {
 		inv.Customer = newCustomerFromInvoice(doc)
 	}
@@ -444,4 +445,12 @@ func newPrecedingFromInvoice(doc *stripe.Invoice, reason string) *org.DocumentRe
 		Code:      cbc.Code(doc.ID),
 		Reason:    reason,
 	}
+}
+
+func newTags(customer *stripe.Customer) tax.Tags {
+	if customer.TaxExempt == stripe.CustomerTaxExemptReverse {
+		return tax.WithTags(tax.TagReverseCharge)
+	}
+
+	return tax.Tags{}
 }
