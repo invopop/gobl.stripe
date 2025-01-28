@@ -7,29 +7,16 @@ jobs:
 
     steps:
       - name: Set up Go
-        uses: actions/setup-go@v1
+        uses: actions/setup-go@v5
         with:
-          go-version: "1.22.3"
-        id: go
+          go-version-file: "go.mod"
 
       - name: Check out code
-        uses: actions/checkout@v3
-
-      #- name: Configure git for private modules
-      #  run: |
-      #    git config --global url."https://${{ secrets.GO_MOD_USER }}:${{ secrets.GO_MOD_PASS }}@github.com".insteadOf "https://github.com"
-
-      - name: Prepare .netrc
-        uses: extractions/netrc@v1
-        with:
-          machine: github.com
-          username: ${{ secrets.GO_MOD_USER }}
-          password: ${{ secrets.GO_MOD_PASS }}
+        uses: actions/checkout@v4
 
       - name: Install Dependencies
         env:
           GOPROXY: https://proxy.golang.org,direct
-          GOPRIVATE: github.com/invopop
         run: go mod download
 
       - name: Test

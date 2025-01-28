@@ -16,7 +16,6 @@ import (
 	goblstripe "github.com/invopop/gobl.stripe"
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/uuid"
-	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
 	"github.com/stripe/stripe-go/v81"
 	"github.com/stripe/stripe-go/v81/creditnote"
@@ -26,7 +25,9 @@ import (
 
 type revertOpts struct {
 	*rootOpts
-	port string
+	port          string
+	stripeKey     string
+	webhookSecret string
 	//directory string
 }
 
@@ -34,14 +35,16 @@ func revert(o *rootOpts) *revertOpts {
 	return &revertOpts{rootOpts: o}
 }
 
-func (c *revertOpts) cmd() *cobra.Command {
+func (r *revertOpts) cmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "revert",
 		Short: "Receive a finalized Stripe Invoice/Credit Note and convert it to a GOBL JSON document",
-		RunE:  c.runE,
+		RunE:  r.runE,
 	}
 
-	cmd.Flags().StringVarP(&c.port, "port", "p", "8080", "Port to listen for Stripe webhooks")
+	cmd.Flags().StringVarP(&r.port, "port", "p", "8080", "Port to listen for Stripe webhooks")
+	cmd.Flags().StringVarP(&r.stripeKey, "stripe-key", "k", " ", "Stripe secret key")
+	cmd.Flags().StringVarP(&r.webhookSecret, "webhook-secret", "s", " ", "Stripe webhook secret")
 	//cmd.Flags().StringVarP(&c.directory, "directory", "d", ".", "Directory to save GOBL JSON files")
 
 	return cmd
@@ -52,6 +55,12 @@ func (c *revertOpts) runE(cmd *cobra.Command, args []string) error {
 		Addr:    ":" + c.port,
 		Handler: http.DefaultServeMux,
 	}
+
+	err := c.loadSecrets()
+	if err != nil {
+		log.Fatalf("Failed to load secrets: %v\n", err)
+	}
+	stripe.Key = c.stripeKey
 
 	http.HandleFunc("/webhook", c.handleWebhook)
 
@@ -81,20 +90,14 @@ func (c *revertOpts) runE(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func (c revertOpts) handleWebhook(w http.ResponseWriter, r *http.Request) {
-	webhookSecret, err := loadSecrets()
-	if err != nil {
-		handleError(w, "Failed to load webhook secret", err, http.StatusInternalServerError)
-		return
-	}
-
+func (c *revertOpts) handleWebhook(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		handleError(w, "Failed to read request body", err, http.StatusInternalServerError)
 		return
 	}
 
-	event, err := webhook.ConstructEvent(body, r.Header.Get("Stripe-Signature"), webhookSecret)
+	event, err := webhook.ConstructEvent(body, r.Header.Get("Stripe-Signature"), c.webhookSecret)
 	if err != nil {
 		handleError(w, "Failed to construct event", err, http.StatusBadRequest)
 		return
@@ -112,14 +115,23 @@ func (c revertOpts) handleWebhook(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// loadSecrets loads the Stripe secret key and webhook secret from the .env file
-func loadSecrets() (string, error) {
-	err := godotenv.Load()
-	if err != nil {
-		return "", fmt.Errorf("failed to load .env file: %w", err)
+// loadSecrets loads the Stripe secret key and webhook secret first from the arguments
+// , then from the environment variables
+func (r *revertOpts) loadSecrets() error {
+	if r.stripeKey == " " {
+		r.stripeKey = os.Getenv("STRIPE_SECRET_KEY")
+		if r.stripeKey == "" {
+			return fmt.Errorf("stripe secret key must be provided as an argument or in the STRIPE_SECRET_KEY environment variable")
+		}
 	}
-	stripe.Key = os.Getenv("STRIPE_SECRET_KEY")
-	return os.Getenv("STRIPE_WEBHOOK_SECRET"), nil
+
+	if r.webhookSecret == " " {
+		r.webhookSecret = os.Getenv("STRIPE_WEBHOOK_SECRET")
+		if r.webhookSecret == "" {
+			return fmt.Errorf("stripe webhook secret must be provided as an argument or in the STRIPE_WEBHOOK_SECRET environment variable")
+		}
+	}
+	return nil
 }
 
 func handleError(w http.ResponseWriter, message string, err error, statusCode int) {

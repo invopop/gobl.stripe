@@ -13,6 +13,85 @@ import (
 	stripe "github.com/stripe/stripe-go/v81"
 )
 
+func TestToCustomerTaxIDDataParamsForTax(t *testing.T) {
+	tests := []struct {
+		name          string
+		taxIdentity   *tax.Identity
+		expectedType  string
+		expectedValue string
+		expectNil     bool
+	}{
+		{
+			name: "Valid US tax ID",
+			taxIdentity: &tax.Identity{
+				Country: l10n.US.Tax(),
+				Code:    "123456789",
+			},
+			expectedType:  string(stripe.TaxIDTypeUSEIN),
+			expectedValue: "123456789",
+			expectNil:     false,
+		},
+		{
+			name: "Valid EU oss tax ID",
+			taxIdentity: &tax.Identity{
+				Country: l10n.EU.Tax(),
+				Code:    "123456789",
+			},
+			expectedType:  string(stripe.TaxIDTypeEUOSSVAT),
+			expectedValue: "EU123456789",
+			expectNil:     false,
+		},
+		{
+			name: "Valid EU tax ID - Germany",
+			taxIdentity: &tax.Identity{
+				Country: l10n.DE.Tax(),
+				Code:    "123456789",
+			},
+			expectedType:  string(stripe.TaxIDTypeEUVAT),
+			expectedValue: "DE123456789",
+			expectNil:     false,
+		},
+		{
+			name: "Valid Australia tax ID",
+			taxIdentity: &tax.Identity{
+				Country: l10n.AU.Tax(),
+				Code:    "987654321",
+			},
+			expectedType:  string(stripe.TaxIDTypeAUABN),
+			expectedValue: "987654321",
+			expectNil:     false,
+		},
+		{
+			name: "Unsupported country",
+			taxIdentity: &tax.Identity{
+				Country: l10n.CodeEmpty.Tax(),
+				Code:    "unknown",
+			},
+			expectedType:  "",
+			expectedValue: "",
+			expectNil:     true,
+		},
+		{
+			name:        "Nil tax identity",
+			taxIdentity: nil,
+			expectNil:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := goblstripe.ToCustomerTaxIDDataParamsForTax(tt.taxIdentity)
+			if tt.expectNil {
+				assert.Nil(t, result)
+			} else {
+				assert.NotNil(t, result)
+				assert.Equal(t, tt.expectedType, stripe.StringValue(result.Type))
+				assert.Equal(t, tt.expectedValue, stripe.StringValue(result.Value))
+			}
+		})
+	}
+}
+
 func TestFromTaxIDToTax(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -156,11 +235,6 @@ func validStripeCustomer() *stripe.Customer {
 					Livemode: false,
 					Type:     "eu_vat",
 					Value:    "DE282741168",
-					Verification: &stripe.TaxIDVerification{
-						Status:          "verified",
-						VerifiedAddress: "123 TEST STREET",
-						VerifiedName:    "TEST",
-					},
 				},
 			},
 		},

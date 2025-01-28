@@ -120,15 +120,16 @@ stripe listen --forward-to localhost:5276/webhook
 
 #### Step 2: Start the `revert` command
 
-In another terminal tab, set up the local port to listen for events by running:
+Before running the `revert` command, you need to configure 2 secrets: Stripe secret API key and the webhook secret. This can be done in 2 ways:
+1. With environment variables: You would need to set the `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` on your environment. Then you run the command like: 
 
 ```bash
 gobl.stripe revert -p 5276
 ```
 
-When this command is running, you’ll see a confirmation message like this:
-```sh
-2025/01/24 17:00:30 Listening on port 5276
+2. You can pass the secrets to the command directly:
+```bash
+gobl.stripe revert -p 5276 -k sk_test_afjsadf44332... -s whsec_jdferfwerif329...
 ```
 
 #### Step 3: Trigger a Stripe Event

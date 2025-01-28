@@ -13,22 +13,15 @@ jobs:
 
     steps:
       - name: Set up Go
-        uses: actions/setup-go@v1
+        uses: actions/setup-go@v5
         with:
-          go-version: "1.20.4"
+          go-version: "go.mod"
         id: go
 
       - name: Check out code
-        uses: actions/checkout@v3
-
-      - name: Prepare .netrc
-        uses: extractions/netrc@v1
-        with:
-          machine: github.com
-          username: ${{ secrets.GO_MOD_USER }}
-          password: ${{ secrets.GO_MOD_PASS }}
+        uses: actions/checkout@v4
 
       - name: Lint
         uses: golangci/golangci-lint-action@v3
         with:
-          version: v1.51
+          version: v1.62
