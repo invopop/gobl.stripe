@@ -50,19 +50,19 @@ func (r *revertOpts) cmd() *cobra.Command {
 	return cmd
 }
 
-func (c *revertOpts) runE(cmd *cobra.Command, args []string) error {
+func (r *revertOpts) runE(_ *cobra.Command, _ []string) error {
 	server := &http.Server{
-		Addr:    ":" + c.port,
+		Addr:    ":" + r.port,
 		Handler: http.DefaultServeMux,
 	}
 
-	err := c.loadSecrets()
+	err := r.loadSecrets()
 	if err != nil {
 		log.Fatalf("Failed to load secrets: %v\n", err)
 	}
-	stripe.Key = c.stripeKey
+	stripe.Key = r.stripeKey
 
-	http.HandleFunc("/webhook", c.handleWebhook)
+	http.HandleFunc("/webhook", r.handleWebhook)
 
 	// Channel to listen for termination signals (control + c)
 	stopChan := make(chan os.Signal, 1)
@@ -70,7 +70,7 @@ func (c *revertOpts) runE(cmd *cobra.Command, args []string) error {
 
 	// Goroutine to start the server
 	go func() {
-		log.Printf("Listening on port %s\n", c.port)
+		log.Printf("Listening on port %s\n", r.port)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Failed to start server: %v\n", err)
 		}
@@ -90,14 +90,14 @@ func (c *revertOpts) runE(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func (c *revertOpts) handleWebhook(w http.ResponseWriter, r *http.Request) {
-	body, err := io.ReadAll(r.Body)
+func (r *revertOpts) handleWebhook(w http.ResponseWriter, req *http.Request) {
+	body, err := io.ReadAll(req.Body)
 	if err != nil {
 		handleError(w, "Failed to read request body", err, http.StatusInternalServerError)
 		return
 	}
 
-	event, err := webhook.ConstructEvent(body, r.Header.Get("Stripe-Signature"), c.webhookSecret)
+	event, err := webhook.ConstructEvent(body, req.Header.Get("Stripe-Signature"), r.webhookSecret)
 	if err != nil {
 		handleError(w, "Failed to construct event", err, http.StatusBadRequest)
 		return
@@ -274,7 +274,7 @@ func saveJSON(data interface{}) error {
 	if err != nil {
 		return fmt.Errorf("failed to create file: %v", err)
 	}
-	defer file.Close()
+	defer file.Close() // nolint: errcheck
 
 	if _, err := file.Write(fullJSON); err != nil {
 		return fmt.Errorf("failed to write to file: %v", err)
