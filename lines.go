@@ -3,7 +3,6 @@ package goblstripe
 import (
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/cal"
@@ -14,13 +13,6 @@ import (
 	"github.com/invopop/gobl/org"
 	"github.com/invopop/gobl/tax"
 	"github.com/stripe/stripe-go/v81"
-)
-
-const (
-	// MetaKeyDateFrom is the key for the start date of a billing period.
-	MetaKeyDateFrom = "stripe-date-from"
-	// MetaKeyDateTo is the key for the end date of a billing period.
-	MetaKeyDateTo = "stripe-date-to"
 )
 
 // Invoice Lines
@@ -74,10 +66,6 @@ func FromInvoiceLineToItem(line *stripe.InvoiceLineItem) *org.Item {
 		Name:     setItemName(line),
 		Currency: currency.Code(strings.ToUpper(string(line.Currency))),
 		Price:    resolveInvoiceLinePrice(line),
-		Meta: cbc.Meta{
-			MetaKeyDateFrom: cal.DateOf(time.Unix(line.Period.Start, 0).UTC()).String(),
-			MetaKeyDateTo:   cal.DateOf(time.Unix(line.Period.End, 0).UTC()).String(),
-		},
 	}
 }
 
@@ -165,13 +153,19 @@ func FromInvoiceLineDiscount(discount *stripe.Discount) *bill.LineDiscount {
 func FromInvoiceTaxAmountsToTaxSet(taxAmounts []*stripe.InvoiceTotalTaxAmount) tax.Set {
 	var ts tax.Set
 	for _, taxAmount := range taxAmounts {
-		ts = append(ts, FromInvoiceTaxAmountToTaxCombo(taxAmount))
+		taxCombo := FromInvoiceTaxAmountToTaxCombo(taxAmount)
+		if taxCombo != nil {
+			ts = append(ts, FromInvoiceTaxAmountToTaxCombo(taxAmount))
+		}
 	}
 	return ts
 }
 
 // FromInvoiceTaxAmountToTaxCombo creates a new GOBL tax combo from a Stripe invoice tax amount.
 func FromInvoiceTaxAmountToTaxCombo(taxAmount *stripe.InvoiceTotalTaxAmount) *tax.Combo {
+	if taxAmount.TaxRate.Country == "" && taxAmount.TaxRate.TaxType == "" {
+		return nil
+	}
 	tc := &tax.Combo{
 		Category: extractTaxCat(taxAmount.TaxRate.TaxType),
 		Country:  l10n.TaxCountryCode(taxAmount.TaxRate.Country),
@@ -286,6 +280,10 @@ func FromCreditNoteTaxAmountsToTaxSet(taxAmounts []*stripe.CreditNoteTaxAmount) 
 
 // FromCreditNoteTaxAmountToTaxCombo creates a new GOBL tax combo from a Stripe credit note tax amount.
 func FromCreditNoteTaxAmountToTaxCombo(taxAmount *stripe.CreditNoteTaxAmount) *tax.Combo {
+	if taxAmount.TaxRate.Country == "" && taxAmount.TaxRate.TaxType == "" {
+		return nil
+	}
+
 	tc := &tax.Combo{
 		Category: extractTaxCat(taxAmount.TaxRate.TaxType),
 		Country:  l10n.TaxCountryCode(taxAmount.TaxRate.Country),

@@ -7,8 +7,6 @@ import (
 
 	goblstripe "github.com/invopop/gobl.stripe"
 	"github.com/invopop/gobl/bill"
-	"github.com/invopop/gobl/cal"
-	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/currency"
 	"github.com/invopop/gobl/l10n"
 	"github.com/invopop/gobl/num"
@@ -57,8 +55,6 @@ func TestBasicFields(t *testing.T) {
 
 	assert.NotNil(t, result, "Line conversion should not return nil")
 	assert.Equal(t, currency.USD, result.Item.Currency, "Item currency should match line currency")
-	assert.Equal(t, cal.NewDate(2025, 1, 8).String(), result.Item.Meta[goblstripe.MetaKeyDateFrom], "Item start date should match line period start")
-	assert.Equal(t, cal.NewDate(2025, 2, 8).String(), result.Item.Meta[goblstripe.MetaKeyDateTo], "Item end date should match line period end")
 	assert.Equal(t, tax.CategoryVAT, result.Taxes[0].Category, "Tax category should match line tax")
 	assert.Equal(t, l10n.ES.Tax(), result.Taxes[0].Country, "Tax country should match line tax")
 	assert.Equal(t, num.NewPercentage(210, 3), result.Taxes[0].Percent, "Tax percentage should match line tax")
@@ -208,10 +204,6 @@ func TestSeveralLines(t *testing.T) {
 				Name:     "Unused time on 2000 × Pro Plan after 08 Jan 2025",
 				Currency: currency.EUR,
 				Price:    num.MakeAmount(-11000, 2),
-				Meta: cbc.Meta{
-					goblstripe.MetaKeyDateFrom: cal.NewDate(2025, 1, 8).String(),
-					goblstripe.MetaKeyDateTo:   cal.NewDate(2025, 2, 8).String(),
-				},
 			},
 			Taxes: tax.Set{
 				{
@@ -227,10 +219,6 @@ func TestSeveralLines(t *testing.T) {
 				Name:     "Remaining time on 10000 × Pro Plan after 08 Jan 2025",
 				Currency: currency.EUR,
 				Price:    num.MakeAmount(19999, 2),
-				Meta: cbc.Meta{
-					goblstripe.MetaKeyDateFrom: cal.NewDate(2025, 1, 8).String(),
-					goblstripe.MetaKeyDateTo:   cal.NewDate(2025, 2, 8).String(),
-				},
 			},
 			Taxes: tax.Set{
 				{
@@ -246,10 +234,6 @@ func TestSeveralLines(t *testing.T) {
 				Name:     "Remaining time on Chargebee Addon after 08 Jan 2025",
 				Currency: currency.EUR,
 				Price:    num.MakeAmount(10000, 2),
-				Meta: cbc.Meta{
-					goblstripe.MetaKeyDateFrom: cal.NewDate(2025, 1, 8).String(),
-					goblstripe.MetaKeyDateTo:   cal.NewDate(2025, 2, 8).String(),
-				},
 			},
 			Taxes: tax.Set{
 				{
@@ -265,10 +249,6 @@ func TestSeveralLines(t *testing.T) {
 				Name:     "Chargebee Addon",
 				Currency: currency.USD,
 				Price:    num.MakeAmount(10294, 2),
-				Meta: cbc.Meta{
-					goblstripe.MetaKeyDateFrom: cal.NewDate(2025, 1, 8).String(),
-					goblstripe.MetaKeyDateTo:   cal.NewDate(2025, 2, 8).String(),
-				},
 			},
 			Taxes: tax.Set{
 				{
@@ -414,10 +394,6 @@ func TestFromLineToItem(t *testing.T) {
 				Name:     "Basic Plan",
 				Currency: "USD",
 				Price:    num.MakeAmount(1000, 2),
-				Meta: cbc.Meta{
-					goblstripe.MetaKeyDateFrom: "2024-01-01",
-					goblstripe.MetaKeyDateTo:   "2024-01-31",
-				},
 			},
 		},
 		{
@@ -439,10 +415,6 @@ func TestFromLineToItem(t *testing.T) {
 				Name:     "Usage Plan",
 				Currency: "EUR",
 				Price:    num.MakeAmount(2500, 2),
-				Meta: cbc.Meta{
-					goblstripe.MetaKeyDateFrom: "2024-01-01",
-					goblstripe.MetaKeyDateTo:   "2024-01-31",
-				},
 			},
 		},
 	}
