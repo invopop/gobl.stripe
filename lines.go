@@ -100,9 +100,9 @@ func resolveInvoiceLinePrice(line *stripe.InvoiceLineItem) num.Amount {
 
 	switch line.Price.BillingScheme {
 	case stripe.PriceBillingSchemePerUnit:
-		return currencyAmount(line.Price.UnitAmount, FromCurrency(line.Currency))
+		return CurrencyAmount(line.Price.UnitAmount, FromCurrency(line.Currency))
 	case stripe.PriceBillingSchemeTiered:
-		return currencyAmount(line.Amount, FromCurrency(line.Currency))
+		return CurrencyAmount(line.Amount, FromCurrency(line.Currency))
 	}
 
 	return num.AmountZero
@@ -141,7 +141,7 @@ func FromInvoiceLineDiscount(discount *stripe.Discount) *bill.LineDiscount {
 	// If the discount is an amount, we can directly set the amount.
 	if discount.Coupon.AmountOff != 0 {
 		return &bill.LineDiscount{
-			Amount: currencyAmount(discount.Coupon.AmountOff, FromCurrency(discount.Coupon.Currency)),
+			Amount: CurrencyAmount(discount.Coupon.AmountOff, FromCurrency(discount.Coupon.Currency)),
 			Reason: discount.Coupon.Name,
 		}
 	}
@@ -241,16 +241,16 @@ func FromCreditNoteLineToItem(line *stripe.CreditNoteLineItem, curr currency.Cod
 // If it is a tiered scheme (line_quantity = 0), the price is the complete amount.
 func resolveCreditNoteLinePrice(line *stripe.CreditNoteLineItem, curr currency.Code) num.Amount {
 	if line.Quantity == 0 {
-		return currencyAmount(line.Amount, curr)
+		return CurrencyAmount(line.Amount, curr)
 	}
 
 	// The unit amount can be 0 when discounts applied the line amount.
 	if line.UnitAmount == 0 {
 		// We could use unit amount excluding tax, but if the tax is included it will not match.
 		unitAmount := line.Amount / line.Quantity
-		return currencyAmount(unitAmount, curr)
+		return CurrencyAmount(unitAmount, curr)
 	}
-	return currencyAmount(line.UnitAmount, curr)
+	return CurrencyAmount(line.UnitAmount, curr)
 }
 
 // FromCreditNoteLineDiscounts creates a list of discounts for a GOBL credit note line item.
@@ -265,7 +265,7 @@ func FromCreditNoteLineDiscounts(discounts []*stripe.CreditNoteLineItemDiscountA
 // FromCreditNoteLineDiscount creates a discount for a GOBL credit note line item.
 func FromCreditNoteLineDiscount(discount *stripe.CreditNoteLineItemDiscountAmount, curr currency.Code) *bill.LineDiscount {
 	return &bill.LineDiscount{
-		Amount: currencyAmount(discount.Amount, curr),
+		Amount: CurrencyAmount(discount.Amount, curr),
 	}
 }
 

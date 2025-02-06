@@ -140,7 +140,7 @@ func newPaymentAdvances(doc *stripe.Invoice) []*pay.Advance {
 
 	// For the moment we can create an advance object with the amount paid
 	advance := &pay.Advance{
-		Amount:      currencyAmount(doc.AmountPaid, FromCurrency(doc.Currency)),
+		Amount:      CurrencyAmount(doc.AmountPaid, FromCurrency(doc.Currency)),
 		Description: "Advance payment",
 		Date:        newDateFromTS(doc.Charge.Created),
 	}
