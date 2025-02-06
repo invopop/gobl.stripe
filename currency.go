@@ -29,8 +29,8 @@ func FromCurrency(curr stripe.Currency) currency.Code {
 	return currency.Code(strings.ToUpper(string(curr)))
 }
 
-// CurrencyAmount creates a currency amount object from a value and a currency code.
-func CurrencyAmount(val int64, curr currency.Code) num.Amount {
+// currencyAmount creates a currency amount object from a value and a currency code.
+func currencyAmount(val int64, curr currency.Code) num.Amount {
 	var exp uint32 = 2
 	if slices.Contains(zeroDecimalCurrencies, curr) {
 		exp = 0

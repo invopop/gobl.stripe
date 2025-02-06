@@ -8,6 +8,7 @@ import (
 	"github.com/invopop/gobl/cal"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/l10n"
+	"github.com/invopop/gobl/num"
 	"github.com/invopop/gobl/org"
 	"github.com/invopop/gobl/tax"
 	"github.com/invopop/gobl/uuid"
@@ -143,4 +144,34 @@ func newOrdering(doc *stripe.Invoice) *bill.Ordering {
 			End:   *newDateFromTS(doc.PeriodEnd),
 		},
 	}
+}
+
+// AdjustRounding checks and, if need be, adjusts the rounding in the GOBL invoice to match the
+// Stripe payable total. Stripe calculates totals by rounding each line and then summing
+// which can lead to a mismatch with the total amount in GOBL.
+func AdjustRounding(gi *bill.Invoice, total int64, curr stripe.Currency) error {
+	// Calculate the difference between the expected and the calculated totals
+	exp := currencyAmount(total, FromCurrency(curr))
+	diff := exp.Subtract(gi.Totals.Payable)
+	if diff.IsZero() {
+		// No difference. No adjustment needed
+		return nil
+	}
+
+	// Check if the difference can be attributed to rounding
+	maxErr := MaxRoundingError(gi)
+	if diff.Abs().Compare(maxErr) == 1 {
+		// Too much difference. Report the error
+		return fmt.Errorf("rounding error in totals too high: %s", diff)
+	}
+
+	gi.Totals.Rounding = &diff
+
+	return nil
+}
+
+// MaxRoundingError returns the maximum error that can be attributed to rounding in an invoice.
+func MaxRoundingError(gi *bill.Invoice) num.Amount {
+	// 0.5 of the smallest subunit of the currency per line
+	return num.MakeAmount(5*int64(len(gi.Lines)), gi.Currency.Def().Subunits+1)
 }

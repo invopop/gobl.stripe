@@ -7,6 +7,7 @@ import (
 	"time"
 
 	goblstripe "github.com/invopop/gobl.stripe"
+	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/cal"
 	"github.com/invopop/gobl/currency"
 	"github.com/invopop/gobl/l10n"
@@ -551,6 +552,100 @@ func TestUnexpandedTax(t *testing.T) {
 
 	err = gi.Validate()
 	require.NoError(t, err)
+}
+
+func TestAdjustRounding(t *testing.T) {
+	// Test case 1: No rounding adjustment needed
+	gi1 := &bill.Invoice{
+		Currency: currency.EUR,
+		Lines: []*bill.Line{
+			{
+				Quantity: num.AmountZero,
+			},
+			{
+				Quantity: num.AmountZero,
+			},
+			{
+				Quantity: num.AmountZero,
+			},
+			{
+				Quantity: num.AmountZero,
+			},
+			{
+				Quantity: num.AmountZero,
+			},
+		},
+		Totals: &bill.Totals{
+			Payable: num.MakeAmount(10000, 2),
+		},
+	}
+	total1 := int64(10000)
+	curr1 := stripe.Currency("USD")
+	err1 := goblstripe.AdjustRounding(gi1, total1, curr1)
+	assert.Nil(t, err1)
+	assert.Nil(t, gi1.Totals.Rounding)
+
+	// Test case 2: Rounding adjustment needed
+	gi2 := &bill.Invoice{
+		Currency: currency.EUR,
+		Lines: []*bill.Line{
+			{
+				Quantity: num.AmountZero,
+			},
+			{
+				Quantity: num.AmountZero,
+			},
+			{
+				Quantity: num.AmountZero,
+			},
+			{
+				Quantity: num.AmountZero,
+			},
+			{
+				Quantity: num.AmountZero,
+			},
+		},
+		Totals: &bill.Totals{
+			Payable: num.MakeAmount(10000, 2),
+		},
+	}
+	total2 := int64(9999)
+	curr2 := stripe.Currency("USD")
+	err2 := goblstripe.AdjustRounding(gi2, total2, curr2)
+	assert.Nil(t, err2)
+	expectedRounding2 := num.NewAmount(-1, 2)
+	assert.Equal(t, expectedRounding2, gi2.Totals.Rounding)
+
+	// Test case 3: Rounding error too high
+	gi3 := &bill.Invoice{
+		Currency: currency.EUR,
+		Lines: []*bill.Line{
+			{
+				Quantity: num.AmountZero,
+			},
+			{
+				Quantity: num.AmountZero,
+			},
+			{
+				Quantity: num.AmountZero,
+			},
+			{
+				Quantity: num.AmountZero,
+			},
+			{
+				Quantity: num.AmountZero,
+			},
+		},
+		Totals: &bill.Totals{
+			Payable: num.MakeAmount(10000, 2),
+		},
+	}
+	total3 := int64(9980)
+	curr3 := stripe.Currency("USD")
+	err3 := goblstripe.AdjustRounding(gi3, total3, curr3)
+	expectedError3 := "rounding error in totals too high: -0.20"
+	assert.EqualError(t, err3, expectedError3)
+	assert.Nil(t, gi3.Totals.Rounding)
 }
 
 // Credit Notes
