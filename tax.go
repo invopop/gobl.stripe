@@ -15,6 +15,10 @@ func taxFromInvoiceTaxAmounts(taxAmounts []*stripe.InvoiceTotalTaxAmount) *bill.
 		return nil
 	}
 
+	if taxAmounts[0].TaxRate.TaxType == "" {
+		return nil
+	}
+
 	// We just check the first tax
 	if taxAmounts[0].Inclusive {
 		t = new(bill.Tax)
@@ -30,6 +34,10 @@ func taxFromCreditNoteTaxAmounts(taxAmounts []*stripe.CreditNoteTaxAmount) *bill
 	var t *bill.Tax
 
 	if len(taxAmounts) == 0 {
+		return nil
+	}
+
+	if taxAmounts[0].TaxRate.TaxType == "" {
 		return nil
 	}
 

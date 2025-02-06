@@ -4,14 +4,13 @@ import (
 	"testing"
 
 	goblstripe "github.com/invopop/gobl.stripe"
-	"github.com/invopop/gobl/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestShippingDetails(t *testing.T) {
-	s := validStripeInvoice()
-	gi, err := goblstripe.FromInvoice(s, uuid.MustParse(namespace))
+	s := completeStripeInvoice()
+	gi, err := goblstripe.FromInvoice(s)
 	require.NoError(t, err)
 
 	assert.Equal(t, "Test Customer", gi.Delivery.Receiver.Name)
