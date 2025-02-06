@@ -177,9 +177,9 @@ To get all the required information, they request to the invoice must be done ex
 
 ### For Invoices
 - account_tax_ids
-- customer.tax_ids
 - lines.data.discounts
 - lines.data.tax_amounts.tax_rate
+- lines.data.price.product
 - total_tax_amounts.tax_rate
 - payment_intent
 
@@ -233,3 +233,6 @@ For the moment GOBL fields `$addons` and `$tags` are not being mapped as we need
 ## Steps to include in Workflows
 
 When converting from Stripe to GOBL, the Stripe invoice does not include any exchange rates. We add some default ones. To have updated ones you should include the exchange rates step in the workflow.
+
+## Important notes
+The UUID generated is random, if you need a specific UUID, you can check the ones in the [gobl/uuid package](https://github.com/invopop/gobl/tree/main/uuid).

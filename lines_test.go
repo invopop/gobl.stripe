@@ -38,9 +38,10 @@ func validInvoiceLine() *stripe.InvoiceLineItem {
 				Amount:    5360,
 				Inclusive: false,
 				TaxRate: &stripe.TaxRate{
-					TaxType:    stripe.TaxRateTaxTypeVAT,
-					Country:    "ES",
-					Percentage: 21.0,
+					TaxType:             stripe.TaxRateTaxTypeVAT,
+					Country:             "ES",
+					EffectivePercentage: 21.0,
+					Percentage:          21.0,
 				},
 				TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonStandardRated,
 				TaxableAmount:    25522,
@@ -88,9 +89,10 @@ func TestSeveralLines(t *testing.T) {
 					Amount:    -2310,
 					Inclusive: false,
 					TaxRate: &stripe.TaxRate{
-						TaxType:    stripe.TaxRateTaxTypeVAT,
-						Country:    "ES",
-						Percentage: 21.0,
+						TaxType:             stripe.TaxRateTaxTypeVAT,
+						Country:             "ES",
+						EffectivePercentage: 21.0,
+						Percentage:          21.0,
 					},
 					TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonStandardRated,
 					TaxableAmount:    -11000,
@@ -120,9 +122,10 @@ func TestSeveralLines(t *testing.T) {
 					Amount:    4200,
 					Inclusive: false,
 					TaxRate: &stripe.TaxRate{
-						TaxType:    stripe.TaxRateTaxTypeVAT,
-						Country:    "ES",
-						Percentage: 21.0,
+						TaxType:             stripe.TaxRateTaxTypeVAT,
+						Country:             "ES",
+						EffectivePercentage: 21.0,
+						Percentage:          21.0,
 					},
 					TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonStandardRated,
 					TaxableAmount:    19999,
@@ -152,9 +155,10 @@ func TestSeveralLines(t *testing.T) {
 					Amount:    2100,
 					Inclusive: false,
 					TaxRate: &stripe.TaxRate{
-						TaxType:    stripe.TaxRateTaxTypeVAT,
-						Country:    "ES",
-						Percentage: 21.0,
+						TaxType:             stripe.TaxRateTaxTypeVAT,
+						Country:             "ES",
+						EffectivePercentage: 21.0,
+						Percentage:          21.0,
 					},
 					TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonStandardRated,
 					TaxableAmount:    10000,
@@ -184,9 +188,10 @@ func TestSeveralLines(t *testing.T) {
 					Amount:    5360,
 					Inclusive: true,
 					TaxRate: &stripe.TaxRate{
-						TaxType:    stripe.TaxRateTaxTypeVAT,
-						Country:    "ES",
-						Percentage: 21.0,
+						TaxType:             stripe.TaxRateTaxTypeVAT,
+						Country:             "ES",
+						EffectivePercentage: 21.0,
+						Percentage:          21.0,
 					},
 					TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonStandardRated,
 					TaxableAmount:    25522,
@@ -311,9 +316,10 @@ func TestFromLinePerUnit(t *testing.T) {
 				Amount:    5360,
 				Inclusive: true,
 				TaxRate: &stripe.TaxRate{
-					TaxType:    stripe.TaxRateTaxTypeVAT,
-					Country:    "ES",
-					Percentage: 21.0,
+					TaxType:             stripe.TaxRateTaxTypeVAT,
+					Country:             "ES",
+					EffectivePercentage: 21.0,
+					Percentage:          21.0,
 				},
 				TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonStandardRated,
 				TaxableAmount:    25522,
@@ -358,9 +364,10 @@ func TestFromLineTiered(t *testing.T) {
 				Amount:    4200,
 				Inclusive: false,
 				TaxRate: &stripe.TaxRate{
-					TaxType:    stripe.TaxRateTaxTypeVAT,
-					Country:    "ES",
-					Percentage: 21.0,
+					TaxType:             stripe.TaxRateTaxTypeVAT,
+					Country:             "ES",
+					EffectivePercentage: 21.0,
+					Percentage:          21.0,
 				},
 				TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonStandardRated,
 				TaxableAmount:    19999,
@@ -513,18 +520,20 @@ func TestFromTaxAmountsToTaxSet(t *testing.T) {
 			input: []*stripe.InvoiceTotalTaxAmount{
 				{
 					TaxRate: &stripe.TaxRate{
-						Country:    "DE",
-						TaxType:    stripe.TaxRateTaxTypeVAT,
-						Percentage: 19.0,
-						Created:    time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
+						Country:             "DE",
+						TaxType:             stripe.TaxRateTaxTypeVAT,
+						EffectivePercentage: 19.0,
+						Percentage:          19.0,
+						Created:             time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
 					},
 				},
 				{
 					TaxRate: &stripe.TaxRate{
-						Country:    "ES",
-						TaxType:    stripe.TaxRateTaxTypeVAT,
-						Percentage: 8.875,
-						Created:    time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
+						Country:             "ES",
+						TaxType:             stripe.TaxRateTaxTypeVAT,
+						EffectivePercentage: 8.875,
+						Percentage:          8.875,
+						Created:             time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
 					},
 				},
 			},
@@ -538,6 +547,43 @@ func TestFromTaxAmountsToTaxSet(t *testing.T) {
 					Category: tax.CategoryVAT,
 					Country:  "ES",
 					Percent:  num.NewPercentage(8875, 5),
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := goblstripe.FromInvoiceTaxAmountsToTaxSet(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestFromTaxAmountsExempt(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    []*stripe.InvoiceTotalTaxAmount
+		expected tax.Set
+	}{
+		{
+			name: "tax amount exempt",
+			input: []*stripe.InvoiceTotalTaxAmount{
+				{
+					TaxRate: &stripe.TaxRate{
+						Country:             "DE",
+						TaxType:             stripe.TaxRateTaxTypeVAT,
+						EffectivePercentage: 0.0,
+						Percentage:          19.0,
+						Created:             time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
+					},
+				},
+			},
+			expected: tax.Set{
+				{
+					Category: tax.CategoryVAT,
+					Country:  "DE",
+					Rate:     tax.RateZero,
 				},
 			},
 		},
@@ -565,9 +611,10 @@ func validCreditNoteLine() *stripe.CreditNoteLineItem {
 				Amount:    2162,
 				Inclusive: false,
 				TaxRate: &stripe.TaxRate{
-					TaxType:    stripe.TaxRateTaxTypeVAT,
-					Country:    "ES",
-					Percentage: 21.0,
+					TaxType:             stripe.TaxRateTaxTypeVAT,
+					Country:             "ES",
+					EffectivePercentage: 21.0,
+					Percentage:          21.0,
 				},
 				TaxableAmount: 10294,
 			},
@@ -653,18 +700,20 @@ func TestFromCNTaxAmountsToTaxSet(t *testing.T) {
 			input: []*stripe.CreditNoteTaxAmount{
 				{
 					TaxRate: &stripe.TaxRate{
-						Country:    "DE",
-						TaxType:    stripe.TaxRateTaxTypeVAT,
-						Percentage: 19.0,
-						Created:    time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
+						Country:             "DE",
+						TaxType:             stripe.TaxRateTaxTypeVAT,
+						EffectivePercentage: 19.0,
+						Percentage:          19.0,
+						Created:             time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
 					},
 				},
 				{
 					TaxRate: &stripe.TaxRate{
-						Country:    "ES",
-						TaxType:    stripe.TaxRateTaxTypeVAT,
-						Percentage: 8.875,
-						Created:    time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
+						Country:             "ES",
+						TaxType:             stripe.TaxRateTaxTypeVAT,
+						EffectivePercentage: 8.875,
+						Percentage:          8.875,
+						Created:             time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
 					},
 				},
 			},

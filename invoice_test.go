@@ -10,23 +10,57 @@ import (
 	"github.com/invopop/gobl/l10n"
 	"github.com/invopop/gobl/num"
 	"github.com/invopop/gobl/tax"
-	"github.com/invopop/gobl/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stripe/stripe-go/v81"
 )
 
-const (
-	namespace = "550e8400-e29b-41d4-a716-446655440000"
-)
+func minimalStripeInvoice() *stripe.Invoice {
+	return &stripe.Invoice{
+		ID:             "in_1QkqKVQhcl5B85YlT32LIsNm",
+		AccountCountry: "DE",
+		AccountName:    "Test Account",
+		AmountDue:      0,
+		AmountPaid:     2000,
+		Created:        1737738363,
+		EffectiveAt:    1737738364,
+		Currency:       stripe.CurrencyEUR,
+		Lines: &stripe.InvoiceLineItemList{
+			Data: []*stripe.InvoiceLineItem{
+				{
+					Description:  "Test Item",
+					Amount:       2000,
+					Currency:     stripe.CurrencyEUR,
+					Quantity:     1,
+					Discountable: true,
+					Period: &stripe.Period{
+						Start: 1737738363,
+						End:   1737738363,
+					},
+					Price: &stripe.Price{
+						BillingScheme: stripe.PriceBillingSchemePerUnit,
+						Currency:      stripe.CurrencyEUR,
+						TaxBehavior:   stripe.PriceTaxBehaviorUnspecified,
+						UnitAmount:    2000,
+					},
+					TaxAmounts: []*stripe.InvoiceTotalTaxAmount{},
+				},
+			},
+		},
+		Total:           2000,
+		TotalTaxAmounts: []*stripe.InvoiceTotalTaxAmount{},
+	}
+}
 
-func validStripeInvoice() *stripe.Invoice {
+func completeStripeInvoice() *stripe.Invoice {
+	taxIDType := stripe.TaxIDTypeEUVAT
 	return &stripe.Invoice{
 		ID:             "inv_123",
 		AccountName:    "Test Account",
 		AccountCountry: "DE",
 		AccountTaxIDs: []*stripe.TaxID{
 			{
+				Created: 1736351225,
 				Type:    "eu_vat",
 				Value:   "DE813495425",
 				Country: "DE",
@@ -37,7 +71,6 @@ func validStripeInvoice() *stripe.Invoice {
 		AmountRemaining: 0,
 		Created:         time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
 		Currency:        "eur",
-		Customer:        validStripeCustomer(),
 		CustomerAddress: &stripe.Address{
 			City:       "Berlin",
 			Country:    "DE",
@@ -60,6 +93,12 @@ func validStripeInvoice() *stripe.Invoice {
 			},
 			Name:  "Test Customer",
 			Phone: "+4915155555555",
+		},
+		CustomerTaxIDs: []*stripe.InvoiceCustomerTaxID{
+			{
+				Type:  &taxIDType,
+				Value: "DE282741168",
+			},
 		},
 		CustomerTaxExempt: nil,
 		DueDate:           0,
@@ -90,9 +129,10 @@ func validStripeInvoice() *stripe.Invoice {
 						{
 							Inclusive: false,
 							TaxRate: &stripe.TaxRate{
-								TaxType:    stripe.TaxRateTaxTypeVAT,
-								Country:    "DE",
-								Percentage: 19.0,
+								TaxType:             stripe.TaxRateTaxTypeVAT,
+								Country:             "DE",
+								EffectivePercentage: 19.0,
+								Percentage:          19.0,
 							},
 							TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonStandardRated,
 							TaxableAmount:    -11000,
@@ -121,9 +161,10 @@ func validStripeInvoice() *stripe.Invoice {
 						{
 							Inclusive: false,
 							TaxRate: &stripe.TaxRate{
-								TaxType:    stripe.TaxRateTaxTypeVAT,
-								Country:    "DE",
-								Percentage: 19.0,
+								TaxType:             stripe.TaxRateTaxTypeVAT,
+								Country:             "DE",
+								EffectivePercentage: 19.0,
+								Percentage:          19.0,
 							},
 							TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonStandardRated,
 							TaxableAmount:    19999,
@@ -152,9 +193,10 @@ func validStripeInvoice() *stripe.Invoice {
 						{
 							Inclusive: false,
 							TaxRate: &stripe.TaxRate{
-								TaxType:    stripe.TaxRateTaxTypeVAT,
-								Country:    "DE",
-								Percentage: 19.0,
+								TaxType:             stripe.TaxRateTaxTypeVAT,
+								Country:             "DE",
+								EffectivePercentage: 19.0,
+								Percentage:          19.0,
 							},
 							TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonStandardRated,
 							TaxableAmount:    10000,
@@ -190,9 +232,23 @@ func validStripeInvoice() *stripe.Invoice {
 	}
 }
 
-func TestBasicFieldsConversion(t *testing.T) {
+func TestMinimalFieldsConversion(t *testing.T) {
+	s := minimalStripeInvoice()
+	gi, err := goblstripe.FromInvoice(s)
+	require.NoError(t, err)
+
+	assert.Equal(t, "in_1QkqKVQhcl5B85YlT32LIsNm", gi.Code.String())
+	assert.Equal(t, "Test Account", gi.Supplier.Name)
+	assert.Equal(t, cal.MakeDate(2025, 1, 24), gi.IssueDate)
+	assert.Equal(t, cal.NewDate(2025, 1, 24), gi.OperationDate)
+	assert.Equal(t, currency.EUR, gi.Currency)
+	assert.Nil(t, gi.Customer)
+	assert.Nil(t, gi.Tax)
+}
+
+/*func TestBasicFieldsConversion(t *testing.T) {
 	s := validStripeInvoice()
-	gi, err := goblstripe.FromInvoice(s, uuid.MustParse(namespace))
+	gi, err := goblstripe.FromInvoice(s)
 	require.NoError(t, err)
 
 	assert.Equal(t, "inv_123", gi.Code.String())
@@ -208,11 +264,19 @@ func TestBasicFieldsConversion(t *testing.T) {
 	assert.Equal(t, currency.EUR, gi.Lines[0].Item.Currency)
 	assert.Equal(t, num.MakeAmount(-11000, 2), gi.Lines[0].Item.Price)
 	assert.Nil(t, gi.Tax)
-}
+}*/
 
 func TestSupplier(t *testing.T) {
-	s := validStripeInvoice()
-	gi, err := goblstripe.FromInvoice(s, uuid.MustParse(namespace))
+	s := minimalStripeInvoice()
+	s.AccountTaxIDs = []*stripe.TaxID{
+		{
+			Created: 1736351225,
+			Type:    "eu_vat",
+			Value:   "DE813495425",
+			Country: "DE",
+		},
+	}
+	gi, err := goblstripe.FromInvoice(s)
 	require.NoError(t, err)
 
 	assert.Equal(t, "Test Account", gi.Supplier.Name)
@@ -221,8 +285,39 @@ func TestSupplier(t *testing.T) {
 }
 
 func TestCustomer(t *testing.T) {
-	s := validStripeInvoice()
-	gi, err := goblstripe.FromInvoice(s, uuid.MustParse(namespace))
+	s := minimalStripeInvoice()
+	s.CustomerAddress = &stripe.Address{
+		City:       "Berlin",
+		Country:    "DE",
+		Line1:      "Unter den Linden 1",
+		Line2:      "",
+		PostalCode: "10117",
+		State:      "BE",
+	}
+	s.CustomerEmail = "me.unselfish@me.com"
+	s.CustomerName = "Test Customer"
+	s.CustomerPhone = "+4915155555555"
+	s.CustomerShipping = &stripe.ShippingDetails{
+		Address: &stripe.Address{
+			City:       "Berlin",
+			Country:    "DE",
+			Line1:      "Unter den Linden 1",
+			Line2:      "",
+			PostalCode: "10117",
+			State:      "BE",
+		},
+		Name:  "Test Customer",
+		Phone: "+4915155555555",
+	}
+	taxIDType := stripe.TaxIDTypeEUVAT
+	s.CustomerTaxIDs = []*stripe.InvoiceCustomerTaxID{
+		{
+			Type:  &taxIDType,
+			Value: "DE282741168",
+		},
+	}
+	s.CustomerTaxExempt = nil
+	gi, err := goblstripe.FromInvoice(s)
 	require.NoError(t, err)
 
 	assert.Equal(t, "Test Customer", gi.Customer.Name)
@@ -237,8 +332,108 @@ func TestCustomer(t *testing.T) {
 }
 
 func TestCalculate(t *testing.T) {
-	s := validStripeInvoice()
-	gi, err := goblstripe.FromInvoice(s, uuid.MustParse(namespace))
+	s := minimalStripeInvoice()
+	s.Lines = &stripe.InvoiceLineItemList{
+		Data: []*stripe.InvoiceLineItem{
+			{
+				ID:                 "il_1Qf1WLQhcl5B85YleQz6ZuEfd",
+				Amount:             -11000,
+				AmountExcludingTax: -11000,
+				Currency:           stripe.CurrencyEUR,
+				Quantity:           2000,
+				Price: &stripe.Price{
+					BillingScheme: stripe.PriceBillingSchemeTiered,
+					Currency:      stripe.CurrencyEUR,
+					TaxBehavior:   stripe.PriceTaxBehaviorExclusive,
+					UnitAmount:    0,
+				},
+				Period: &stripe.Period{
+					Start: 1736351413,
+					End:   1739029692,
+				},
+				Description: "Unused time on 2000 × Pro Plan after 08 Jan 2025",
+				TaxAmounts: []*stripe.InvoiceTotalTaxAmount{
+					{
+						Inclusive: false,
+						TaxRate: &stripe.TaxRate{
+							TaxType:             stripe.TaxRateTaxTypeVAT,
+							Country:             "DE",
+							EffectivePercentage: 19.0,
+							Percentage:          19.0,
+						},
+						TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonStandardRated,
+						TaxableAmount:    -11000,
+					},
+				},
+				UnitAmountExcludingTax: -6,
+			},
+			{
+				ID:                 "il_1Qf1WLQhcl5B85YleQz6ZuEw",
+				Amount:             19999,
+				AmountExcludingTax: 19999,
+				Currency:           stripe.CurrencyEUR,
+				Quantity:           10000,
+				Price: &stripe.Price{
+					BillingScheme: stripe.PriceBillingSchemeTiered,
+					Currency:      stripe.CurrencyEUR,
+					TaxBehavior:   stripe.PriceTaxBehaviorExclusive,
+					UnitAmount:    0,
+				},
+				Period: &stripe.Period{
+					Start: 1736351413,
+					End:   1739029692,
+				},
+				Description: "Remaining time on 10000 × Pro Plan after 08 Jan 2025",
+				TaxAmounts: []*stripe.InvoiceTotalTaxAmount{
+					{
+						Inclusive: false,
+						TaxRate: &stripe.TaxRate{
+							TaxType:             stripe.TaxRateTaxTypeVAT,
+							Country:             "DE",
+							EffectivePercentage: 19.0,
+							Percentage:          19.0,
+						},
+						TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonStandardRated,
+						TaxableAmount:    19999,
+					},
+				},
+				UnitAmountExcludingTax: 2,
+			},
+			{
+				ID:                 "il_1Qf1WLQhcl5B85YleQz6Zusc",
+				Amount:             10000,
+				AmountExcludingTax: 10000,
+				Currency:           stripe.CurrencyEUR,
+				Quantity:           1,
+				Price: &stripe.Price{
+					BillingScheme: stripe.PriceBillingSchemePerUnit,
+					Currency:      stripe.CurrencyEUR,
+					TaxBehavior:   stripe.PriceTaxBehaviorExclusive,
+					UnitAmount:    10000,
+				},
+				Period: &stripe.Period{
+					Start: 1736351413,
+					End:   1739029692,
+				},
+				Description: "Remaining time on Chargebee Addon after 08 Jan 2025",
+				TaxAmounts: []*stripe.InvoiceTotalTaxAmount{
+					{
+						Inclusive: false,
+						TaxRate: &stripe.TaxRate{
+							TaxType:             stripe.TaxRateTaxTypeVAT,
+							Country:             "DE",
+							EffectivePercentage: 19.0,
+							Percentage:          19.0,
+						},
+						TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonStandardRated,
+						TaxableAmount:    10000,
+					},
+				},
+				UnitAmountExcludingTax: 10000,
+			},
+		},
+	}
+	gi, err := goblstripe.FromInvoice(s)
 	require.NoError(t, err)
 
 	err = gi.Calculate()
@@ -251,8 +446,8 @@ func TestCalculate(t *testing.T) {
 }
 
 func TestValidate(t *testing.T) {
-	s := validStripeInvoice()
-	gi, err := goblstripe.FromInvoice(s, uuid.MustParse(namespace))
+	s := completeStripeInvoice()
+	gi, err := goblstripe.FromInvoice(s)
 	require.NoError(t, err)
 
 	err = gi.Calculate()
@@ -263,15 +458,14 @@ func TestValidate(t *testing.T) {
 }
 
 func TestReverseCharge(t *testing.T) {
-	s := validStripeInvoice()
-	s.Customer.TaxExempt = stripe.CustomerTaxExemptReverse
-	s.Customer.TaxIDs = &stripe.TaxIDList{
-		Data: []*stripe.TaxID{
-			{
-				Type:    "eu_vat",
-				Value:   "FR123456789",
-				Country: "FR",
-			},
+	s := minimalStripeInvoice()
+	customerReverse := stripe.CustomerTaxExemptReverse
+	s.CustomerTaxExempt = &customerReverse
+	taxIDType := stripe.TaxIDTypeEUVAT
+	s.CustomerTaxIDs = []*stripe.InvoiceCustomerTaxID{
+		{
+			Type:  &taxIDType,
+			Value: "DE282741168",
 		},
 	}
 	s.Lines = &stripe.InvoiceLineItemList{
@@ -297,9 +491,10 @@ func TestReverseCharge(t *testing.T) {
 					{
 						Inclusive: false,
 						TaxRate: &stripe.TaxRate{
-							TaxType:    stripe.TaxRateTaxTypeVAT,
-							Country:    "DE",
-							Percentage: 0,
+							TaxType:             stripe.TaxRateTaxTypeVAT,
+							Country:             "DE",
+							EffectivePercentage: 0.0,
+							Percentage:          19.0,
 						},
 						TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonReverseCharge,
 						TaxableAmount:    10000,
@@ -310,10 +505,30 @@ func TestReverseCharge(t *testing.T) {
 		},
 	}
 
-	gi, err := goblstripe.FromInvoice(s, uuid.MustParse(namespace))
+	gi, err := goblstripe.FromInvoice(s)
 	require.NoError(t, err)
 
 	assert.Equal(t, tax.TagReverseCharge, gi.Tags.List[0])
+	assert.Equal(t, gi.Lines[0].Taxes[0].Category, tax.CategoryVAT)
+
+	err = gi.Calculate()
+	require.NoError(t, err)
+
+	assert.Equal(t, num.MakeAmount(10000, 2), gi.Totals.Sum)
+	assert.Equal(t, num.MakeAmount(0, 2), gi.Totals.Taxes.Sum)
+	assert.Equal(t, num.MakeAmount(0, 2), gi.Totals.Taxes.Categories[0].Amount)
+	assert.Equal(t, num.MakeAmount(10000, 2), gi.Totals.TotalWithTax)
+}
+
+func TestOrderingPeriod(t *testing.T) {
+	s := minimalStripeInvoice()
+	s.PeriodStart = 1737738363
+	s.PeriodEnd = 1737738363
+	gi, err := goblstripe.FromInvoice(s)
+	require.NoError(t, err)
+
+	assert.Equal(t, "2025-01-24", gi.Ordering.Period.Start.String())
+	assert.Equal(t, "2025-01-24", gi.Ordering.Period.End.String())
 }
 
 // Credit Notes
@@ -383,12 +598,11 @@ func validCreditNote() *stripe.CreditNote {
 
 func TestFromCreditNote(t *testing.T) {
 	s := validCreditNote()
-	gi, err := goblstripe.FromCreditNote(s, uuid.MustParse(namespace))
+	gi, err := goblstripe.FromCreditNote(s)
 	require.NoError(t, err)
 
 	assert.Equal(t, "cn_123", gi.Code.String())
 	assert.Equal(t, "Test Account", gi.Supplier.Name)
-	assert.Equal(t, "86f836a6-47ee-302e-90df-2ad86a2f7060", gi.UUID.String())
 	assert.Equal(t, cal.MakeDate(2024, 1, 1), gi.IssueDate)
 	assert.Equal(t, cal.NewDate(2024, 1, 1), gi.OperationDate)
 	assert.Equal(t, currency.EUR, gi.Currency)

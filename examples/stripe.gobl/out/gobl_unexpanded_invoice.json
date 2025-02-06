@@ -1,19 +1,14 @@
 {
-  "$regime": "ES",
   "$tags": [
     "reverse-charge"
   ],
-  "uuid": "87ee2a9e-2a5b-48bb-9d31-3f916a800e42",
+  "uuid": "e99d243b-64b0-4827-9506-204eedf66e75",
   "type": "standard",
-  "code": "in_1QpDx7Qhcl5B85Yls3Aj1n1Z",
+  "code": "in_1QpCUMQhcl5B85YlfgMLxqMg",
   "issue_date": "2025-02-05",
   "currency": "EUR",
   "supplier": {
-    "name": "Invopop Development",
-    "tax_id": {
-      "country": "ES",
-      "code": "A12345678"
-    }
+    "name": "Invopop Development"
   },
   "customer": {
     "name": "Peter The Panda",
@@ -53,8 +48,7 @@
       "sum": "300.00",
       "taxes": [
         {
-          "cat": "VAT",
-          "rate": "zero",
+          "cat": "",
           "percent": "0.0%"
         }
       ],
@@ -73,35 +67,27 @@
         }
       },
       "sum": "140.00",
-      "discounts": [
-        {
-          "reason": "First_coupon",
-          "percent": "10.0%",
-          "amount": "14.00"
-        }
-      ],
       "taxes": [
         {
-          "cat": "VAT",
-          "rate": "zero",
+          "cat": "",
           "percent": "0.0%"
         }
       ],
-      "total": "126.00"
+      "total": "140.00"
     }
   ],
   "ordering": {},
   "totals": {
-    "sum": "426.00",
-    "total": "426.00",
+    "sum": "440.00",
+    "tax_included": "0.00",
+    "total": "440.00",
     "taxes": {
       "categories": [
         {
-          "code": "VAT",
+          "code": "",
           "rates": [
             {
-              "key": "zero",
-              "base": "426.00",
+              "base": "440.00",
               "percent": "0.0%",
               "amount": "0.00"
             }
@@ -112,14 +98,7 @@
       "sum": "0.00"
     },
     "tax": "0.00",
-    "total_with_tax": "426.00",
-    "payable": "426.00"
-  },
-  "notes": [
-    {
-      "key": "legal",
-      "src": "reverse-charge",
-      "text": "Reverse Charge / Inversión del sujeto pasivo."
-    }
-  ]
+    "total_with_tax": "440.00",
+    "payable": "440.00"
+  }
 }

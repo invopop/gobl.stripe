@@ -15,7 +15,6 @@ import (
 
 	goblstripe "github.com/invopop/gobl.stripe"
 	"github.com/invopop/gobl/bill"
-	"github.com/invopop/gobl/uuid"
 	"github.com/spf13/cobra"
 	"github.com/stripe/stripe-go/v81"
 	"github.com/stripe/stripe-go/v81/creditnote"
@@ -181,8 +180,7 @@ func createInvoiceExpandParams() *stripe.InvoiceParams {
 }
 
 func convertInvoiceToGOBL(invoiceNew *stripe.Invoice) (*bill.Invoice, error) {
-	namespace := uuid.MustParse("550e8400-e29b-41d4-a716-446655440000")
-	gi, err := goblstripe.FromInvoice(invoiceNew, namespace)
+	gi, err := goblstripe.FromInvoice(invoiceNew)
 	if err != nil {
 		return nil, err
 	}
@@ -226,8 +224,7 @@ func processCreditNote(w http.ResponseWriter, event stripe.Event) {
 }
 
 func convertCreditNoteToGOBL(creditNoteNew *stripe.CreditNote) (*bill.Invoice, error) {
-	namespace := uuid.MustParse("550e8400-e29b-41d4-a716-446655440000")
-	gi, err := goblstripe.FromCreditNote(creditNoteNew, namespace)
+	gi, err := goblstripe.FromCreditNote(creditNoteNew)
 	if err != nil {
 		return nil, err
 	}
