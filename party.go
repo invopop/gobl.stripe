@@ -321,19 +321,21 @@ func newCustomerFromInvoice(doc *stripe.Invoice) *org.Party {
 	}
 
 	if doc.CustomerTaxIDs != nil {
-		if customerParty == nil {
-			customerParty = new(org.Party)
-		}
-		// In Stripe there are 2 objects for the taxID: stripe.TaxID and stripe.CustomerTaxID
-		stripeTaxID := &stripe.TaxID{
-			Type:  *doc.CustomerTaxIDs[0].Type,
-			Value: doc.CustomerTaxIDs[0].Value,
-		}
+		if len(doc.CustomerTaxIDs) > 0 {
+			if customerParty == nil {
+				customerParty = new(org.Party)
+			}
+			// In Stripe there are 2 objects for the taxID: stripe.TaxID and stripe.CustomerTaxID
+			stripeTaxID := &stripe.TaxID{
+				Type:  *doc.CustomerTaxIDs[0].Type,
+				Value: doc.CustomerTaxIDs[0].Value,
+			}
 
-		if slices.Contains(orgIDKeys, stripeTaxID.Type) {
-			customerParty.Identities[0] = FromTaxIDToOrg(stripeTaxID)
-		} else {
-			customerParty.TaxID = FromTaxIDToTax(stripeTaxID)
+			if slices.Contains(orgIDKeys, stripeTaxID.Type) {
+				customerParty.Identities[0] = FromTaxIDToOrg(stripeTaxID)
+			} else {
+				customerParty.TaxID = FromTaxIDToTax(stripeTaxID)
+			}
 		}
 	}
 

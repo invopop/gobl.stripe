@@ -53,6 +53,7 @@ func extractTaxCat(taxType stripe.TaxRateTaxType) cbc.Code {
 	case stripe.TaxRateTaxTypeGST:
 		return tax.CategoryGST
 	default:
-		return ""
+		// Default is used for unexpanded invoices to prevent invalids
+		return tax.CategoryVAT
 	}
 }

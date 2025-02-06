@@ -1,6 +1,8 @@
 package goblstripe_test
 
 import (
+	"encoding/json"
+	"os"
 	"testing"
 	"time"
 
@@ -47,6 +49,7 @@ func minimalStripeInvoice() *stripe.Invoice {
 				},
 			},
 		},
+		CustomerTaxIDs:  []*stripe.InvoiceCustomerTaxID{},
 		Total:           2000,
 		TotalTaxAmounts: []*stripe.InvoiceTotalTaxAmount{},
 	}
@@ -531,6 +534,25 @@ func TestOrderingPeriod(t *testing.T) {
 	assert.Equal(t, "2025-01-24", gi.Ordering.Period.End.String())
 }
 
+func TestUnexpandedTax(t *testing.T) {
+	data, _ := os.ReadFile("examples/stripe.gobl/unexpanded_invoice.json")
+	s := new(stripe.Invoice)
+	err := json.Unmarshal(data, s)
+	require.NoError(t, err)
+	s.AccountCountry = "DE"
+	customerExempt := stripe.CustomerTaxExemptNone
+	s.CustomerTaxExempt = &customerExempt
+
+	gi, err := goblstripe.FromInvoice(s)
+	require.NoError(t, err)
+
+	err = gi.Calculate()
+	require.NoError(t, err)
+
+	err = gi.Validate()
+	require.NoError(t, err)
+}
+
 // Credit Notes
 
 func validCreditNote() *stripe.CreditNote {
@@ -615,365 +637,3 @@ func TestFromCreditNote(t *testing.T) {
 	assert.Equal(t, "order_change", gi.Preceding[0].Reason)
 	assert.Nil(t, gi.Tax)
 }
-
-// Below is a full test suite for the FromInvoice function. It is commented out
-// because there are some fields in GOBL that cannot be set by the function,
-// e.g. total in Totals
-/*func TestFromInvoice(t *testing.T) {
-	tests := []struct {
-		name      string
-		invoice   *stripe.Invoice
-		namespace uuid.UUID
-		want      *bill.Invoice
-		wantErr   bool
-	}{
-		{
-			name: "Invoice Invopop",
-			invoice: &stripe.Invoice{
-				ID:             "inv_123",
-				AccountName:    "Test Account",
-				AccountCountry: "DE",
-				AccountTaxIDs: []*stripe.TaxID{
-					{
-						Type:    "eu_vat",
-						Value:   "DE12345678",
-						Country: "DE",
-					},
-				},
-				AmountDue:       22989,
-				AmountPaid:      22989,
-				AmountRemaining: 0,
-				Created:         time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
-				Currency:        "eur",
-				Customer:        createSampleCustomer(),
-				CustomerAddress: &stripe.Address{
-					City:       "Berlin",
-					Country:    "DE",
-					Line1:      "Unter den Linden 1",
-					Line2:      "",
-					PostalCode: "10117",
-					State:      "BE",
-				},
-				CustomerEmail: "me.unselfish@me.com",
-				CustomerName:  "Test Customer",
-				CustomerPhone: "+4915155555555",
-				CustomerShipping: &stripe.ShippingDetails{
-					Address: &stripe.Address{
-						City:       "Berlin",
-						Country:    "DE",
-						Line1:      "Unter den Linden 1",
-						Line2:      "",
-						PostalCode: "10117",
-						State:      "BE",
-					},
-					Name:  "Test Customer",
-					Phone: "+4915155555555",
-				},
-				CustomerTaxExempt: nil,
-				DueDate:           0,
-				EffectiveAt:       time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
-				Issuer: &stripe.InvoiceIssuer{
-					Type: stripe.InvoiceIssuerTypeSelf,
-				},
-				Lines: &stripe.InvoiceLineItemList{
-					Data: []*stripe.InvoiceLineItem{
-						{
-							ID:                 "il_1Qf1WLQhcl5B85YleQz6ZuEfd",
-							Amount:             -11000,
-							AmountExcludingTax: -11000,
-							Currency:           stripe.CurrencyEUR,
-							Quantity:           2000,
-							Price: &stripe.Price{
-								BillingScheme: stripe.PriceBillingSchemeTiered,
-								Currency:      stripe.CurrencyEUR,
-								TaxBehavior:   stripe.PriceTaxBehaviorExclusive,
-								UnitAmount:    0,
-							},
-							Period: &stripe.Period{
-								Start: 1736351413,
-								End:   1739029692,
-							},
-							Description: "Unused time on 2000 × Pro Plan after 08 Jan 2025",
-							TaxAmounts: []*stripe.InvoiceTotalTaxAmount{
-								{
-									Amount:    -2310,
-									Inclusive: false,
-									TaxRate: &stripe.TaxRate{
-										TaxType:    stripe.TaxRateTaxTypeVAT,
-										Country:    "DE",
-										Percentage: 19.0,
-									},
-									TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonStandardRated,
-									TaxableAmount:    -11000,
-								},
-							},
-							UnitAmountExcludingTax: -6,
-						},
-						{
-							ID:                 "il_1Qf1WLQhcl5B85YleQz6ZuEw",
-							Amount:             19999,
-							AmountExcludingTax: 19999,
-							Currency:           stripe.CurrencyEUR,
-							Quantity:           10000,
-							Price: &stripe.Price{
-								BillingScheme: stripe.PriceBillingSchemeTiered,
-								Currency:      stripe.CurrencyEUR,
-								TaxBehavior:   stripe.PriceTaxBehaviorExclusive,
-								UnitAmount:    0,
-							},
-							Period: &stripe.Period{
-								Start: 1736351413,
-								End:   1739029692,
-							},
-							Description: "Remaining time on 10000 × Pro Plan after 08 Jan 2025",
-							TaxAmounts: []*stripe.InvoiceTotalTaxAmount{
-								{
-									Amount:    3800,
-									Inclusive: false,
-									TaxRate: &stripe.TaxRate{
-										TaxType:    stripe.TaxRateTaxTypeVAT,
-										Country:    "DE",
-										Percentage: 19.0,
-									},
-									TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonStandardRated,
-									TaxableAmount:    19999,
-								},
-							},
-							UnitAmountExcludingTax: 2,
-						},
-						{
-							ID:                 "il_1Qf1WLQhcl5B85YleQz6Zusc",
-							Amount:             10000,
-							AmountExcludingTax: 10000,
-							Currency:           stripe.CurrencyEUR,
-							Quantity:           1,
-							Price: &stripe.Price{
-								BillingScheme: stripe.PriceBillingSchemePerUnit,
-								Currency:      stripe.CurrencyEUR,
-								TaxBehavior:   stripe.PriceTaxBehaviorExclusive,
-								UnitAmount:    10000,
-							},
-							Period: &stripe.Period{
-								Start: 1736351413,
-								End:   1739029692,
-							},
-							Description: "Remaining time on Chargebee Addon after 08 Jan 2025",
-							TaxAmounts: []*stripe.InvoiceTotalTaxAmount{
-								{
-									Amount:    1900,
-									Inclusive: false,
-									TaxRate: &stripe.TaxRate{
-										TaxType:    stripe.TaxRateTaxTypeVAT,
-										Country:    "DE",
-										Percentage: 19.0,
-									},
-									TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonStandardRated,
-									TaxableAmount:    10000,
-								},
-							},
-							UnitAmountExcludingTax: 10000,
-						},
-					},
-				},
-				Livemode: false,
-				Paid:     true,
-				PaymentIntent: &stripe.PaymentIntent{
-					Amount:             22989,
-					Created:            1736351225,
-					Currency:           stripe.CurrencyEUR,
-					PaymentMethodTypes: []string{"card"},
-				},
-				Subtotal:             18999,
-				SubtotalExcludingTax: 18999,
-				Tax:                  3590,
-				Total:                22989,
-				TotalExcludingTax:    18999,
-				TotalTaxAmounts: []*stripe.InvoiceTotalTaxAmount{
-					{
-						Amount:    3590,
-						Inclusive: false,
-						TaxRate: &stripe.TaxRate{
-							TaxType:    stripe.TaxRateTaxTypeVAT,
-							Country:    "DE",
-							Percentage: 19.0,
-							Created:    1736351225,
-							Livemode:   false,
-						},
-						TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonStandardRated,
-						TaxableAmount:    18999,
-					},
-				},
-			},
-			namespace: uuid.MustParse("550e8400-e29b-41d4-a716-446655440000"),
-			want: &bill.Invoice{
-				Identify: uuid.Identify{
-					UUID: uuid.MustParse("86f836a6-47ee-302e-90df-2ad86a2f7060"),
-				},
-				Addons:        tax.Addons{},
-				Type:          bill.InvoiceTypeStandard,
-				Regime:        tax.WithRegime("DE"),
-				Code:          "inv_123",
-				Currency:      currency.EUR,
-				IssueDate:     cal.MakeDate(2024, 1, 1),
-				OperationDate: cal.NewDate(2024, 1, 1),
-				Supplier: &org.Party{
-					Name: "Test Account",
-					TaxID: &tax.Identity{
-						Country: l10n.DE.Tax(),
-						Code:    "12345678",
-					},
-				},
-				Customer: &org.Party{
-					Name: "Test Customer",
-					Addresses: []*org.Address{
-						{
-							Locality:    "Berlin",
-							Country:     "DE",
-							Street:      "Unter den Linden 1",
-							StreetExtra: "",
-							Code:        "10117",
-							State:       "BE",
-						},
-					},
-					Emails: []*org.Email{
-						{
-							Address: "me.unselfish@me.com",
-						},
-					},
-					Telephones: []*org.Telephone{
-						{
-							Number: "+4915155555555",
-						},
-					},
-					TaxID: &tax.Identity{
-						Country: "DE",
-						Code:    "282741168",
-					},
-				},
-				Lines: []*bill.Line{
-					{
-						Index:    1,
-						Quantity: num.MakeAmount(1, 0),
-						Sum:      num.MakeAmount(-11000, 2),
-						Total:    num.MakeAmount(-11000, 2),
-						Item: &org.Item{
-							Name:     "Unused time on 2000 × Pro Plan after 08 Jan 2025",
-							Currency: currency.EUR,
-							Price:    num.MakeAmount(-11000, 2),
-							Meta: cbc.Meta{
-								goblstripe.MetaKeyDateFrom: cal.NewDate(2025, 1, 8).String(),
-								goblstripe.MetaKeyDateTo:   cal.NewDate(2025, 2, 8).String(),
-							},
-						},
-						Taxes: tax.Set{
-							{
-								Category: tax.CategoryVAT,
-								Percent:  num.NewPercentage(190, 3),
-							},
-						},
-					},
-					{
-						Index:    2,
-						Quantity: num.MakeAmount(1, 0),
-						Sum:      num.MakeAmount(19999, 2),
-						Total:    num.MakeAmount(19999, 2),
-						Item: &org.Item{
-							Name:     "Remaining time on 10000 × Pro Plan after 08 Jan 2025",
-							Currency: currency.EUR,
-							Price:    num.MakeAmount(19999, 2),
-							Meta: cbc.Meta{
-								goblstripe.MetaKeyDateFrom: cal.NewDate(2025, 1, 8).String(),
-								goblstripe.MetaKeyDateTo:   cal.NewDate(2025, 2, 8).String(),
-							},
-						},
-						Taxes: tax.Set{
-							{
-								Category: tax.CategoryVAT,
-								Country:  "DE",
-								Percent:  num.NewPercentage(190, 3),
-							},
-						},
-					},
-					{
-						Index:    3,
-						Quantity: num.MakeAmount(1, 0),
-						Sum:      num.MakeAmount(10000, 2),
-						Total:    num.MakeAmount(10000, 2),
-						Item: &org.Item{
-							Name:     "Remaining time on Chargebee Addon after 08 Jan 2025",
-							Currency: currency.EUR,
-							Price:    num.MakeAmount(10000, 2),
-							Meta: cbc.Meta{
-								goblstripe.MetaKeyDateFrom: cal.NewDate(2025, 1, 8).String(),
-								goblstripe.MetaKeyDateTo:   cal.NewDate(2025, 2, 8).String(),
-							},
-						},
-						Taxes: tax.Set{
-							{
-								Category: tax.CategoryVAT,
-								Country:  "DE",
-								Percent:  num.NewPercentage(190, 3),
-							},
-						},
-					},
-				},
-				Delivery: &bill.Delivery{
-					Receiver: &org.Party{
-						Name: "Test Customer",
-						Addresses: []*org.Address{
-							{
-								Locality:    "Berlin",
-								Country:     "DE",
-								Street:      "Unter den Linden 1",
-								StreetExtra: "",
-								Code:        "10117",
-								State:       "BE",
-							},
-						},
-					},
-				},
-				Totals: &bill.Totals{
-					Sum:   num.MakeAmount(18999, 2),
-					Total: num.MakeAmount(18999, 2),
-					Taxes: &tax.Total{
-						Categories: []*tax.CategoryTotal{
-							{
-								Code: tax.CategoryVAT,
-								Rates: []*tax.RateTotal{
-									{
-										Percent: num.NewPercentage(190, 3),
-										Amount:  num.MakeAmount(3990, 2),
-									},
-								},
-								Amount: num.MakeAmount(3990, 2),
-							},
-						},
-						Sum: num.MakeAmount(3990, 2),
-					},
-					Tax:          num.MakeAmount(3990, 2),
-					TotalWithTax: num.MakeAmount(22989, 2),
-				},
-			},
-			wantErr: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := goblstripe.FromInvoice(tt.invoice, tt.namespace)
-			if tt.wantErr {
-				assert.Error(t, err)
-				return
-			}
-			assert.NoError(t, err)
-
-			err = got.Calculate()
-			assert.NoError(t, err)
-
-			err = got.Validate()
-			assert.NoError(t, err)
-
-			assert.Equal(t, tt.want, got)
-		})
-	}
-}*/
