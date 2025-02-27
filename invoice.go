@@ -32,7 +32,7 @@ func FromInvoice(doc *stripe.Invoice) (*bill.Invoice, error) {
 		return nil, err
 	}
 
-	inv.UUID = uuid.V4() // Generated randomly, but you can modify afterwards for the specific use case.
+	inv.UUID = uuid.V7() // Generated randomly, but you can modify afterwards for the specific use case.
 
 	inv.Code = cbc.Code(doc.ID) //Sequential code used to identify this invoice in tax declarations.
 

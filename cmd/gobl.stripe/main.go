@@ -3,13 +3,17 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/invopop/gobl/bill"
 	"github.com/joho/godotenv"
+	"github.com/stripe/stripe-go/v81"
 )
 
 // build data provided by goreleaser and mage setup
@@ -37,4 +41,41 @@ func run() error {
 	}
 
 	return root().cmd().ExecuteContext(ctx)
+}
+
+func saveJSON(data interface{}) error {
+	var filename string
+	var prefix string
+
+	switch v := data.(type) {
+	case *bill.Invoice:
+		filename = "gobl_" + v.Code.String() + ".json"
+		prefix = "GOBL Invoice"
+	case *stripe.Invoice:
+		filename = "stripe_" + v.ID + ".json"
+		prefix = "Stripe Invoice"
+	case *stripe.CreditNote:
+		filename = "stripe_" + v.ID + ".json"
+		prefix = "Stripe Credit Note"
+	default:
+		return fmt.Errorf("unsupported type for JSON saving")
+	}
+
+	fullJSON, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal %s: %v", prefix, err)
+	}
+
+	file, err := os.Create(filename)
+	if err != nil {
+		return fmt.Errorf("failed to create file: %v", err)
+	}
+	defer file.Close() // nolint: errcheck
+
+	if _, err := file.Write(fullJSON); err != nil {
+		return fmt.Errorf("failed to write to file: %v", err)
+	}
+
+	log.Printf("%s JSON saved to %s\n", prefix, filename)
+	return nil
 }

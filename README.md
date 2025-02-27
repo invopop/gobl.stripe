@@ -2,7 +2,7 @@
 
 Convert GOBL documents to and from the Stripe API format.
 
-Copyright [Invopop Ltd.](https://invopop.com) 2024. Released publicly under the [Apache License Version 2.0](LICENSE). For commercial licenses please contact the [dev team at invopop](mailto:dev@invopop.com). In order to accept contributions to this library we will require transferring copyrights to Invopop Ltd.
+Copyright [Invopop Ltd.](https://invopop.com) 2025. Released publicly under the [Apache License Version 2.0](LICENSE). For commercial licenses please contact the [dev team at invopop](mailto:dev@invopop.com). In order to accept contributions to this library we will require transferring copyrights to Invopop Ltd.
 
 ## Table of Contents
 
@@ -101,15 +101,15 @@ func main{
 The GOBL <-> Stripe package also includes a command line helper. You can install it manually in your Go environment (from this main directory) with:
 
 ```bash
-go install ./cmd/gobl.tin
+go install ./cmd/gobl.stripe
 ```
 
 #### Listen to Stripe Events + Stripe -> GOBL conversion
 
-With the `revert` command you will be able to:  
+With the `listen` command you will be able to:  
 1. Listen to Stripe events (e.g., invoice finalized or credit note created).  
-2. Convert the event data into GOBL format.  
-3. Save the output as a JSON file.
+2. Save the invoice received in the event as a JSON file.  
+3. (optional) Convert to GOBL and save as a JSON file.
 
 To test this functionality locally, use the **Stripe CLI**, which you can install by following these [instructions](https://docs.stripe.com/stripe-cli).
 
@@ -123,19 +123,19 @@ Choose a port to forward events to (e.g., port `5276` in this example), and run 
 stripe listen --forward-to localhost:5276/webhook
 ```
 
-2. **Start the `revert` command**
+2. **Start the `listen` command**
 
-Before running the `revert` command, you need to configure 2 secrets: Stripe secret API key and the webhook secret. This can be done in 2 ways:
+Before running the `listen` command, you need to configure 2 secrets: Stripe secret API key and the webhook secret. This can be done in 2 ways:
 
 - With environment variables: You would need to set the `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` on your environment. Then you run the command like: 
 
 ```bash
-gobl.stripe revert -p 5276
+gobl.stripe listen -p 5276
 ```
 
 - As arguments in the command:
 ```bash
-gobl.stripe revert -p 5276 -k sk_test_afjsadf44332... -s whsec_jdferfwerif329...
+gobl.stripe listen -p 5276 -k sk_test_afjsadf44332... -s whsec_jdferfwerif329...
 ```
 
 3. **Trigger a Stripe Event**
@@ -162,9 +162,23 @@ You can also create and finalize invoices using the [Stripe API](https://docs.st
 
 4. **Review the Output**
 
-Once an event is triggered, the `revert` command generates 2 JSON files in the same directory:
+Once an event is triggered, the `listen` command generates 2 JSON files in the same directory:
 - `stripe_{id}.json`: Contains the Stripe event data
 - `gobl_{id}.json`: Contains the corresponding GOBL-converted data.
+
+If you just want to get the stripe JSON file you can set the flag of convert to false:
+
+```bash
+gobl.stripe listen -p 5276 -c=false
+```
+
+#### Stripe to GOBL conversion only
+If you already have a Stripe invoice in JSON format and want to convert it to GOBL, you can use the convert command:
+
+```bash
+gobl.stripe convert stripe_in_1QxASYQhcl5B85Ylo18UfypW.json
+```
+
 
 ## Naming
 

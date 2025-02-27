@@ -369,64 +369,6 @@ func TestFromLineTiered(t *testing.T) {
 	assert.Equal(t, l10n.ES.Tax(), result.Taxes[0].Country, "Tax country should match line tax")
 }
 
-func TestFromLineToItem(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    *stripe.InvoiceLineItem
-		expected *org.Item
-	}{
-		{
-			name: "per unit billing scheme",
-			input: &stripe.InvoiceLineItem{
-				Description: "Basic Plan",
-				Currency:    "usd",
-				Period: &stripe.Period{
-					Start: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
-					End:   time.Date(2024, 1, 31, 0, 0, 0, 0, time.UTC).Unix(),
-				},
-				Price: &stripe.Price{
-					UnitAmount:    1000,
-					Currency:      "usd",
-					BillingScheme: stripe.PriceBillingSchemePerUnit,
-				},
-			},
-			expected: &org.Item{
-				Name:     "Basic Plan",
-				Currency: "USD",
-				Price:    num.MakeAmount(1000, 2),
-			},
-		},
-		{
-			name: "tiered billing scheme",
-			input: &stripe.InvoiceLineItem{
-				Description: "Usage Plan",
-				Currency:    "eur",
-				Amount:      2500,
-				Period: &stripe.Period{
-					Start: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
-					End:   time.Date(2024, 1, 31, 0, 0, 0, 0, time.UTC).Unix(),
-				},
-				Price: &stripe.Price{
-					Currency:      "eur",
-					BillingScheme: stripe.PriceBillingSchemeTiered,
-				},
-			},
-			expected: &org.Item{
-				Name:     "Usage Plan",
-				Currency: "EUR",
-				Price:    num.MakeAmount(2500, 2),
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := goblstripe.FromInvoiceLineToItem(tt.input)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
-}
-
 func TestFromDiscount(t *testing.T) {
 	tests := []struct {
 		name     string

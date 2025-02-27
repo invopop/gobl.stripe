@@ -22,46 +22,49 @@ import (
 	"github.com/stripe/stripe-go/v81/webhook"
 )
 
-type revertOpts struct {
+type listenOpts struct {
 	*rootOpts
 	port          string
 	stripeKey     string
 	webhookSecret string
+	convertToGOBL bool
 	//directory string
 }
 
-func revert(o *rootOpts) *revertOpts {
-	return &revertOpts{rootOpts: o}
+func listen(o *rootOpts) *listenOpts {
+	return &listenOpts{rootOpts: o}
 }
 
-func (r *revertOpts) cmd() *cobra.Command {
+func (l *listenOpts) cmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "revert",
-		Short: "Receive a finalized Stripe Invoice/Credit Note and convert it to a GOBL JSON document",
-		RunE:  r.runE,
+		Use:   "listen",
+		Short: "Listen to Stripe invoice/credit_note events",
+		Long:  "Listen to Stripe invoice/credit_note events, save them as Stripe Invoice/ Credit Note JSON and convert it to GOBL json",
+		RunE:  l.runE,
 	}
 
-	cmd.Flags().StringVarP(&r.port, "port", "p", "8080", "Port to listen for Stripe webhooks")
-	cmd.Flags().StringVarP(&r.stripeKey, "stripe-key", "k", " ", "Stripe secret key")
-	cmd.Flags().StringVarP(&r.webhookSecret, "webhook-secret", "s", " ", "Stripe webhook secret")
+	cmd.Flags().StringVarP(&l.port, "port", "p", "8080", "Port to listen for Stripe webhooks")
+	cmd.Flags().StringVarP(&l.stripeKey, "stripe-key", "k", " ", "Stripe secret key")
+	cmd.Flags().StringVarP(&l.webhookSecret, "webhook-secret", "s", " ", "Stripe webhook secret")
+	cmd.Flags().BoolVarP(&l.convertToGOBL, "convert", "c", true, "Convert Stripe invoices to GOBL format")
 	//cmd.Flags().StringVarP(&c.directory, "directory", "d", ".", "Directory to save GOBL JSON files")
 
 	return cmd
 }
 
-func (r *revertOpts) runE(_ *cobra.Command, _ []string) error {
+func (l *listenOpts) runE(_ *cobra.Command, _ []string) error {
 	server := &http.Server{
-		Addr:    ":" + r.port,
+		Addr:    ":" + l.port,
 		Handler: http.DefaultServeMux,
 	}
 
-	err := r.loadSecrets()
+	err := l.loadSecrets()
 	if err != nil {
-		log.Fatalf("Failed to load secrets: %v\n", err)
+		return fmt.Errorf("failed to load secrets: %w", err)
 	}
-	stripe.Key = r.stripeKey
+	stripe.Key = l.stripeKey
 
-	http.HandleFunc("/webhook", r.handleWebhook)
+	http.HandleFunc("/webhook", l.handleWebhook)
 
 	// Channel to listen for termination signals (control + c)
 	stopChan := make(chan os.Signal, 1)
@@ -69,7 +72,7 @@ func (r *revertOpts) runE(_ *cobra.Command, _ []string) error {
 
 	// Goroutine to start the server
 	go func() {
-		log.Printf("Listening on port %s\n", r.port)
+		log.Printf("Listening on port %s\n", l.port)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Failed to start server: %v\n", err)
 		}
@@ -89,14 +92,14 @@ func (r *revertOpts) runE(_ *cobra.Command, _ []string) error {
 	return nil
 }
 
-func (r *revertOpts) handleWebhook(w http.ResponseWriter, req *http.Request) {
+func (l *listenOpts) handleWebhook(w http.ResponseWriter, req *http.Request) {
 	body, err := io.ReadAll(req.Body)
 	if err != nil {
 		handleError(w, "Failed to read request body", err, http.StatusInternalServerError)
 		return
 	}
 
-	event, err := webhook.ConstructEvent(body, req.Header.Get("Stripe-Signature"), r.webhookSecret)
+	event, err := webhook.ConstructEvent(body, req.Header.Get("Stripe-Signature"), l.webhookSecret)
 	if err != nil {
 		handleError(w, "Failed to construct event", err, http.StatusBadRequest)
 		return
@@ -104,9 +107,9 @@ func (r *revertOpts) handleWebhook(w http.ResponseWriter, req *http.Request) {
 
 	switch event.Type {
 	case "invoice.created", "invoice.finalized":
-		processInvoice(w, event)
+		l.processInvoice(w, event)
 	case "credit_note.created":
-		processCreditNote(w, event)
+		l.processCreditNote(w, event)
 	default:
 		log.Printf("Unhandled event type: %s\n", event.Type)
 	}
@@ -116,17 +119,17 @@ func (r *revertOpts) handleWebhook(w http.ResponseWriter, req *http.Request) {
 
 // loadSecrets loads the Stripe secret key and webhook secret first from the arguments
 // , then from the environment variables
-func (r *revertOpts) loadSecrets() error {
-	if r.stripeKey == " " {
-		r.stripeKey = os.Getenv("STRIPE_SECRET_KEY")
-		if r.stripeKey == "" {
+func (l *listenOpts) loadSecrets() error {
+	if l.stripeKey == " " {
+		l.stripeKey = os.Getenv("STRIPE_SECRET_KEY")
+		if l.stripeKey == "" {
 			return fmt.Errorf("stripe secret key must be provided as an argument or in the STRIPE_SECRET_KEY environment variable")
 		}
 	}
 
-	if r.webhookSecret == " " {
-		r.webhookSecret = os.Getenv("STRIPE_WEBHOOK_SECRET")
-		if r.webhookSecret == "" {
+	if l.webhookSecret == " " {
+		l.webhookSecret = os.Getenv("STRIPE_WEBHOOK_SECRET")
+		if l.webhookSecret == "" {
 			return fmt.Errorf("stripe webhook secret must be provided as an argument or in the STRIPE_WEBHOOK_SECRET environment variable")
 		}
 	}
@@ -138,7 +141,7 @@ func handleError(w http.ResponseWriter, message string, err error, statusCode in
 	http.Error(w, fmt.Sprintf("%s: %v", message, err), statusCode)
 }
 
-func processInvoice(w http.ResponseWriter, event stripe.Event) {
+func (l *listenOpts) processInvoice(w http.ResponseWriter, event stripe.Event) {
 	var invoiceReceived stripe.Invoice
 	if err := json.Unmarshal(event.Data.Raw, &invoiceReceived); err != nil {
 		handleError(w, "Failed to parse invoice", err, http.StatusBadRequest)
@@ -157,23 +160,26 @@ func processInvoice(w http.ResponseWriter, event stripe.Event) {
 		handleError(w, "Failed to save Stripe JSON", err, http.StatusInternalServerError)
 	}
 
-	gi, err := convertInvoiceToGOBL(invoiceExpanded)
-	if err != nil {
-		handleError(w, "Failed to convert invoice to GOBL", err, http.StatusInternalServerError)
-		return
-	}
+	if l.convertToGOBL {
+		gi, err := convertInvoiceToGOBL(invoiceExpanded)
+		if err != nil {
+			handleError(w, "Failed to convert invoice to GOBL", err, http.StatusInternalServerError)
+			return
+		}
 
-	if err := saveJSON(gi); err != nil {
-		handleError(w, "Failed to save GOBL JSON", err, http.StatusInternalServerError)
+		if err := saveJSON(gi); err != nil {
+			handleError(w, "Failed to save GOBL JSON", err, http.StatusInternalServerError)
+		}
 	}
 }
 
 func createInvoiceExpandParams() *stripe.InvoiceParams {
 	params := &stripe.InvoiceParams{}
 	params.AddExpand("account_tax_ids")
-	params.AddExpand("customer.tax_ids")
+	//params.AddExpand("customer.tax_ids")
 	params.AddExpand("lines.data.discounts")
 	params.AddExpand("lines.data.tax_amounts.tax_rate")
+	params.AddExpand("lines.data.price.product")
 	params.AddExpand("total_tax_amounts.tax_rate")
 	params.AddExpand("payment_intent")
 	return params
@@ -192,7 +198,7 @@ func convertInvoiceToGOBL(invoiceNew *stripe.Invoice) (*bill.Invoice, error) {
 	return gi, nil
 }
 
-func processCreditNote(w http.ResponseWriter, event stripe.Event) {
+func (l *listenOpts) processCreditNote(w http.ResponseWriter, event stripe.Event) {
 	var creditNoteReceived stripe.CreditNote
 	if err := json.Unmarshal(event.Data.Raw, &creditNoteReceived); err != nil {
 		handleError(w, "Failed to parse credit note", err, http.StatusBadRequest)
@@ -211,14 +217,16 @@ func processCreditNote(w http.ResponseWriter, event stripe.Event) {
 		handleError(w, "Failed to save Stripe JSON", err, http.StatusInternalServerError)
 	}
 
-	gi, err := convertCreditNoteToGOBL(creditNoteExpanded)
-	if err != nil {
-		handleError(w, "Failed to convert invoice to GOBL", err, http.StatusInternalServerError)
-		return
-	}
+	if l.convertToGOBL {
+		gi, err := convertCreditNoteToGOBL(creditNoteExpanded)
+		if err != nil {
+			handleError(w, "Failed to convert invoice to GOBL", err, http.StatusInternalServerError)
+			return
+		}
 
-	if err := saveJSON(gi); err != nil {
-		handleError(w, "Failed to save GOBL JSON", err, http.StatusInternalServerError)
+		if err := saveJSON(gi); err != nil {
+			handleError(w, "Failed to save GOBL JSON", err, http.StatusInternalServerError)
+		}
 	}
 
 }
@@ -242,41 +250,4 @@ func createCreditNoteExpandParams() *stripe.CreditNoteParams {
 	params.AddExpand("invoice.account_tax_ids")
 	params.AddExpand("lines.data.tax_amounts.tax_rate")
 	return params
-}
-
-func saveJSON(data interface{}) error {
-	var filename string
-	var prefix string
-
-	switch v := data.(type) {
-	case *bill.Invoice:
-		filename = "gobl_" + v.Code.String() + ".json"
-		prefix = "GOBL Invoice"
-	case *stripe.Invoice:
-		filename = "stripe_" + v.ID + ".json"
-		prefix = "Stripe Invoice"
-	case *stripe.CreditNote:
-		filename = "stripe_" + v.ID + ".json"
-		prefix = "Stripe Credit Note"
-	default:
-		return fmt.Errorf("unsupported type for JSON saving")
-	}
-
-	fullJSON, err := json.MarshalIndent(data, "", "  ")
-	if err != nil {
-		return fmt.Errorf("failed to marshal %s: %v", prefix, err)
-	}
-
-	file, err := os.Create(filename)
-	if err != nil {
-		return fmt.Errorf("failed to create file: %v", err)
-	}
-	defer file.Close() // nolint: errcheck
-
-	if _, err := file.Write(fullJSON); err != nil {
-		return fmt.Errorf("failed to write to file: %v", err)
-	}
-
-	log.Printf("%s JSON saved to %s\n", prefix, filename)
-	return nil
 }

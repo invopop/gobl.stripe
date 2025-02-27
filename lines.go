@@ -30,7 +30,7 @@ func FromInvoiceLines(lines []*stripe.InvoiceLineItem) []*bill.Line {
 func FromInvoiceLine(line *stripe.InvoiceLineItem) *bill.Line {
 	invLine := &bill.Line{
 		Quantity: newQuantityFromInvoiceLine(line),
-		Item:     FromInvoiceLineToItem(line),
+		Item:     fromInvoiceLineToItem(line),
 	}
 
 	if len(line.Discounts) > 0 && line.Discountable {
@@ -60,8 +60,8 @@ func newQuantityFromInvoiceLine(line *stripe.InvoiceLineItem) num.Amount {
 	}
 }
 
-// FromInvoiceLineToItem creates a new GOBL item from a Stripe invoice line item.
-func FromInvoiceLineToItem(line *stripe.InvoiceLineItem) *org.Item {
+// fromInvoiceLineToItem creates a new GOBL item from a Stripe invoice line item.
+func fromInvoiceLineToItem(line *stripe.InvoiceLineItem) *org.Item {
 	return &org.Item{
 		Name:     setItemName(line),
 		Currency: currency.Code(strings.ToUpper(string(line.Currency))),
