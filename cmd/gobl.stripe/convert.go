@@ -13,7 +13,7 @@ import (
 
 type convertOpts struct {
 	*rootOpts
-	direction string // "to-gobl" or "to-stripe"
+	direction string // "from-stripe" or "to-stripe"
 }
 
 func convert(o *rootOpts) *convertOpts {
@@ -29,8 +29,6 @@ func (c *convertOpts) cmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&c.direction, "direction", "d", "from-stripe", "Direction of conversion: 'to-stripe' or 'from-stripe'")
-
-	cmd.MarkFlagRequired("input")
 
 	return cmd
 }

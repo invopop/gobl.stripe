@@ -117,8 +117,8 @@ func (l *listenOpts) handleWebhook(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// loadSecrets loads the Stripe secret key and webhook secret first from the arguments
-// , then from the environment variables
+// loadSecrets loads the Stripe secret key and webhook secret first from the arguments,
+// then from the environment variables
 func (l *listenOpts) loadSecrets() error {
 	if l.stripeKey == " " {
 		l.stripeKey = os.Getenv("STRIPE_SECRET_KEY")
