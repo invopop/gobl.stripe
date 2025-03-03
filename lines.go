@@ -3,7 +3,6 @@ package goblstripe
 import (
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/cal"
@@ -14,13 +13,6 @@ import (
 	"github.com/invopop/gobl/org"
 	"github.com/invopop/gobl/tax"
 	"github.com/stripe/stripe-go/v81"
-)
-
-const (
-	// MetaKeyDateFrom is the key for the start date of a billing period.
-	MetaKeyDateFrom = "stripe-date-from"
-	// MetaKeyDateTo is the key for the end date of a billing period.
-	MetaKeyDateTo = "stripe-date-to"
 )
 
 // Invoice Lines
@@ -38,7 +30,7 @@ func FromInvoiceLines(lines []*stripe.InvoiceLineItem) []*bill.Line {
 func FromInvoiceLine(line *stripe.InvoiceLineItem) *bill.Line {
 	invLine := &bill.Line{
 		Quantity: newQuantityFromInvoiceLine(line),
-		Item:     FromInvoiceLineToItem(line),
+		Item:     fromInvoiceLineToItem(line),
 	}
 
 	if len(line.Discounts) > 0 && line.Discountable {
@@ -68,17 +60,34 @@ func newQuantityFromInvoiceLine(line *stripe.InvoiceLineItem) num.Amount {
 	}
 }
 
-// FromInvoiceLineToItem creates a new GOBL item from a Stripe invoice line item.
-func FromInvoiceLineToItem(line *stripe.InvoiceLineItem) *org.Item {
+// fromInvoiceLineToItem creates a new GOBL item from a Stripe invoice line item.
+func fromInvoiceLineToItem(line *stripe.InvoiceLineItem) *org.Item {
 	return &org.Item{
-		Name:     line.Description,
+		Name:     setItemName(line),
 		Currency: currency.Code(strings.ToUpper(string(line.Currency))),
 		Price:    resolveInvoiceLinePrice(line),
-		Meta: cbc.Meta{
-			MetaKeyDateFrom: cal.DateOf(time.Unix(line.Period.Start, 0).UTC()).String(),
-			MetaKeyDateTo:   cal.DateOf(time.Unix(line.Period.End, 0).UTC()).String(),
-		},
 	}
+}
+
+// setItemName sets the name of the item for a GOBL invoice line item.
+func setItemName(line *stripe.InvoiceLineItem) string {
+	if line.Description != "" {
+		return line.Description
+	}
+
+	if line.Price != nil {
+		if line.Price.Product != nil {
+			return line.Price.Product.Name
+		}
+	}
+
+	if line.Plan != nil {
+		if line.Plan.Product != nil {
+			return line.Plan.Product.Name
+		}
+	}
+
+	return ""
 }
 
 // resolveInvoiceLinePrice resolves the price for a GOBL invoice line item.
@@ -101,15 +110,21 @@ func resolveInvoiceLinePrice(line *stripe.InvoiceLineItem) num.Amount {
 
 // FromInvoiceLineDiscounts creates a list of discounts for a GOBL invoice line item.
 func FromInvoiceLineDiscounts(discounts []*stripe.Discount) []*bill.LineDiscount {
-	invDiscounts := make([]*bill.LineDiscount, 0, len(discounts))
+	invDiscounts := make([]*bill.LineDiscount, 0)
 	for _, discount := range discounts {
-		invDiscounts = append(invDiscounts, FromInvoiceLineDiscount(discount))
+		lineDiscount := FromInvoiceLineDiscount(discount)
+		if lineDiscount != nil {
+			invDiscounts = append(invDiscounts, FromInvoiceLineDiscount(discount))
+		}
 	}
 	return invDiscounts
 }
 
 // FromInvoiceLineDiscount creates a discount for a GOBL invoice line item.
 func FromInvoiceLineDiscount(discount *stripe.Discount) *bill.LineDiscount {
+	if discount.Coupon == nil {
+		return nil
+	}
 
 	if !discount.Coupon.Valid {
 		return nil
@@ -138,24 +153,33 @@ func FromInvoiceLineDiscount(discount *stripe.Discount) *bill.LineDiscount {
 func FromInvoiceTaxAmountsToTaxSet(taxAmounts []*stripe.InvoiceTotalTaxAmount) tax.Set {
 	var ts tax.Set
 	for _, taxAmount := range taxAmounts {
-		ts = append(ts, FromInvoiceTaxAmountToTaxCombo(taxAmount))
+		taxCombo := FromInvoiceTaxAmountToTaxCombo(taxAmount)
+		if taxCombo != nil {
+			ts = append(ts, FromInvoiceTaxAmountToTaxCombo(taxAmount))
+		}
 	}
 	return ts
 }
 
 // FromInvoiceTaxAmountToTaxCombo creates a new GOBL tax combo from a Stripe invoice tax amount.
 func FromInvoiceTaxAmountToTaxCombo(taxAmount *stripe.InvoiceTotalTaxAmount) *tax.Combo {
+	if taxAmount.TaxRate.Country == "" && taxAmount.TaxRate.TaxType == "" {
+		return nil
+	}
 	tc := &tax.Combo{
 		Category: extractTaxCat(taxAmount.TaxRate.TaxType),
 		Country:  l10n.TaxCountryCode(taxAmount.TaxRate.Country),
 	}
 
+	// Instead of the percentage we can also look at the taxability_reason field.
+	// There are different types defined and we could map them to the tax categories in GOBL.
+
 	taxDate := newDateFromTS(taxAmount.TaxRate.Created)
 	// Based on the country and the percentage, we can determine the tax rate and value.
-	rate, val := lookupRateValue(taxAmount.TaxRate.Percentage, tc.Country.Code(), tc.Category, taxDate)
+	rate, val := lookupRateValue(taxAmount.TaxRate.EffectivePercentage, tc.Country.Code(), tc.Category, taxDate)
 	if val == nil {
 		// No matching rate found in the regime. Set the tax percent directly.
-		tc.Percent = percentFromFloat(taxAmount.TaxRate.Percentage)
+		tc.Percent = percentFromFloat(taxAmount.TaxRate.EffectivePercentage)
 		return tc
 	}
 
@@ -166,8 +190,6 @@ func FromInvoiceTaxAmountToTaxCombo(taxAmount *stripe.InvoiceTotalTaxAmount) *ta
 }
 
 // Credit Notes Lines
-
-// FromCreditNoteLineItems converts Stripe credit note line items into GOBL credit note lines.
 
 // FromCreditNoteLines converts Stripe credit note line items into GOBL bill lines.
 func FromCreditNoteLines(lines []*stripe.CreditNoteLineItem, curr currency.Code) []*bill.Line {
@@ -258,17 +280,24 @@ func FromCreditNoteTaxAmountsToTaxSet(taxAmounts []*stripe.CreditNoteTaxAmount) 
 
 // FromCreditNoteTaxAmountToTaxCombo creates a new GOBL tax combo from a Stripe credit note tax amount.
 func FromCreditNoteTaxAmountToTaxCombo(taxAmount *stripe.CreditNoteTaxAmount) *tax.Combo {
+	if taxAmount.TaxRate.Country == "" && taxAmount.TaxRate.TaxType == "" {
+		return nil
+	}
+
 	tc := &tax.Combo{
 		Category: extractTaxCat(taxAmount.TaxRate.TaxType),
 		Country:  l10n.TaxCountryCode(taxAmount.TaxRate.Country),
 	}
 
+	// Instead of the percentage we can also look at the taxability_reason field.
+	// There are different types defined and we could map them to the tax categories in GOBL.
+
 	taxDate := newDateFromTS(taxAmount.TaxRate.Created)
 	// Based on the country and the percentage, we can determine the tax rate and value.
-	rate, val := lookupRateValue(taxAmount.TaxRate.Percentage, tc.Country.Code(), tc.Category, taxDate)
+	rate, val := lookupRateValue(taxAmount.TaxRate.EffectivePercentage, tc.Country.Code(), tc.Category, taxDate)
 	if val == nil {
 		// No matching rate found in the regime. Set the tax percent directly.
-		tc.Percent = percentFromFloat(taxAmount.TaxRate.Percentage)
+		tc.Percent = percentFromFloat(taxAmount.TaxRate.EffectivePercentage)
 		return tc
 	}
 
@@ -287,7 +316,6 @@ func lookupRateValue(sRate float64, country l10n.Code, cat cbc.Code, date *cal.D
 	if catDef == nil {
 		return nil, nil
 	}
-
 	for _, r := range catDef.Rates {
 		for _, v := range r.Values {
 			if v.Percent.Rescale(3) != *percentFromFloat(sRate) {

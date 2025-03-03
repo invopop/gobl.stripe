@@ -8,6 +8,7 @@ import (
 	"github.com/invopop/gobl/cal"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/l10n"
+	"github.com/invopop/gobl/num"
 	"github.com/invopop/gobl/org"
 	"github.com/invopop/gobl/tax"
 	"github.com/invopop/gobl/uuid"
@@ -22,21 +23,16 @@ import (
 
 // FromInvoice converts a stripe invoice object into a GOBL bill.Invoice.
 // The namespace is the UUID of the enrollment.
-func FromInvoice(doc *stripe.Invoice, namespace uuid.UUID) (*bill.Invoice, error) {
+func FromInvoice(doc *stripe.Invoice) (*bill.Invoice, error) {
 	inv := new(bill.Invoice)
 	inv.Type = bill.InvoiceTypeStandard
-
-	// TODO: Add support for reverse charge invoices
 
 	regimeDef, err := regimeFromInvoice(doc)
 	if err != nil {
 		return nil, err
 	}
 
-	inv.UUID, err = uuidFromInvoice(doc, namespace)
-	if err != nil {
-		return nil, err
-	}
+	inv.UUID = uuid.V7() // Generated randomly, but you can modify afterwards for the specific use case.
 
 	inv.Code = cbc.Code(doc.ID) //Sequential code used to identify this invoice in tax declarations.
 
@@ -49,11 +45,9 @@ func FromInvoice(doc *stripe.Invoice, namespace uuid.UUID) (*bill.Invoice, error
 	inv.ExchangeRates = newExchangeRates(inv.Currency, regimeDef)
 
 	inv.Supplier = newSupplierFromInvoice(doc)
-	if doc.Customer != nil {
-		inv.Customer = FromCustomer(doc.Customer)
-		inv.Tags = newTags(doc.Customer)
-	} else {
-		inv.Customer = newCustomerFromInvoice(doc)
+	inv.Customer = newCustomerFromInvoice(doc)
+	if doc.CustomerTaxExempt != nil {
+		inv.Tags = newTags(*doc.CustomerTaxExempt)
 	}
 
 	inv.Lines = FromInvoiceLines(doc.Lines.Data)
@@ -64,7 +58,6 @@ func FromInvoice(doc *stripe.Invoice, namespace uuid.UUID) (*bill.Invoice, error
 
 	//Remaining fields
 	//Addons: TODO
-	//Tags: TODO
 	//Discounts: for the moment not considered in general (only in lines)
 
 	return inv, nil
@@ -72,7 +65,7 @@ func FromInvoice(doc *stripe.Invoice, namespace uuid.UUID) (*bill.Invoice, error
 
 // FromCreditNote converts a stripe credit note object into a GOBL bill.Invoice.
 // The namespace is the UUID of the enrollment.
-func FromCreditNote(doc *stripe.CreditNote, namespace uuid.UUID) (*bill.Invoice, error) {
+func FromCreditNote(doc *stripe.CreditNote) (*bill.Invoice, error) {
 	inv := new(bill.Invoice)
 	inv.Type = bill.InvoiceTypeCreditNote
 
@@ -81,10 +74,7 @@ func FromCreditNote(doc *stripe.CreditNote, namespace uuid.UUID) (*bill.Invoice,
 		return nil, err
 	}
 
-	inv.UUID, err = uuidFromInvoice(doc.Invoice, namespace)
-	if err != nil {
-		return nil, err
-	}
+	inv.UUID = uuid.V4() // Generated randomly, but you can modify afterwards for the specific use case.
 
 	inv.Code = cbc.Code(doc.ID) //Sequential code used to identify this credit note in tax declarations.
 
@@ -106,24 +96,6 @@ func FromCreditNote(doc *stripe.CreditNote, namespace uuid.UUID) (*bill.Invoice,
 	inv.Preceding = []*org.DocumentRef{newPrecedingFromInvoice(doc.Invoice, string(doc.Reason))}
 
 	return inv, nil
-}
-
-// uuidFromInvoice generates a UUID for an invoice based on the namespace, site, and stripe Invoice ID.
-func uuidFromInvoice(doc *stripe.Invoice, namespace uuid.UUID) (uuid.UUID, error) {
-	if doc.AccountName == "" {
-		return uuid.Empty, fmt.Errorf("missing account name")
-	}
-	return invoiceUUID(namespace, doc.AccountName, doc.ID), nil
-}
-
-// invoiceUUID generates a UUID for a UUID based on the namespace, site, and stripe Invoice ID.
-func invoiceUUID(ns uuid.UUID, site string, stID string) uuid.UUID {
-	if ns == uuid.Empty {
-		return uuid.Empty
-	}
-
-	base := site + ":" + stID
-	return uuid.V3(ns, []byte(base))
 }
 
 // newDateFromTS creates a cal date object from a Unix timestamp.
@@ -155,10 +127,51 @@ func newPrecedingFromInvoice(doc *stripe.Invoice, reason string) *org.DocumentRe
 	}
 }
 
-func newTags(customer *stripe.Customer) tax.Tags {
-	if customer.TaxExempt == stripe.CustomerTaxExemptReverse {
+// newTags creates a tax tags object from a customer tax exempt status.
+func newTags(customerExempt stripe.CustomerTaxExempt) tax.Tags {
+	if customerExempt == stripe.CustomerTaxExemptReverse {
 		return tax.WithTags(tax.TagReverseCharge)
 	}
 
 	return tax.Tags{}
+}
+
+// newOrdering creates an ordering object from an invoice.
+func newOrdering(doc *stripe.Invoice) *bill.Ordering {
+	return &bill.Ordering{
+		Period: &cal.Period{
+			Start: *newDateFromTS(doc.PeriodStart),
+			End:   *newDateFromTS(doc.PeriodEnd),
+		},
+	}
+}
+
+// AdjustRounding checks and, if need be, adjusts the rounding in the GOBL invoice to match the
+// Stripe payable total. Stripe calculates totals by rounding each line and then summing
+// which can lead to a mismatch with the total amount in GOBL.
+func AdjustRounding(gi *bill.Invoice, total int64, curr stripe.Currency) error {
+	// Calculate the difference between the expected and the calculated totals
+	exp := currencyAmount(total, FromCurrency(curr))
+	diff := exp.Subtract(gi.Totals.Payable)
+	if diff.IsZero() {
+		// No difference. No adjustment needed
+		return nil
+	}
+
+	// Check if the difference can be attributed to rounding
+	maxErr := MaxRoundingError(gi)
+	if diff.Abs().Compare(maxErr) == 1 {
+		// Too much difference. Report the error
+		return fmt.Errorf("rounding error in totals too high: %s", diff)
+	}
+
+	gi.Totals.Rounding = &diff
+
+	return nil
+}
+
+// MaxRoundingError returns the maximum error that can be attributed to rounding in an invoice.
+func MaxRoundingError(gi *bill.Invoice) num.Amount {
+	// 0.5 of the smallest subunit of the currency per line
+	return num.MakeAmount(5*int64(len(gi.Lines)), gi.Currency.Def().Subunits+1)
 }

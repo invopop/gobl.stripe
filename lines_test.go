@@ -7,8 +7,6 @@ import (
 
 	goblstripe "github.com/invopop/gobl.stripe"
 	"github.com/invopop/gobl/bill"
-	"github.com/invopop/gobl/cal"
-	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/currency"
 	"github.com/invopop/gobl/l10n"
 	"github.com/invopop/gobl/num"
@@ -38,9 +36,10 @@ func validInvoiceLine() *stripe.InvoiceLineItem {
 				Amount:    5360,
 				Inclusive: false,
 				TaxRate: &stripe.TaxRate{
-					TaxType:    stripe.TaxRateTaxTypeVAT,
-					Country:    "ES",
-					Percentage: 21.0,
+					TaxType:             stripe.TaxRateTaxTypeVAT,
+					Country:             "ES",
+					EffectivePercentage: 21.0,
+					Percentage:          21.0,
 				},
 				TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonStandardRated,
 				TaxableAmount:    25522,
@@ -56,8 +55,6 @@ func TestBasicFields(t *testing.T) {
 
 	assert.NotNil(t, result, "Line conversion should not return nil")
 	assert.Equal(t, currency.USD, result.Item.Currency, "Item currency should match line currency")
-	assert.Equal(t, cal.NewDate(2025, 1, 8).String(), result.Item.Meta[goblstripe.MetaKeyDateFrom], "Item start date should match line period start")
-	assert.Equal(t, cal.NewDate(2025, 2, 8).String(), result.Item.Meta[goblstripe.MetaKeyDateTo], "Item end date should match line period end")
 	assert.Equal(t, tax.CategoryVAT, result.Taxes[0].Category, "Tax category should match line tax")
 	assert.Equal(t, l10n.ES.Tax(), result.Taxes[0].Country, "Tax country should match line tax")
 	assert.Equal(t, num.NewPercentage(210, 3), result.Taxes[0].Percent, "Tax percentage should match line tax")
@@ -88,9 +85,10 @@ func TestSeveralLines(t *testing.T) {
 					Amount:    -2310,
 					Inclusive: false,
 					TaxRate: &stripe.TaxRate{
-						TaxType:    stripe.TaxRateTaxTypeVAT,
-						Country:    "ES",
-						Percentage: 21.0,
+						TaxType:             stripe.TaxRateTaxTypeVAT,
+						Country:             "ES",
+						EffectivePercentage: 21.0,
+						Percentage:          21.0,
 					},
 					TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonStandardRated,
 					TaxableAmount:    -11000,
@@ -120,9 +118,10 @@ func TestSeveralLines(t *testing.T) {
 					Amount:    4200,
 					Inclusive: false,
 					TaxRate: &stripe.TaxRate{
-						TaxType:    stripe.TaxRateTaxTypeVAT,
-						Country:    "ES",
-						Percentage: 21.0,
+						TaxType:             stripe.TaxRateTaxTypeVAT,
+						Country:             "ES",
+						EffectivePercentage: 21.0,
+						Percentage:          21.0,
 					},
 					TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonStandardRated,
 					TaxableAmount:    19999,
@@ -152,9 +151,10 @@ func TestSeveralLines(t *testing.T) {
 					Amount:    2100,
 					Inclusive: false,
 					TaxRate: &stripe.TaxRate{
-						TaxType:    stripe.TaxRateTaxTypeVAT,
-						Country:    "ES",
-						Percentage: 21.0,
+						TaxType:             stripe.TaxRateTaxTypeVAT,
+						Country:             "ES",
+						EffectivePercentage: 21.0,
+						Percentage:          21.0,
 					},
 					TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonStandardRated,
 					TaxableAmount:    10000,
@@ -184,9 +184,10 @@ func TestSeveralLines(t *testing.T) {
 					Amount:    5360,
 					Inclusive: true,
 					TaxRate: &stripe.TaxRate{
-						TaxType:    stripe.TaxRateTaxTypeVAT,
-						Country:    "ES",
-						Percentage: 21.0,
+						TaxType:             stripe.TaxRateTaxTypeVAT,
+						Country:             "ES",
+						EffectivePercentage: 21.0,
+						Percentage:          21.0,
 					},
 					TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonStandardRated,
 					TaxableAmount:    25522,
@@ -203,10 +204,6 @@ func TestSeveralLines(t *testing.T) {
 				Name:     "Unused time on 2000 × Pro Plan after 08 Jan 2025",
 				Currency: currency.EUR,
 				Price:    num.MakeAmount(-11000, 2),
-				Meta: cbc.Meta{
-					goblstripe.MetaKeyDateFrom: cal.NewDate(2025, 1, 8).String(),
-					goblstripe.MetaKeyDateTo:   cal.NewDate(2025, 2, 8).String(),
-				},
 			},
 			Taxes: tax.Set{
 				{
@@ -222,10 +219,6 @@ func TestSeveralLines(t *testing.T) {
 				Name:     "Remaining time on 10000 × Pro Plan after 08 Jan 2025",
 				Currency: currency.EUR,
 				Price:    num.MakeAmount(19999, 2),
-				Meta: cbc.Meta{
-					goblstripe.MetaKeyDateFrom: cal.NewDate(2025, 1, 8).String(),
-					goblstripe.MetaKeyDateTo:   cal.NewDate(2025, 2, 8).String(),
-				},
 			},
 			Taxes: tax.Set{
 				{
@@ -241,10 +234,6 @@ func TestSeveralLines(t *testing.T) {
 				Name:     "Remaining time on Chargebee Addon after 08 Jan 2025",
 				Currency: currency.EUR,
 				Price:    num.MakeAmount(10000, 2),
-				Meta: cbc.Meta{
-					goblstripe.MetaKeyDateFrom: cal.NewDate(2025, 1, 8).String(),
-					goblstripe.MetaKeyDateTo:   cal.NewDate(2025, 2, 8).String(),
-				},
 			},
 			Taxes: tax.Set{
 				{
@@ -260,10 +249,6 @@ func TestSeveralLines(t *testing.T) {
 				Name:     "Chargebee Addon",
 				Currency: currency.USD,
 				Price:    num.MakeAmount(10294, 2),
-				Meta: cbc.Meta{
-					goblstripe.MetaKeyDateFrom: cal.NewDate(2025, 1, 8).String(),
-					goblstripe.MetaKeyDateTo:   cal.NewDate(2025, 2, 8).String(),
-				},
 			},
 			Taxes: tax.Set{
 				{
@@ -311,9 +296,10 @@ func TestFromLinePerUnit(t *testing.T) {
 				Amount:    5360,
 				Inclusive: true,
 				TaxRate: &stripe.TaxRate{
-					TaxType:    stripe.TaxRateTaxTypeVAT,
-					Country:    "ES",
-					Percentage: 21.0,
+					TaxType:             stripe.TaxRateTaxTypeVAT,
+					Country:             "ES",
+					EffectivePercentage: 21.0,
+					Percentage:          21.0,
 				},
 				TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonStandardRated,
 				TaxableAmount:    25522,
@@ -358,9 +344,10 @@ func TestFromLineTiered(t *testing.T) {
 				Amount:    4200,
 				Inclusive: false,
 				TaxRate: &stripe.TaxRate{
-					TaxType:    stripe.TaxRateTaxTypeVAT,
-					Country:    "ES",
-					Percentage: 21.0,
+					TaxType:             stripe.TaxRateTaxTypeVAT,
+					Country:             "ES",
+					EffectivePercentage: 21.0,
+					Percentage:          21.0,
 				},
 				TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonStandardRated,
 				TaxableAmount:    19999,
@@ -380,72 +367,6 @@ func TestFromLineTiered(t *testing.T) {
 	assert.Equal(t, num.MakePercentage(210, 3), *result.Taxes[0].Percent, "Tax percentage should match line tax")
 	assert.Equal(t, tax.CategoryVAT, result.Taxes[0].Category, "Tax category should match line tax")
 	assert.Equal(t, l10n.ES.Tax(), result.Taxes[0].Country, "Tax country should match line tax")
-}
-
-func TestFromLineToItem(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    *stripe.InvoiceLineItem
-		expected *org.Item
-	}{
-		{
-			name: "per unit billing scheme",
-			input: &stripe.InvoiceLineItem{
-				Description: "Basic Plan",
-				Currency:    "usd",
-				Period: &stripe.Period{
-					Start: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
-					End:   time.Date(2024, 1, 31, 0, 0, 0, 0, time.UTC).Unix(),
-				},
-				Price: &stripe.Price{
-					UnitAmount:    1000,
-					Currency:      "usd",
-					BillingScheme: stripe.PriceBillingSchemePerUnit,
-				},
-			},
-			expected: &org.Item{
-				Name:     "Basic Plan",
-				Currency: "USD",
-				Price:    num.MakeAmount(1000, 2),
-				Meta: cbc.Meta{
-					goblstripe.MetaKeyDateFrom: "2024-01-01",
-					goblstripe.MetaKeyDateTo:   "2024-01-31",
-				},
-			},
-		},
-		{
-			name: "tiered billing scheme",
-			input: &stripe.InvoiceLineItem{
-				Description: "Usage Plan",
-				Currency:    "eur",
-				Amount:      2500,
-				Period: &stripe.Period{
-					Start: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
-					End:   time.Date(2024, 1, 31, 0, 0, 0, 0, time.UTC).Unix(),
-				},
-				Price: &stripe.Price{
-					Currency:      "eur",
-					BillingScheme: stripe.PriceBillingSchemeTiered,
-				},
-			},
-			expected: &org.Item{
-				Name:     "Usage Plan",
-				Currency: "EUR",
-				Price:    num.MakeAmount(2500, 2),
-				Meta: cbc.Meta{
-					goblstripe.MetaKeyDateFrom: "2024-01-01",
-					goblstripe.MetaKeyDateTo:   "2024-01-31",
-				},
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := goblstripe.FromInvoiceLineToItem(tt.input)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
 }
 
 func TestFromDiscount(t *testing.T) {
@@ -513,18 +434,20 @@ func TestFromTaxAmountsToTaxSet(t *testing.T) {
 			input: []*stripe.InvoiceTotalTaxAmount{
 				{
 					TaxRate: &stripe.TaxRate{
-						Country:    "DE",
-						TaxType:    stripe.TaxRateTaxTypeVAT,
-						Percentage: 19.0,
-						Created:    time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
+						Country:             "DE",
+						TaxType:             stripe.TaxRateTaxTypeVAT,
+						EffectivePercentage: 19.0,
+						Percentage:          19.0,
+						Created:             time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
 					},
 				},
 				{
 					TaxRate: &stripe.TaxRate{
-						Country:    "ES",
-						TaxType:    stripe.TaxRateTaxTypeVAT,
-						Percentage: 8.875,
-						Created:    time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
+						Country:             "ES",
+						TaxType:             stripe.TaxRateTaxTypeVAT,
+						EffectivePercentage: 8.875,
+						Percentage:          8.875,
+						Created:             time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
 					},
 				},
 			},
@@ -538,6 +461,43 @@ func TestFromTaxAmountsToTaxSet(t *testing.T) {
 					Category: tax.CategoryVAT,
 					Country:  "ES",
 					Percent:  num.NewPercentage(8875, 5),
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := goblstripe.FromInvoiceTaxAmountsToTaxSet(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestFromTaxAmountsExempt(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    []*stripe.InvoiceTotalTaxAmount
+		expected tax.Set
+	}{
+		{
+			name: "tax amount exempt",
+			input: []*stripe.InvoiceTotalTaxAmount{
+				{
+					TaxRate: &stripe.TaxRate{
+						Country:             "DE",
+						TaxType:             stripe.TaxRateTaxTypeVAT,
+						EffectivePercentage: 0.0,
+						Percentage:          19.0,
+						Created:             time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
+					},
+				},
+			},
+			expected: tax.Set{
+				{
+					Category: tax.CategoryVAT,
+					Country:  "DE",
+					Rate:     tax.RateZero,
 				},
 			},
 		},
@@ -565,9 +525,10 @@ func validCreditNoteLine() *stripe.CreditNoteLineItem {
 				Amount:    2162,
 				Inclusive: false,
 				TaxRate: &stripe.TaxRate{
-					TaxType:    stripe.TaxRateTaxTypeVAT,
-					Country:    "ES",
-					Percentage: 21.0,
+					TaxType:             stripe.TaxRateTaxTypeVAT,
+					Country:             "ES",
+					EffectivePercentage: 21.0,
+					Percentage:          21.0,
 				},
 				TaxableAmount: 10294,
 			},
@@ -653,18 +614,20 @@ func TestFromCNTaxAmountsToTaxSet(t *testing.T) {
 			input: []*stripe.CreditNoteTaxAmount{
 				{
 					TaxRate: &stripe.TaxRate{
-						Country:    "DE",
-						TaxType:    stripe.TaxRateTaxTypeVAT,
-						Percentage: 19.0,
-						Created:    time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
+						Country:             "DE",
+						TaxType:             stripe.TaxRateTaxTypeVAT,
+						EffectivePercentage: 19.0,
+						Percentage:          19.0,
+						Created:             time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
 					},
 				},
 				{
 					TaxRate: &stripe.TaxRate{
-						Country:    "ES",
-						TaxType:    stripe.TaxRateTaxTypeVAT,
-						Percentage: 8.875,
-						Created:    time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
+						Country:             "ES",
+						TaxType:             stripe.TaxRateTaxTypeVAT,
+						EffectivePercentage: 8.875,
+						Percentage:          8.875,
+						Created:             time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
 					},
 				},
 			},

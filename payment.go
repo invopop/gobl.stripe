@@ -98,7 +98,6 @@ func newPaymentInstructions(doc *stripe.Invoice) *pay.Instructions {
 		return nil
 	}
 
-	var instructions *pay.Instructions
 	if doc.PaymentIntent == nil {
 		return nil
 	}
@@ -106,6 +105,8 @@ func newPaymentInstructions(doc *stripe.Invoice) *pay.Instructions {
 	if doc.PaymentIntent.PaymentMethodTypes == nil {
 		return nil
 	}
+
+	var instructions *pay.Instructions
 
 	for _, method := range doc.PaymentIntent.PaymentMethodTypes {
 		for _, def := range paymentMethodDefinitions {
@@ -127,7 +128,7 @@ func newPaymentInstructions(doc *stripe.Invoice) *pay.Instructions {
 
 // newPaymentAdvances creates a payment advances object from a Stripe invoice.
 func newPaymentAdvances(doc *stripe.Invoice) []*pay.Advance {
-	if doc.Paid || doc.AmountPaid == 0 {
+	if doc.Paid || doc.AmountPaid == 0 || doc.Charge == nil {
 		return nil
 	}
 

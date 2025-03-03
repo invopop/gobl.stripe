@@ -294,33 +294,48 @@ func newCustomerFromInvoice(doc *stripe.Invoice) *org.Party {
 		in fields like customer_name, customer_email, etc.
 	*/
 
-	customerParty := new(org.Party)
+	var customerParty *org.Party
 	if doc.CustomerAddress != nil {
+		customerParty = new(org.Party)
 		customerParty.Addresses = append(customerParty.Addresses, FromAddress(doc.CustomerAddress))
 	}
 	if doc.CustomerEmail != "" {
+		if customerParty == nil {
+			customerParty = new(org.Party)
+		}
 		customerParty.Emails = append(customerParty.Emails, FromEmail(doc.CustomerEmail))
 	}
 
 	if doc.CustomerName != "" {
+		if customerParty == nil {
+			customerParty = new(org.Party)
+		}
 		customerParty.Name = doc.CustomerName
 	}
 
 	if doc.CustomerPhone != "" {
+		if customerParty == nil {
+			customerParty = new(org.Party)
+		}
 		customerParty.Telephones = append(customerParty.Telephones, FromTelephone(doc.CustomerPhone))
 	}
 
 	if doc.CustomerTaxIDs != nil {
-		// In Stripe there are 2 objects for the taxID: stripe.TaxID and stripe.CustomerTaxID
-		stripeTaxID := &stripe.TaxID{
-			Type:  *doc.CustomerTaxIDs[0].Type,
-			Value: doc.CustomerTaxIDs[0].Value,
-		}
+		if len(doc.CustomerTaxIDs) > 0 {
+			if customerParty == nil {
+				customerParty = new(org.Party)
+			}
+			// In Stripe there are 2 objects for the taxID: stripe.TaxID and stripe.CustomerTaxID
+			stripeTaxID := &stripe.TaxID{
+				Type:  *doc.CustomerTaxIDs[0].Type,
+				Value: doc.CustomerTaxIDs[0].Value,
+			}
 
-		if slices.Contains(orgIDKeys, stripeTaxID.Type) {
-			customerParty.Identities[0] = FromTaxIDToOrg(stripeTaxID)
-		} else {
-			customerParty.TaxID = FromTaxIDToTax(stripeTaxID)
+			if slices.Contains(orgIDKeys, stripeTaxID.Type) {
+				customerParty.Identities[0] = FromTaxIDToOrg(stripeTaxID)
+			} else {
+				customerParty.TaxID = FromTaxIDToTax(stripeTaxID)
+			}
 		}
 	}
 
@@ -331,7 +346,7 @@ func newSupplierFromInvoice(doc *stripe.Invoice) *org.Party {
 	/*
 		Here we have 2 options:
 		- Do a call to the API here to fetch the supplier (account) tax id
-		- Assume the received invoice has the
+		- Assume the received invoice has the supplier data
 
 		We will assume the second option for now
 	*/
@@ -343,15 +358,22 @@ func newSupplierFromInvoice(doc *stripe.Invoice) *org.Party {
 	}
 
 	if doc.AccountTaxIDs != nil {
-		if supplierParty == nil {
-			supplierParty = new(org.Party)
-		}
-		// When we have several accounttaxids, we assume the first one is the main one
-		accountTaxID := doc.AccountTaxIDs[0]
-		if slices.Contains(orgIDKeys, accountTaxID.Type) {
-			supplierParty.Identities[0] = FromTaxIDToOrg(accountTaxID)
-		} else {
-			supplierParty.TaxID = FromTaxIDToTax(accountTaxID)
+		if len(doc.AccountTaxIDs) > 0 {
+			// When we have several accounttaxids, we assume the first one is the main one
+			accountTaxID := doc.AccountTaxIDs[0]
+
+			if accountTaxID.Created != 0 {
+				// When the field is not expanded it has created == 0
+				if supplierParty == nil {
+					supplierParty = new(org.Party)
+				}
+
+				if slices.Contains(orgIDKeys, accountTaxID.Type) {
+					supplierParty.Identities[0] = FromTaxIDToOrg(accountTaxID)
+				} else {
+					supplierParty.TaxID = FromTaxIDToTax(accountTaxID)
+				}
+			}
 		}
 	}
 
