@@ -62,10 +62,11 @@ func newQuantityFromInvoiceLine(line *stripe.InvoiceLineItem) num.Amount {
 
 // fromInvoiceLineToItem creates a new GOBL item from a Stripe invoice line item.
 func fromInvoiceLineToItem(line *stripe.InvoiceLineItem) *org.Item {
+	price := resolveInvoiceLinePrice(line)
 	return &org.Item{
 		Name:     setItemName(line),
 		Currency: currency.Code(strings.ToUpper(string(line.Currency))),
-		Price:    resolveInvoiceLinePrice(line),
+		Price:    &price,
 	}
 }
 
@@ -229,10 +230,11 @@ func newQuantityFromCreditNote(line *stripe.CreditNoteLineItem) num.Amount {
 
 // FromCreditNoteLineToItem creates a new GOBL item from a Stripe credit note line item.
 func FromCreditNoteLineToItem(line *stripe.CreditNoteLineItem, curr currency.Code) *org.Item {
+	price := resolveCreditNoteLinePrice(line, curr)
 	return &org.Item{
 		Name:     line.Description,
 		Currency: curr,
-		Price:    resolveCreditNoteLinePrice(line, curr),
+		Price:    &price,
 	}
 }
 

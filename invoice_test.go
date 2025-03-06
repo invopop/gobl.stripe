@@ -728,7 +728,7 @@ func TestFromCreditNote(t *testing.T) {
 	assert.Equal(t, "282741168", gi.Customer.TaxID.Code.String())
 	assert.Equal(t, "Unused time on 2000 × Pro Plan after 08 Jan 2025", gi.Lines[0].Item.Name)
 	assert.Equal(t, currency.EUR, gi.Lines[0].Item.Currency)
-	assert.Equal(t, num.MakeAmount(10294, 2), gi.Lines[0].Item.Price)
+	assert.Equal(t, num.NewAmount(10294, 2), gi.Lines[0].Item.Price)
 	assert.Equal(t, "order_change", gi.Preceding[0].Reason)
 	assert.Nil(t, gi.Tax)
 }
