@@ -32,5 +32,5 @@ func TestZeroDecimalCurrencies(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, currency.JPY, gi.Currency)
-	assert.Equal(t, num.MakeAmount(-11000, 0), gi.Lines[0].Item.Price)
+	assert.Equal(t, num.NewAmount(-11000, 0), gi.Lines[0].Item.Price)
 }

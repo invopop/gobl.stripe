@@ -7,26 +7,26 @@ import (
 )
 
 // newDelivery creates a delivery object from an invoice.
-func newDelivery(doc *stripe.Invoice) *bill.Delivery {
+func newDelivery(doc *stripe.Invoice) *bill.DeliveryDetails {
 	if doc.ShippingDetails != nil {
-		return FromShippingDetailsToDelivery(doc.ShippingDetails)
+		return FromShippingDetailsToDeliveryDetails(doc.ShippingDetails)
 	}
 
 	if doc.CustomerShipping != nil {
-		return FromShippingDetailsToDelivery(doc.CustomerShipping)
+		return FromShippingDetailsToDeliveryDetails(doc.CustomerShipping)
 	}
 
 	// If no shipping details are provided, return nil
 	return nil
 }
 
-// FromShippingDetailsToDelivery converts a stripe shipping details object into a GOBL delivery object.
-func FromShippingDetailsToDelivery(shipping *stripe.ShippingDetails) *bill.Delivery {
+// FromShippingDetailsToDeliveryDetails converts a stripe shipping details object into a GOBL delivery object.
+func FromShippingDetailsToDeliveryDetails(shipping *stripe.ShippingDetails) *bill.DeliveryDetails {
 	receiver := newReceiver(shipping)
 	if receiver.Validate() != nil {
 		return nil
 	}
-	return &bill.Delivery{
+	return &bill.DeliveryDetails{
 		Receiver: receiver,
 	}
 }
