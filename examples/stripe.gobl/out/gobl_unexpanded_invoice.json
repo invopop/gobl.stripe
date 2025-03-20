@@ -2,7 +2,7 @@
   "$tags": [
     "reverse-charge"
   ],
-  "uuid": "e99d243b-64b0-4827-9506-204eedf66e75",
+  "uuid": "0195b301-9b9a-7c26-ab82-50720f9a3dc2",
   "type": "standard",
   "code": "in_1QpCUMQhcl5B85YlfgMLxqMg",
   "issue_date": "2025-02-05",
@@ -39,19 +39,9 @@
       "item": {
         "name": "Chargebee Addon",
         "currency": "EUR",
-        "price": "300.00",
-        "meta": {
-          "stripe-date-from": "2025-01-21",
-          "stripe-date-to": "2025-01-21"
-        }
+        "price": "300.00"
       },
       "sum": "300.00",
-      "taxes": [
-        {
-          "cat": "",
-          "percent": "0.0%"
-        }
-      ],
       "total": "300.00"
     },
     {
@@ -60,45 +50,26 @@
       "item": {
         "name": "Physical good",
         "currency": "EUR",
-        "price": "70.00",
-        "meta": {
-          "stripe-date-from": "2025-01-20",
-          "stripe-date-to": "2025-01-20"
-        }
+        "price": "70.00"
       },
       "sum": "140.00",
-      "taxes": [
-        {
-          "cat": "",
-          "percent": "0.0%"
-        }
-      ],
       "total": "140.00"
     }
   ],
-  "ordering": {},
+  "ordering": {
+    "period": {
+      "start": "2025-02-05",
+      "end": "2025-02-05"
+    }
+  },
   "totals": {
     "sum": "440.00",
-    "tax_included": "0.00",
     "total": "440.00",
-    "taxes": {
-      "categories": [
-        {
-          "code": "",
-          "rates": [
-            {
-              "base": "440.00",
-              "percent": "0.0%",
-              "amount": "0.00"
-            }
-          ],
-          "amount": "0.00"
-        }
-      ],
-      "sum": "0.00"
-    },
     "tax": "0.00",
     "total_with_tax": "440.00",
     "payable": "440.00"
+  },
+  "meta": {
+    "stripe-document-id": "in_1QpCUMQhcl5B85YlfgMLxqMg"
   }
 }

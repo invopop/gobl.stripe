@@ -1,8 +1,8 @@
 {
   "$regime": "ES",
-  "uuid": "89d16108-d5df-3966-8cc9-1fa6f1e32934",
+  "uuid": "0195b301-2d26-7d39-8896-2e9eb3597f1b",
   "type": "standard",
-  "code": "in_1QkqQIQhcl5B85Ylnmv29PeU",
+  "code": "FPOP-10029",
   "issue_date": "2025-01-24",
   "op_date": "2025-01-24",
   "currency": "EUR",
@@ -42,11 +42,7 @@
       "item": {
         "name": "Chargebee Addon",
         "currency": "EUR",
-        "price": "300.00",
-        "meta": {
-          "stripe-date-from": "2025-01-21",
-          "stripe-date-to": "2025-01-21"
-        }
+        "price": "300.00"
       },
       "sum": "300.00",
       "taxes": [
@@ -64,11 +60,7 @@
       "item": {
         "name": "Physical good",
         "currency": "EUR",
-        "price": "70.00",
-        "meta": {
-          "stripe-date-from": "2025-01-20",
-          "stripe-date-to": "2025-01-20"
-        }
+        "price": "70.00"
       },
       "sum": "140.00",
       "discounts": [
@@ -88,7 +80,12 @@
       "total": "126.00"
     }
   ],
-  "ordering": {},
+  "ordering": {
+    "period": {
+      "start": "2025-01-24",
+      "end": "2025-01-24"
+    }
+  },
   "totals": {
     "sum": "426.00",
     "total": "426.00",
@@ -112,5 +109,8 @@
     "tax": "89.46",
     "total_with_tax": "515.46",
     "payable": "515.46"
+  },
+  "meta": {
+    "stripe-document-id": "in_1QkqQIQhcl5B85Ylnmv29PeU"
   }
 }

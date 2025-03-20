@@ -1,7 +1,7 @@
 {
-  "uuid": "637011c5-0c7d-353d-b94b-981852a0ba45",
+  "uuid": "7972f211-9e2d-40be-9aba-57c9ce1096d3",
   "type": "credit-note",
-  "code": "cn_1QkqKXQhcl5B85YlskhbQXF1",
+  "code": "FPOP-10027-CN-01",
   "issue_date": "2025-01-24",
   "op_date": "2025-01-24",
   "currency": "USD",
@@ -41,5 +41,8 @@
     "tax": "0.00",
     "total_with_tax": "10.00",
     "payable": "10.00"
+  },
+  "meta": {
+    "stripe-document-id": "cn_1QkqKXQhcl5B85YlskhbQXF1"
   }
 }
