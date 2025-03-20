@@ -50,25 +50,25 @@ var paymentMethodDefinitions = []paymentMethodDef{
 }
 
 // newPayment creates a GOBL payment object from a Stripe invoice.
-func newPayment(doc *stripe.Invoice) *bill.Payment {
-	var p *bill.Payment
+func newPayment(doc *stripe.Invoice) *bill.PaymentDetails {
+	var p *bill.PaymentDetails
 
 	if terms := newPaymentTerms(doc); terms != nil {
-		p = &bill.Payment{
+		p = &bill.PaymentDetails{
 			Terms: terms,
 		}
 	}
 
 	if instructions := newPaymentInstructions(doc); instructions != nil {
 		if p == nil {
-			p = new(bill.Payment)
+			p = new(bill.PaymentDetails)
 		}
 		p.Instructions = instructions
 	}
 
 	if advances := newPaymentAdvances(doc); advances != nil {
 		if p == nil {
-			p = new(bill.Payment)
+			p = new(bill.PaymentDetails)
 		}
 		p.Advances = advances
 	}
