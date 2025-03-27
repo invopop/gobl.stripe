@@ -16,8 +16,14 @@ import (
 )
 
 const (
-	// StripeDocumentID is the key used to save the Stripe document ID in the invoice metadata.
-	StripeDocumentID = "stripe-document-id"
+	// MetaKeyStripeDocID is the key used to save the Stripe document ID in the invoice metadata.
+	MetaKeyStripeDocID   = "stripe-document-id"
+	MetaKeyStripeDocType = "stripe-document-type"
+)
+
+const (
+	StripeDocTypeInvoice    = "invoice"
+	StripeDocTypeCreditNote = "credit_note"
 )
 
 // ToInvoice converts a GOBL bill.Invoice into a stripe invoice object.
@@ -45,7 +51,8 @@ func FromInvoice(doc *stripe.Invoice) (*bill.Invoice, error) {
 	}
 
 	inv.Meta = cbc.Meta{
-		StripeDocumentID: doc.ID, // Save it in case we need to retrieve the invoice from Stripe at some point
+		MetaKeyStripeDocID:   doc.ID, // Save it in case we need to retrieve the invoice from Stripe at some point
+		MetaKeyStripeDocType: StripeDocTypeInvoice,
 	}
 
 	inv.IssueDate = cal.DateOf(time.Unix(doc.Created, 0).UTC()) //Date when the invoice was created
@@ -94,7 +101,8 @@ func FromCreditNote(doc *stripe.CreditNote) (*bill.Invoice, error) {
 	}
 
 	inv.Meta = cbc.Meta{
-		StripeDocumentID: doc.ID, // Save it in case we need to retrieve the invoice from Stripe at some point
+		MetaKeyStripeDocID:   doc.ID, // Save it in case we need to retrieve the invoice from Stripe at some point
+		MetaKeyStripeDocType: StripeDocTypeCreditNote,
 	}
 
 	inv.IssueDate = cal.DateOf(time.Unix(doc.Created, 0).UTC()) //Date when the credit note was created
