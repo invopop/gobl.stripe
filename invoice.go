@@ -15,12 +15,14 @@ import (
 	"github.com/stripe/stripe-go/v81"
 )
 
+// Meta constants used in the Stripe to GOBL conversion
 const (
-	// MetaKeyStripeDocID is the key used to save the Stripe document ID in the invoice metadata.
 	MetaKeyStripeDocID   = "stripe-document-id"
 	MetaKeyStripeDocType = "stripe-document-type"
+	MetaKeyStripeEnv     = "stripe-env" // The environment in which the invoice was created
 )
 
+// Document type constants used in the Stripe to GOBL conversion
 const (
 	StripeDocTypeInvoice    = "invoice"
 	StripeDocTypeCreditNote = "credit_note"
