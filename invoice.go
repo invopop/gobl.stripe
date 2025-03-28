@@ -2,6 +2,7 @@ package goblstripe
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/invopop/gobl/bill"
@@ -14,6 +15,8 @@ import (
 	"github.com/invopop/gobl/uuid"
 	"github.com/stripe/stripe-go/v81"
 )
+
+//TODO: Add the first part of the invoice number as series
 
 // Meta constants used in the Stripe to GOBL conversion
 const (
@@ -47,13 +50,20 @@ func FromInvoice(doc *stripe.Invoice) (*bill.Invoice, error) {
 	inv.UUID = uuid.V7() // Generated randomly, but you can modify afterwards for the specific use case.
 
 	if doc.Number != "" {
-		inv.Code = cbc.Code(doc.Number) //Sequential code used to identify this invoice in tax declarations.
+		// Split the invoice number by "-" to separate series and code
+		parts := strings.Split(doc.Number, "-")
+		if len(parts) > 1 {
+			inv.Series = cbc.Code(parts[0])
+			inv.Code = cbc.Code(parts[1]) // Sequential code used to identify this invoice in tax declarations.
+		} else {
+			inv.Code = cbc.Code(doc.Number) // No separator found, use the whole number as code
+		}
 	} else {
 		inv.Code = cbc.Code(doc.ID)
 	}
 
 	inv.Meta = cbc.Meta{
-		MetaKeyStripeDocID:   doc.ID, // Save it in case we need to retrieve the invoice from Stripe at some point
+		MetaKeyStripeDocID:   doc.ID,
 		MetaKeyStripeDocType: StripeDocTypeInvoice,
 	}
 
@@ -97,13 +107,13 @@ func FromCreditNote(doc *stripe.CreditNote) (*bill.Invoice, error) {
 	inv.UUID = uuid.V4() // Generated randomly, but you can modify afterwards for the specific use case.
 
 	if doc.Number != "" {
-		inv.Code = cbc.Code(doc.Number) //Sequential code used to identify this invoice in tax declarations.
+		inv.Code = cbc.Code(doc.Number)
 	} else {
 		inv.Code = cbc.Code(doc.ID)
 	}
 
 	inv.Meta = cbc.Meta{
-		MetaKeyStripeDocID:   doc.ID, // Save it in case we need to retrieve the invoice from Stripe at some point
+		MetaKeyStripeDocID:   doc.ID,
 		MetaKeyStripeDocType: StripeDocTypeCreditNote,
 	}
 
