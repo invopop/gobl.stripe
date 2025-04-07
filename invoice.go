@@ -2,6 +2,7 @@ package goblstripe
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/invopop/gobl/bill"
@@ -15,6 +16,21 @@ import (
 	"github.com/stripe/stripe-go/v81"
 )
 
+//TODO: Add the first part of the invoice number as series
+
+// Meta constants used in the Stripe to GOBL conversion
+const (
+	MetaKeyStripeDocID   = "stripe-document-id"
+	MetaKeyStripeDocType = "stripe-document-type"
+	MetaKeyStripeEnv     = "stripe-env" // The environment in which the invoice was created
+)
+
+// Document type constants used in the Stripe to GOBL conversion
+const (
+	StripeDocTypeInvoice    = "invoice"
+	StripeDocTypeCreditNote = "credit_note"
+)
+
 // ToInvoice converts a GOBL bill.Invoice into a stripe invoice object.
 // TODO: Implement
 /*func ToInvoice(inv *bill.Invoice) (*stripe.Invoice, error) {
@@ -22,7 +38,6 @@ import (
 }*/
 
 // FromInvoice converts a stripe invoice object into a GOBL bill.Invoice.
-// The namespace is the UUID of the enrollment.
 func FromInvoice(doc *stripe.Invoice) (*bill.Invoice, error) {
 	inv := new(bill.Invoice)
 	inv.Type = bill.InvoiceTypeStandard
@@ -34,7 +49,23 @@ func FromInvoice(doc *stripe.Invoice) (*bill.Invoice, error) {
 
 	inv.UUID = uuid.V7() // Generated randomly, but you can modify afterwards for the specific use case.
 
-	inv.Code = cbc.Code(doc.ID) //Sequential code used to identify this invoice in tax declarations.
+	if doc.Number != "" {
+		// Split the invoice number by "-" to separate series and code
+		parts := strings.Split(doc.Number, "-")
+		if len(parts) > 1 {
+			inv.Series = cbc.Code(parts[0])
+			inv.Code = cbc.Code(parts[1]) // Sequential code used to identify this invoice in tax declarations.
+		} else {
+			inv.Code = cbc.Code(doc.Number) // No separator found, use the whole number as code
+		}
+	} else {
+		inv.Code = cbc.Code(doc.ID)
+	}
+
+	inv.Meta = cbc.Meta{
+		MetaKeyStripeDocID:   doc.ID,
+		MetaKeyStripeDocType: StripeDocTypeInvoice,
+	}
 
 	inv.IssueDate = cal.DateOf(time.Unix(doc.Created, 0).UTC()) //Date when the invoice was created
 	if doc.EffectiveAt != 0 {
@@ -64,7 +95,6 @@ func FromInvoice(doc *stripe.Invoice) (*bill.Invoice, error) {
 }
 
 // FromCreditNote converts a stripe credit note object into a GOBL bill.Invoice.
-// The namespace is the UUID of the enrollment.
 func FromCreditNote(doc *stripe.CreditNote) (*bill.Invoice, error) {
 	inv := new(bill.Invoice)
 	inv.Type = bill.InvoiceTypeCreditNote
@@ -76,7 +106,16 @@ func FromCreditNote(doc *stripe.CreditNote) (*bill.Invoice, error) {
 
 	inv.UUID = uuid.V4() // Generated randomly, but you can modify afterwards for the specific use case.
 
-	inv.Code = cbc.Code(doc.ID) //Sequential code used to identify this credit note in tax declarations.
+	if doc.Number != "" {
+		inv.Code = cbc.Code(doc.Number)
+	} else {
+		inv.Code = cbc.Code(doc.ID)
+	}
+
+	inv.Meta = cbc.Meta{
+		MetaKeyStripeDocID:   doc.ID,
+		MetaKeyStripeDocType: StripeDocTypeCreditNote,
+	}
 
 	inv.IssueDate = cal.DateOf(time.Unix(doc.Created, 0).UTC()) //Date when the credit note was created
 	if doc.EffectiveAt != 0 {

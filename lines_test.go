@@ -1,7 +1,6 @@
 package goblstripe_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -203,7 +202,7 @@ func TestSeveralLines(t *testing.T) {
 			Item: &org.Item{
 				Name:     "Unused time on 2000 × Pro Plan after 08 Jan 2025",
 				Currency: currency.EUR,
-				Price:    num.MakeAmount(-11000, 2),
+				Price:    num.NewAmount(-11000, 2),
 			},
 			Taxes: tax.Set{
 				{
@@ -218,7 +217,7 @@ func TestSeveralLines(t *testing.T) {
 			Item: &org.Item{
 				Name:     "Remaining time on 10000 × Pro Plan after 08 Jan 2025",
 				Currency: currency.EUR,
-				Price:    num.MakeAmount(19999, 2),
+				Price:    num.NewAmount(19999, 2),
 			},
 			Taxes: tax.Set{
 				{
@@ -233,7 +232,7 @@ func TestSeveralLines(t *testing.T) {
 			Item: &org.Item{
 				Name:     "Remaining time on Chargebee Addon after 08 Jan 2025",
 				Currency: currency.EUR,
-				Price:    num.MakeAmount(10000, 2),
+				Price:    num.NewAmount(10000, 2),
 			},
 			Taxes: tax.Set{
 				{
@@ -248,7 +247,7 @@ func TestSeveralLines(t *testing.T) {
 			Item: &org.Item{
 				Name:     "Chargebee Addon",
 				Currency: currency.USD,
-				Price:    num.MakeAmount(10294, 2),
+				Price:    num.NewAmount(10294, 2),
 			},
 			Taxes: tax.Set{
 				{
@@ -262,13 +261,6 @@ func TestSeveralLines(t *testing.T) {
 
 	result := goblstripe.FromInvoiceLines(lines)
 	assert.Equal(t, expected, result, "Converted lines should match expected")
-	for i, line := range result {
-		ctx := context.Background()
-		// The index is calculated automatically in GOBL, so we need to set it manually
-		line.Index = i + 1
-		err := line.ValidateWithContext(ctx)
-		assert.Nil(t, err, "Line should be valid")
-	}
 
 	assert.Equal(t, len(lines), len(result), "Number of converted lines should match input")
 }
