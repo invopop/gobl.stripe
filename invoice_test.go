@@ -656,6 +656,7 @@ func validCreditNote() *stripe.CreditNote {
 		Currency: stripe.CurrencyEUR,
 		Invoice: &stripe.Invoice{
 			ID:             "inv_123",
+			Number:         "INV-123",
 			AccountName:    "Test Account",
 			AccountCountry: "DE",
 			AccountTaxIDs: []*stripe.TaxID{
@@ -730,5 +731,7 @@ func TestFromCreditNote(t *testing.T) {
 	assert.Equal(t, currency.EUR, gi.Lines[0].Item.Currency)
 	assert.Equal(t, num.MakeAmount(10294, 2), gi.Lines[0].Item.Price)
 	assert.Equal(t, "order_change", gi.Preceding[0].Reason)
+	assert.Equal(t, "123", gi.Preceding[0].Code.String())
+	assert.Equal(t, "INV", gi.Preceding[0].Series.String())
 	assert.Nil(t, gi.Tax)
 }
