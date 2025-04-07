@@ -3,7 +3,7 @@
   "$tags": [
     "reverse-charge"
   ],
-  "uuid": "87ee2a9e-2a5b-48bb-9d31-3f916a800e42",
+  "uuid": "0195b2ff-de30-7399-a386-cbffd6f770d8",
   "type": "standard",
   "code": "in_1QpDx7Qhcl5B85Yls3Aj1n1Z",
   "issue_date": "2025-02-05",
@@ -44,11 +44,7 @@
       "item": {
         "name": "Chargebee Addon",
         "currency": "EUR",
-        "price": "300.00",
-        "meta": {
-          "stripe-date-from": "2025-01-21",
-          "stripe-date-to": "2025-01-21"
-        }
+        "price": "300.00"
       },
       "sum": "300.00",
       "taxes": [
@@ -66,11 +62,7 @@
       "item": {
         "name": "Physical good",
         "currency": "EUR",
-        "price": "70.00",
-        "meta": {
-          "stripe-date-from": "2025-01-20",
-          "stripe-date-to": "2025-01-20"
-        }
+        "price": "70.00"
       },
       "sum": "140.00",
       "discounts": [
@@ -90,7 +82,12 @@
       "total": "126.00"
     }
   ],
-  "ordering": {},
+  "ordering": {
+    "period": {
+      "start": "2025-02-05",
+      "end": "2025-02-05"
+    }
+  },
   "totals": {
     "sum": "426.00",
     "total": "426.00",
@@ -121,5 +118,8 @@
       "src": "reverse-charge",
       "text": "Reverse Charge / Inversión del sujeto pasivo."
     }
-  ]
+  ],
+  "meta": {
+    "stripe-document-id": "in_1QpDx7Qhcl5B85Yls3Aj1n1Z"
+  }
 }
