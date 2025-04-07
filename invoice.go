@@ -119,12 +119,25 @@ func regimeFromInvoice(doc *stripe.Invoice) (*tax.RegimeDef, error) {
 
 // newPrecedingFromInvoice creates a document reference from a Stripe invoice.
 func newPrecedingFromInvoice(doc *stripe.Invoice, reason string) *org.DocumentRef {
-	return &org.DocumentRef{
-		Type:      bill.InvoiceTypeStandard,
-		IssueDate: newDateFromTS(doc.Created),
-		Code:      cbc.Code(doc.ID),
-		Reason:    reason,
+	docRef := new(org.DocumentRef)
+
+	if doc.Number != "" {
+		parts := strings.Split(doc.Number, "-")
+		if len(parts) > 1 {
+			docRef.Series = cbc.Code(parts[0])
+			docRef.Code = cbc.Code(parts[1]) // Sequential code used to identify this invoice in tax declarations.
+		} else {
+			docRef.Code = cbc.Code(doc.Number)
+		}
+	} else {
+		docRef.Code = cbc.Code(doc.ID)
 	}
+
+	docRef.IssueDate = newDateFromTS(doc.Created)
+	docRef.Type = bill.InvoiceTypeStandard
+	docRef.Reason = reason
+
+	return docRef
 }
 
 // newTags creates a tax tags object from a customer tax exempt status.
