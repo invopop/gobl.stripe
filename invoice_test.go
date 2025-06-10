@@ -9,6 +9,7 @@ import (
 	goblstripe "github.com/invopop/gobl.stripe"
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/cal"
+	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/currency"
 	"github.com/invopop/gobl/l10n"
 	"github.com/invopop/gobl/num"
@@ -333,6 +334,38 @@ func TestCustomer(t *testing.T) {
 	assert.Equal(t, "DE", gi.Customer.Addresses[0].Country.String())
 	assert.Equal(t, "BE", gi.Customer.Addresses[0].State.String())
 	assert.Equal(t, "me.unselfish@me.com", gi.Customer.Emails[0].Address)
+}
+
+func TestCustomerWithMetadata(t *testing.T) {
+	s := minimalStripeInvoice()
+	s.Customer = validStripeCustomer()
+	s.Customer.Metadata = map[string]string{
+		"gobl-customer-my-key": "my-value",
+		"another-key":          "another-value",
+	}
+
+	gi, err := goblstripe.FromInvoice(s)
+	require.NoError(t, err)
+
+	c := gi.Customer
+	require.NotNil(t, c)
+
+	assert.Equal(t, "Test Customer", c.Name)
+	assert.NotNil(t, c.TaxID)
+	assert.Equal(t, "DE", c.TaxID.Country.String())
+	assert.Equal(t, "282741168", c.TaxID.Code.String())
+	assert.Equal(t, "Unter den Linden 1", c.Addresses[0].Street)
+	assert.Equal(t, "10117", c.Addresses[0].Code.String())
+	assert.Equal(t, "Berlin", c.Addresses[0].Locality)
+	assert.Equal(t, "DE", c.Addresses[0].Country.String())
+	assert.Equal(t, "BE", c.Addresses[0].State.String())
+	assert.Equal(t, "me.unselfish@me.com", c.Emails[0].Address)
+	assert.Equal(t, "+4915155555555", c.Telephones[0].Number)
+
+	require.NotNil(t, c.Ext)
+	assert.Equal(t, cbc.Code("my-value"), c.Ext[cbc.Key("my-key")])
+	_, ok := c.Ext[cbc.Key("another-key")]
+	assert.False(t, ok)
 }
 
 func TestCalculate(t *testing.T) {

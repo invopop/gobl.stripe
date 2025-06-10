@@ -1,0 +1,110 @@
+{
+  "uuid": "019758ef-7245-7734-baff-326b8f8dd41e",
+  "type": "standard",
+  "series": "JV64HIWA",
+  "code": "0009",
+  "issue_date": "2025-06-10",
+  "op_date": "2025-06-10",
+  "currency": "MXN",
+  "supplier": {
+    "name": "ESCUELA KEMPER URGATE"
+  },
+  "customer": {
+    "name": "MARIA FERNANDA ESPEJO MARIN",
+    "tax_id": {
+      "country": "MX",
+      "code": "EEMF000804326"
+    },
+    "addresses": [
+      {
+        "locality": "San Andrés Cholula",
+        "state": "PUE",
+        "code": "72825",
+        "country": "MX"
+      }
+    ],
+    "emails": [
+      {
+        "addr": "marife@gmail.com"
+      }
+    ],
+    "ext": {
+      "mx-cfdi-fiscal-regime": "626",
+      "mx-cfdi-use": "G03"
+    }
+  },
+  "lines": [
+    {
+      "i": 1,
+      "quantity": "1",
+      "item": {
+        "name": "Equipo para uso de software punto de venta",
+        "currency": "MXN",
+        "price": "3360.00",
+        "ext": {
+          "mx-cfdi-prod-serv": "43211505"
+        }
+      },
+      "sum": "3360.00",
+      "taxes": [
+        {
+          "cat": "VAT",
+          "country": "MX",
+          "rate": "standard",
+          "percent": "16.0%"
+        }
+      ],
+      "total": "3360.00"
+    }
+  ],
+  "ordering": {
+    "period": {
+      "start": "2025-06-10",
+      "end": "2025-06-10"
+    }
+  },
+  "payment": {
+    "terms": {
+      "due_dates": [
+        {
+          "date": "2025-07-10",
+          "amount": "3897.60",
+          "percent": "100%"
+        }
+      ]
+    },
+    "instructions": {
+      "key": "card+online",
+      "detail": "Card, Link"
+    }
+  },
+  "totals": {
+    "sum": "3360.00",
+    "total": "3360.00",
+    "taxes": {
+      "categories": [
+        {
+          "code": "VAT",
+          "rates": [
+            {
+              "key": "standard",
+              "country": "MX",
+              "base": "3360.00",
+              "percent": "16.0%",
+              "amount": "537.60"
+            }
+          ],
+          "amount": "537.60"
+        }
+      ],
+      "sum": "537.60"
+    },
+    "tax": "537.60",
+    "total_with_tax": "3897.60",
+    "payable": "3897.60"
+  },
+  "meta": {
+    "stripe-document-id": "in_1RYN7YH4o6QqbU8hGDmIcfdb",
+    "stripe-document-type": "invoice"
+  }
+}

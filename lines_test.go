@@ -194,6 +194,29 @@ func TestSeveralLines(t *testing.T) {
 			},
 			UnitAmountExcludingTax: 8507,
 		},
+		{
+			ID:                 "il_1Qf1WLQhcl5B85YleQz6Zusf",
+			Amount:             5000,
+			AmountExcludingTax: 5000,
+			Currency:           stripe.CurrencyEUR,
+			Quantity:           1,
+			Price: &stripe.Price{
+				BillingScheme: stripe.PriceBillingSchemePerUnit,
+				Currency:      stripe.CurrencyEUR,
+				TaxBehavior:   stripe.PriceTaxBehaviorExclusive,
+				UnitAmount:    5000,
+				Product: &stripe.Product{
+					Metadata: map[string]string{
+						"gobl-item-foo": "bar",
+					},
+				},
+			},
+			Period: &stripe.Period{
+				Start: 1736351413,
+				End:   1739029692,
+			},
+			Description: "Line with extension",
+		},
 	}
 
 	expected := []*bill.Line{
@@ -256,6 +279,18 @@ func TestSeveralLines(t *testing.T) {
 					Percent:  num.NewPercentage(210, 3),
 				},
 			},
+		},
+		{
+			Quantity: num.MakeAmount(1, 0),
+			Item: &org.Item{
+				Name:     "Line with extension",
+				Currency: currency.EUR,
+				Price:    num.NewAmount(5000, 2),
+				Ext: tax.Extensions{
+					"foo": "bar",
+				},
+			},
+			Taxes: nil,
 		},
 	}
 

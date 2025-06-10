@@ -61,6 +61,6 @@ func extractTaxCat(taxType stripe.TaxRateTaxType) cbc.Code {
 	case stripe.TaxRateTaxTypeGST:
 		return tax.CategoryGST
 	default:
-		return ""
+		return tax.CategoryVAT // Default to VAT if no category is found.
 	}
 }
