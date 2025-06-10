@@ -284,7 +284,7 @@ func FromCustomer(customer *stripe.Customer) *org.Party {
 		}
 	}
 
-	if customer.Metadata != nil {
+	if len(customer.Metadata) != 0 {
 		customerParty.Ext = newExtensionsWithPrefix(customer.Metadata, customDataCustomerExt)
 	}
 

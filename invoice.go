@@ -76,7 +76,7 @@ func FromInvoice(doc *stripe.Invoice) (*bill.Invoice, error) {
 	inv.ExchangeRates = newExchangeRates(inv.Currency, regimeDef)
 
 	inv.Supplier = newSupplierFromInvoice(doc)
-	if doc.Customer != nil && doc.Customer.Metadata != nil {
+	if doc.Customer != nil && len(doc.Customer.Metadata) != 0 {
 		inv.Customer = FromCustomer(doc.Customer)
 	} else {
 		inv.Customer = newCustomerFromInvoice(doc)
