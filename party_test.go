@@ -329,7 +329,6 @@ func TestFromCustomer(t *testing.T) {
 					Country: "DE",
 					Code:    "282741168",
 				},
-				Ext: tax.Extensions{},
 			},
 		},
 		{

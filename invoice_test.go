@@ -85,7 +85,7 @@ func completeStripeInvoice() *stripe.Invoice {
 			State:      "BE",
 		},
 		CustomerEmail: "me.unselfish@me.com",
-		CustomerName:  "Test Customer",
+		CustomerName:  "Test Customer Invoice",
 		CustomerPhone: "+4915155555555",
 		CustomerShipping: &stripe.ShippingDetails{
 			Address: &stripe.Address{
@@ -366,6 +366,69 @@ func TestCustomerWithMetadata(t *testing.T) {
 	assert.Equal(t, cbc.Code("my-value"), c.Ext[cbc.Key("my-key")])
 	_, ok := c.Ext[cbc.Key("another-key")]
 	assert.False(t, ok)
+}
+
+func TestCustomerMetadataCondition(t *testing.T) {
+	t.Run("customer with empty metadata uses fallback", func(t *testing.T) {
+		s := completeStripeInvoice()
+		s.Customer = validStripeCustomer()
+		s.Customer.Metadata = map[string]string{} // Empty metadata
+
+		gi, err := goblstripe.FromInvoice(s)
+		require.NoError(t, err)
+
+		// Should use newCustomerFromInvoice fallback
+		c := gi.Customer
+		require.NotNil(t, c)
+		assert.Equal(t, "Test Customer Invoice", c.Name)
+	})
+
+	t.Run("customer with nil metadata uses fallback", func(t *testing.T) {
+		s := completeStripeInvoice()
+		s.Customer = validStripeCustomer()
+		s.Customer.Metadata = nil // Nil metadata
+
+		gi, err := goblstripe.FromInvoice(s)
+		require.NoError(t, err)
+
+		// Should use newCustomerFromInvoice fallback
+		c := gi.Customer
+		require.NotNil(t, c)
+		assert.Equal(t, "Test Customer Invoice", c.Name)
+	})
+
+	t.Run("customer with non-empty metadata uses FromCustomer", func(t *testing.T) {
+		s := minimalStripeInvoice()
+		s.Customer = validStripeCustomer()
+		s.Customer.Metadata = map[string]string{
+			"gobl-customer-my-key": "my-value",
+		}
+
+		gi, err := goblstripe.FromInvoice(s)
+		require.NoError(t, err)
+
+		// Should use FromCustomer
+		c := gi.Customer
+		require.NotNil(t, c)
+		assert.Equal(t, "Test Customer", c.Name)
+
+		// Check that metadata was processed
+		require.NotNil(t, c.Ext)
+		assert.Equal(t, cbc.Code("my-value"), c.Ext[cbc.Key("my-key")])
+	})
+
+	t.Run("nil customer uses fallback", func(t *testing.T) {
+		s := completeStripeInvoice()
+		s.Customer = nil
+
+		gi, err := goblstripe.FromInvoice(s)
+		require.NoError(t, err)
+
+		// Should use newCustomerFromInvoice fallback
+		c := gi.Customer
+		require.NotNil(t, c)
+		assert.Equal(t, "Test Customer Invoice", c.Name)
+	})
 }
 
 func TestCalculate(t *testing.T) {
