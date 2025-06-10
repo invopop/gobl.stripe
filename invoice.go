@@ -76,7 +76,11 @@ func FromInvoice(doc *stripe.Invoice) (*bill.Invoice, error) {
 	inv.ExchangeRates = newExchangeRates(inv.Currency, regimeDef)
 
 	inv.Supplier = newSupplierFromInvoice(doc)
-	inv.Customer = newCustomerFromInvoice(doc)
+	if doc.Customer != nil && doc.Customer.Metadata != nil {
+		inv.Customer = FromCustomer(doc.Customer)
+	} else {
+		inv.Customer = newCustomerFromInvoice(doc)
+	}
 	if doc.CustomerTaxExempt != nil {
 		inv.Tags = newTags(*doc.CustomerTaxExempt)
 	}

@@ -63,11 +63,18 @@ func newQuantityFromInvoiceLine(line *stripe.InvoiceLineItem) num.Amount {
 // fromInvoiceLineToItem creates a new GOBL item from a Stripe invoice line item.
 func fromInvoiceLineToItem(line *stripe.InvoiceLineItem) *org.Item {
 	price := resolveInvoiceLinePrice(line)
-	return &org.Item{
+
+	item := &org.Item{
 		Name:     setItemName(line),
 		Currency: currency.Code(strings.ToUpper(string(line.Currency))),
 		Price:    &price,
 	}
+
+	if line.Price != nil && line.Price.Product != nil && line.Price.Product.Metadata != nil {
+		item.Ext = newExtensionsWithPrefix(line.Price.Product.Metadata, customDataItemExt)
+	}
+
+	return item
 }
 
 // setItemName sets the name of the item for a GOBL invoice line item.

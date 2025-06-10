@@ -329,6 +329,7 @@ func TestFromCustomer(t *testing.T) {
 					Country: "DE",
 					Code:    "282741168",
 				},
+				Ext: tax.Extensions{},
 			},
 		},
 		{
@@ -338,6 +339,21 @@ func TestFromCustomer(t *testing.T) {
 			},
 			expected: &org.Party{
 				Name: "Test Company",
+			},
+		},
+		{
+			name: "with extensions",
+			input: &stripe.Customer{
+				Name: "Test Company",
+				Metadata: map[string]string{
+					"gobl-customer-foo": "bar",
+				},
+			},
+			expected: &org.Party{
+				Name: "Test Company",
+				Ext: tax.Extensions{
+					"foo": "bar",
+				},
 			},
 		},
 	}
