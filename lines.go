@@ -175,7 +175,7 @@ func FromInvoiceTaxAmountToTaxCombo(taxAmount *stripe.InvoiceTotalTaxAmount) *ta
 		return nil
 	}
 	tc := &tax.Combo{
-		Category: extractTaxCat(taxAmount.TaxRate.TaxType),
+		Category: extractTaxCat(taxAmount.TaxRate),
 		Country:  l10n.TaxCountryCode(taxAmount.TaxRate.Country),
 	}
 
@@ -294,7 +294,7 @@ func FromCreditNoteTaxAmountToTaxCombo(taxAmount *stripe.CreditNoteTaxAmount) *t
 	}
 
 	tc := &tax.Combo{
-		Category: extractTaxCat(taxAmount.TaxRate.TaxType),
+		Category: extractTaxCat(taxAmount.TaxRate),
 		Country:  l10n.TaxCountryCode(taxAmount.TaxRate.Country),
 	}
 
