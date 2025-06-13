@@ -1,0 +1,80 @@
+{
+    "uuid": "019769a5-729d-760e-a1c6-a6f9e49d042d",
+    "type": "standard",
+    "series": "E486556A",
+    "code": "0120",
+    "issue_date": "2025-06-13",
+    "op_date": "2025-06-13",
+    "currency": "EUR",
+    "tax": {
+      "prices_include": "VAT"
+    },
+    "supplier": {
+      "name": "Invopop SL",
+      "tax_id": {
+        "country": "ES",
+        "code": "B85905495"
+      }
+    },
+    "customer": {
+      "name": "Pablo Menendez",
+      "tax_id": {
+        "country": "MX",
+        "code": "POL220712JY2"
+      },
+      "addresses": [
+        {
+          "country": "ES"
+        }
+      ],
+      "emails": [
+        {
+          "addr": "pablo.menendez@invopop.com"
+        }
+      ]
+    },
+    "lines": [
+      {
+        "i": 0,
+        "quantity": "1",
+        "item": {
+          "name": "Burger Cangreburger",
+          "currency": "EUR",
+          "price": "10.00"
+        },
+        "taxes": [
+          {
+            "cat": "VAT",
+            "country": "ES",
+            "rate": "zero"
+          }
+        ]
+      }
+    ],
+    "ordering": {
+      "period": {
+        "start": "2025-06-13",
+        "end": "2025-06-13"
+      }
+    },
+    "payment": {
+      "terms": {
+        "due_dates": [
+          {
+            "date": "2025-07-13",
+            "amount": "0",
+            "percent": "100%"
+          }
+        ]
+      },
+      "instructions": {
+        "key": "online+card+online+online+online+online+online+direct-debit+online+online",
+        "detail": "Bancontact, Card, EPS, giropay, iDEAL, Przelewy24, PayPal, SEPA Direct Debit, Sofort, WeChat Pay"
+      }
+    },
+    "totals": null,
+    "meta": {
+      "stripe-document-id": "in_1RZYOBHlPoaS9ikaEBdWXm3R",
+      "stripe-document-type": "invoice"
+    }
+  }
