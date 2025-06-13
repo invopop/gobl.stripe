@@ -53,6 +53,9 @@ func taxFromCreditNoteTaxAmounts(taxAmounts []*stripe.CreditNoteTaxAmount) *bill
 
 // extractTaxCat extracts the tax category from a Stripe tax type.
 func extractTaxCat(taxType *stripe.TaxRate) cbc.Code {
+	if taxType == nil {
+		return ""
+	}
 	switch taxType.TaxType {
 	case stripe.TaxRateTaxTypeVAT:
 		return tax.CategoryVAT
