@@ -15,14 +15,14 @@ func taxFromInvoiceTaxAmounts(taxAmounts []*stripe.InvoiceTotalTaxAmount) *bill.
 		return nil
 	}
 
-	if taxAmounts[0].TaxRate.TaxType == "" {
+	if taxAmounts[0].TaxRate.TaxType == "" && taxAmounts[0].TaxRate.DisplayName == "" {
 		return nil
 	}
 
 	// We just check the first tax
 	if taxAmounts[0].Inclusive {
 		t = new(bill.Tax)
-		t.PricesInclude = extractTaxCat(taxAmounts[0].TaxRate.TaxType)
+		t.PricesInclude = extractTaxCat(taxAmounts[0].TaxRate)
 		return t
 	}
 
@@ -37,30 +37,43 @@ func taxFromCreditNoteTaxAmounts(taxAmounts []*stripe.CreditNoteTaxAmount) *bill
 		return nil
 	}
 
-	if taxAmounts[0].TaxRate.TaxType == "" {
+	if taxAmounts[0].TaxRate.TaxType == "" && taxAmounts[0].TaxRate.DisplayName == "" {
 		return nil
 	}
 
 	// We just check the first tax
 	if taxAmounts[0].Inclusive {
 		t = new(bill.Tax)
-		t.PricesInclude = extractTaxCat(taxAmounts[0].TaxRate.TaxType)
+		t.PricesInclude = extractTaxCat(taxAmounts[0].TaxRate)
 		return t
 	}
 
 	return nil
 }
 
-// extractTaxCat extracts the tax category from a Stripe tax type.
-func extractTaxCat(taxType stripe.TaxRateTaxType) cbc.Code {
-	switch taxType {
+// extractTaxCat extracts the tax category from a Stripe tax rate.
+// If the tax type is not set, we use the display name to determine the tax category.
+func extractTaxCat(taxType *stripe.TaxRate) cbc.Code {
+	if taxType == nil {
+		return ""
+	}
+	switch taxType.TaxType {
 	case stripe.TaxRateTaxTypeVAT:
 		return tax.CategoryVAT
 	case stripe.TaxRateTaxTypeSalesTax:
 		return tax.CategoryST
 	case stripe.TaxRateTaxTypeGST:
 		return tax.CategoryGST
-	default:
-		return tax.CategoryVAT // Default to VAT if no category is found.
 	}
+
+	switch taxType.DisplayName {
+	case "VAT", "IVA":
+		return tax.CategoryVAT
+	case "Sales Tax":
+		return tax.CategoryST
+	case "GST":
+		return tax.CategoryGST
+	}
+
+	return ""
 }

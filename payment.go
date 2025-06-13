@@ -116,7 +116,9 @@ func newPaymentInstructions(doc *stripe.Invoice) *pay.Instructions {
 					instructions.Key = def.MeansKey
 					instructions.Detail = def.Description
 				} else {
-					instructions.Key = instructions.Key.With(def.MeansKey)
+					if !instructions.Key.Has(def.MeansKey) {
+						instructions.Key = instructions.Key.With(def.MeansKey)
+					}
 					instructions.Detail += ", " + def.Description
 				}
 			}
