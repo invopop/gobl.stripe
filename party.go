@@ -232,7 +232,7 @@ func ToCustomerParams(party *org.Party) *stripe.CustomerParams {
 }
 
 // FromCustomer converts a stripe customer object into a GOBL org.Party.
-func FromCustomer(customer *stripe.Customer) *org.Party {
+func FromCustomer(customer *stripe.Customer, regimeCountry l10n.TaxCountryCode) *org.Party {
 	/*
 		There are 2 options to get the customer from an invoice:
 		- Info already in the invoice in fields like customer_name, customer_email, etc.
@@ -288,6 +288,15 @@ func FromCustomer(customer *stripe.Customer) *org.Party {
 		customerParty.Ext = newExtensionsWithPrefix(customer.Metadata, customDataCustomerExt)
 	}
 
+	// For Italy, if the tax id is empty, we jsut need to supply the country code
+	if regimeCountry == l10n.IT.Tax() {
+		if customerParty != nil && customerParty.TaxID == nil && customerParty.Identities == nil && customerParty.Addresses != nil && len(customerParty.Addresses) > 0 && customerParty.Addresses[0].Country != "IT" {
+			customerParty.TaxID = &tax.Identity{
+				Country: l10n.TaxCountryCode(customerParty.Addresses[0].Country),
+			}
+		}
+	}
+
 	return customerParty
 }
 
@@ -299,6 +308,7 @@ func newCustomerFromInvoice(doc *stripe.Invoice) *org.Party {
 	*/
 
 	var customerParty *org.Party
+
 	if doc.CustomerAddress != nil {
 		customerParty = new(org.Party)
 		customerParty.Addresses = append(customerParty.Addresses, FromAddress(doc.CustomerAddress))
@@ -339,6 +349,15 @@ func newCustomerFromInvoice(doc *stripe.Invoice) *org.Party {
 				customerParty.Identities[0] = FromTaxIDToOrg(stripeTaxID)
 			} else {
 				customerParty.TaxID = FromTaxIDToTax(stripeTaxID)
+			}
+		}
+	}
+
+	// Special case for Italy, if the tax id is empty, we jsut need to supply the country code
+	if doc.AccountCountry == "IT" {
+		if customerParty != nil && customerParty.TaxID == nil && customerParty.Identities == nil && customerParty.Addresses != nil && len(customerParty.Addresses) > 0 && customerParty.Addresses[0].Country != "IT" {
+			customerParty.TaxID = &tax.Identity{
+				Country: l10n.TaxCountryCode(customerParty.Addresses[0].Country),
 			}
 		}
 	}

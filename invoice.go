@@ -77,7 +77,7 @@ func FromInvoice(doc *stripe.Invoice) (*bill.Invoice, error) {
 
 	inv.Supplier = newSupplierFromInvoice(doc)
 	if doc.Customer != nil && len(doc.Customer.Metadata) != 0 {
-		inv.Customer = FromCustomer(doc.Customer)
+		inv.Customer = FromCustomer(doc.Customer, regimeDef.Country)
 	} else {
 		inv.Customer = newCustomerFromInvoice(doc)
 	}
@@ -131,7 +131,7 @@ func FromCreditNote(doc *stripe.CreditNote) (*bill.Invoice, error) {
 
 	inv.Supplier = newSupplierFromInvoice(doc.Invoice)
 	if doc.Customer != nil {
-		inv.Customer = FromCustomer(doc.Customer)
+		inv.Customer = FromCustomer(doc.Customer, regimeDef.Country)
 	}
 
 	inv.Lines = FromCreditNoteLines(doc.Lines.Data, inv.Currency)

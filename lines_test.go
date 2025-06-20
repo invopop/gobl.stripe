@@ -680,3 +680,353 @@ func TestFromCNTaxAmountsToTaxSet(t *testing.T) {
 		})
 	}
 }
+
+// Test Tax Exemption Logic
+
+func TestFromInvoiceLineWithExemptTax(t *testing.T) {
+	tests := []struct {
+		name     string
+		metadata map[string]string
+		expected tax.Set
+	}{
+		{
+			name: "exempt with it-sdi-exempt extension",
+			metadata: map[string]string{
+				"gobl-line-vat-it-sdi-exempt": "N2.2",
+			},
+			expected: tax.Set{
+				{
+					Category: tax.CategoryVAT,
+					Rate:     tax.RateExempt,
+					Ext: tax.Extensions{
+						"it-sdi-exempt": "N2.2",
+					},
+				},
+			},
+		},
+		{
+			name: "exempt with multiple extensions",
+			metadata: map[string]string{
+				"gobl-line-vat-exempt-reason": "export",
+				"gobl-line-vat-code":          "B2B",
+			},
+			expected: tax.Set{
+				{
+					Category: tax.CategoryVAT,
+					Rate:     tax.RateExempt,
+					Ext: tax.Extensions{
+						"exempt-reason": "export",
+						"code":          "B2B",
+					},
+				},
+			},
+		},
+		{
+			name: "exempt with partial exempt key",
+			metadata: map[string]string{
+				"gobl-line-vat-tax-exempt": "reverse-charge",
+			},
+			expected: tax.Set{
+				{
+					Category: tax.CategoryVAT,
+					Rate:     tax.RateExempt,
+					Ext: tax.Extensions{
+						"tax-exempt": "reverse-charge",
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			line := &stripe.InvoiceLineItem{
+				ID:           "il_test_exempt",
+				Amount:       10000,
+				Currency:     stripe.CurrencyEUR,
+				Quantity:     1,
+				Description:  "Test exempt line",
+				Discountable: true,
+				Price: &stripe.Price{
+					BillingScheme: stripe.PriceBillingSchemePerUnit,
+					Currency:      stripe.CurrencyEUR,
+					UnitAmount:    10000,
+					Product: &stripe.Product{
+						Name:     "Test Product",
+						Metadata: tt.metadata,
+					},
+				},
+				TaxAmounts: []*stripe.InvoiceTotalTaxAmount{
+					{
+						Amount:    2100,
+						Inclusive: false,
+						TaxRate: &stripe.TaxRate{
+							TaxType:             stripe.TaxRateTaxTypeVAT,
+							Country:             "ES",
+							EffectivePercentage: 21.0,
+							Percentage:          21.0,
+						},
+					},
+				},
+			}
+
+			result := goblstripe.FromInvoiceLine(line)
+
+			assert.NotNil(t, result, "Line conversion should not return nil")
+			assert.Equal(t, tt.expected, result.Taxes, "Tax set should match expected exempt taxes")
+			assert.Equal(t, currency.EUR, result.Item.Currency, "Item currency should match")
+			assert.Equal(t, 100.0, result.Item.Price.Float64(), "Item price should match")
+		})
+	}
+}
+
+func TestFromInvoiceLineWithNonExemptMetadata(t *testing.T) {
+	tests := []struct {
+		name     string
+		metadata map[string]string
+	}{
+		{
+			name: "non-exempt vat metadata",
+			metadata: map[string]string{
+				"gobl-line-vat-category": "standard",
+				"gobl-line-vat-rate":     "21",
+			},
+		},
+		{
+			name: "no vat metadata",
+			metadata: map[string]string{
+				"gobl-item-category": "service",
+				"other-field":        "value",
+			},
+		},
+		{
+			name:     "empty metadata",
+			metadata: map[string]string{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			line := &stripe.InvoiceLineItem{
+				ID:           "il_test_non_exempt",
+				Amount:       10000,
+				Currency:     stripe.CurrencyEUR,
+				Quantity:     1,
+				Description:  "Test non-exempt line",
+				Discountable: true,
+				Price: &stripe.Price{
+					BillingScheme: stripe.PriceBillingSchemePerUnit,
+					Currency:      stripe.CurrencyEUR,
+					UnitAmount:    10000,
+					Product: &stripe.Product{
+						Name:     "Test Product",
+						Metadata: tt.metadata,
+					},
+				},
+				TaxAmounts: []*stripe.InvoiceTotalTaxAmount{
+					{
+						Amount:    2100,
+						Inclusive: false,
+						TaxRate: &stripe.TaxRate{
+							TaxType:             stripe.TaxRateTaxTypeVAT,
+							Country:             "ES",
+							EffectivePercentage: 21.0,
+							Percentage:          21.0,
+						},
+					},
+				},
+			}
+
+			result := goblstripe.FromInvoiceLine(line)
+
+			assert.NotNil(t, result, "Line conversion should not return nil")
+			// Should have normal tax processing, not exempt
+			assert.Equal(t, 1, len(result.Taxes), "Should have one tax combo")
+			assert.Equal(t, tax.CategoryVAT, result.Taxes[0].Category, "Tax category should be VAT")
+			assert.Equal(t, l10n.ES.Tax(), result.Taxes[0].Country, "Tax country should be ES")
+			assert.Equal(t, num.NewPercentage(210, 3), result.Taxes[0].Percent, "Tax percentage should be 21%")
+			assert.NotEqual(t, tax.RateExempt, result.Taxes[0].Rate, "Tax rate should not be exempt")
+		})
+	}
+}
+
+func TestFromInvoiceLineExemptEdgeCases(t *testing.T) {
+	tests := []struct {
+		name string
+		line func() *stripe.InvoiceLineItem
+	}{
+		{
+			name: "nil price",
+			line: func() *stripe.InvoiceLineItem {
+				line := validInvoiceLine()
+				line.Price = nil
+				return line
+			},
+		},
+		{
+			name: "nil product",
+			line: func() *stripe.InvoiceLineItem {
+				line := validInvoiceLine()
+				line.Price = &stripe.Price{
+					BillingScheme: stripe.PriceBillingSchemePerUnit,
+					Currency:      stripe.CurrencyEUR,
+					UnitAmount:    10000,
+					Product:       nil,
+				}
+				return line
+			},
+		},
+		{
+			name: "nil metadata",
+			line: func() *stripe.InvoiceLineItem {
+				line := validInvoiceLine()
+				line.Price = &stripe.Price{
+					BillingScheme: stripe.PriceBillingSchemePerUnit,
+					Currency:      stripe.CurrencyEUR,
+					UnitAmount:    10000,
+					Product: &stripe.Product{
+						Name:     "Test Product",
+						Metadata: nil,
+					},
+				}
+				return line
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			line := tt.line()
+			result := goblstripe.FromInvoiceLine(line)
+
+			assert.NotNil(t, result, "Line conversion should not return nil")
+			// Should fall through to normal tax processing
+			assert.Equal(t, 1, len(result.Taxes), "Should have one tax combo from normal processing")
+			assert.Equal(t, tax.CategoryVAT, result.Taxes[0].Category, "Tax category should be VAT")
+			assert.NotEqual(t, tax.RateExempt, result.Taxes[0].Rate, "Tax rate should not be exempt")
+		})
+	}
+}
+
+func TestFromInvoiceLineExemptWithNoTaxAmounts(t *testing.T) {
+	line := &stripe.InvoiceLineItem{
+		ID:           "il_test_exempt_no_tax",
+		Amount:       10000,
+		Currency:     stripe.CurrencyEUR,
+		Quantity:     1,
+		Description:  "Test exempt line with no tax amounts",
+		Discountable: true,
+		Price: &stripe.Price{
+			BillingScheme: stripe.PriceBillingSchemePerUnit,
+			Currency:      stripe.CurrencyEUR,
+			UnitAmount:    10000,
+			Product: &stripe.Product{
+				Name: "Test Product",
+				Metadata: map[string]string{
+					"gobl-line-vat-it-sdi-exempt": "N2.2",
+				},
+			},
+		},
+		TaxAmounts: []*stripe.InvoiceTotalTaxAmount{}, // No tax amounts
+	}
+
+	result := goblstripe.FromInvoiceLine(line)
+
+	assert.NotNil(t, result, "Line conversion should not return nil")
+	assert.Equal(t, 1, len(result.Taxes), "Should have one exempt tax combo")
+	assert.Equal(t, tax.CategoryVAT, result.Taxes[0].Category, "Tax category should be VAT")
+	assert.Equal(t, tax.RateExempt, result.Taxes[0].Rate, "Tax rate should be exempt")
+	assert.Equal(t, tax.Extensions{"it-sdi-exempt": "N2.2"}, result.Taxes[0].Ext, "Extensions should match")
+}
+
+func TestFromInvoiceLineExemptCaseSensitive(t *testing.T) {
+	tests := []struct {
+		name        string
+		metadataKey string
+		shouldMatch bool
+	}{
+		{
+			name:        "lowercase exempt",
+			metadataKey: "gobl-line-vat-exempt-reason",
+			shouldMatch: true,
+		},
+		{
+			name:        "uppercase EXEMPT",
+			metadataKey: "gobl-line-vat-EXEMPT-code",
+			shouldMatch: false, // strings.Contains is case-sensitive
+		},
+		{
+			name:        "mixed case ExEmPt",
+			metadataKey: "gobl-line-vat-ExEmPt-type",
+			shouldMatch: false, // strings.Contains is case-sensitive
+		},
+		{
+			name:        "exempt at beginning",
+			metadataKey: "gobl-line-vat-exempt",
+			shouldMatch: true,
+		},
+		{
+			name:        "exempt in middle",
+			metadataKey: "gobl-line-vat-tax-exempt-reason",
+			shouldMatch: true,
+		},
+		{
+			name:        "exempt at end",
+			metadataKey: "gobl-line-vat-is-exempt",
+			shouldMatch: true,
+		},
+		{
+			name:        "no exempt in key",
+			metadataKey: "gobl-line-vat-standard-rate",
+			shouldMatch: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			line := &stripe.InvoiceLineItem{
+				ID:           "il_test_case_sensitive",
+				Amount:       10000,
+				Currency:     stripe.CurrencyEUR,
+				Quantity:     1,
+				Description:  "Test case sensitivity",
+				Discountable: true,
+				Price: &stripe.Price{
+					BillingScheme: stripe.PriceBillingSchemePerUnit,
+					Currency:      stripe.CurrencyEUR,
+					UnitAmount:    10000,
+					Product: &stripe.Product{
+						Name: "Test Product",
+						Metadata: map[string]string{
+							tt.metadataKey: "test-value",
+						},
+					},
+				},
+				TaxAmounts: []*stripe.InvoiceTotalTaxAmount{
+					{
+						Amount:    2100,
+						Inclusive: false,
+						TaxRate: &stripe.TaxRate{
+							TaxType:             stripe.TaxRateTaxTypeVAT,
+							Country:             "ES",
+							EffectivePercentage: 21.0,
+							Percentage:          21.0,
+						},
+					},
+				},
+			}
+
+			result := goblstripe.FromInvoiceLine(line)
+
+			assert.NotNil(t, result, "Line conversion should not return nil")
+
+			if tt.shouldMatch {
+				assert.Equal(t, 1, len(result.Taxes), "Should have one exempt tax combo")
+				assert.Equal(t, tax.RateExempt, result.Taxes[0].Rate, "Tax rate should be exempt")
+			} else {
+				assert.Equal(t, 1, len(result.Taxes), "Should have one tax combo")
+				assert.NotEqual(t, tax.RateExempt, result.Taxes[0].Rate, "Tax rate should not be exempt")
+			}
+		})
+	}
+}

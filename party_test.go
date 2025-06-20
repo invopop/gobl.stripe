@@ -359,7 +359,7 @@ func TestFromCustomer(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := goblstripe.FromCustomer(tt.input)
+			result := goblstripe.FromCustomer(tt.input, l10n.DE.Tax())
 			assert.Equal(t, tt.expected, result)
 		})
 	}
@@ -452,6 +452,163 @@ func TestFromTelephone(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := goblstripe.FromTelephone(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestFromCustomerItalyTaxIDLogic(t *testing.T) {
+	tests := []struct {
+		name          string
+		customer      *stripe.Customer
+		regimeCountry l10n.TaxCountryCode
+		expected      *org.Party
+	}{
+		{
+			name: "Italy regime with foreign customer - should add tax ID with customer country",
+			customer: &stripe.Customer{
+				Name: "Foreign Customer",
+				Address: &stripe.Address{
+					Country: "DE",
+					City:    "Berlin",
+				},
+				// No TaxIDs provided
+			},
+			regimeCountry: l10n.IT.Tax(),
+			expected: &org.Party{
+				Name: "Foreign Customer",
+				Addresses: []*org.Address{
+					{
+						Country:  "DE",
+						Locality: "Berlin",
+					},
+				},
+				TaxID: &tax.Identity{
+					Country: l10n.DE.Tax(),
+				},
+			},
+		},
+		{
+			name: "Italy regime with Italian customer - should not add tax ID",
+			customer: &stripe.Customer{
+				Name: "Italian Customer",
+				Address: &stripe.Address{
+					Country: "IT",
+					City:    "Rome",
+				},
+			},
+			regimeCountry: l10n.IT.Tax(),
+			expected: &org.Party{
+				Name: "Italian Customer",
+				Addresses: []*org.Address{
+					{
+						Country:  "IT",
+						Locality: "Rome",
+					},
+				},
+			},
+		},
+		{
+			name: "Non-Italy regime with foreign customer - should not add tax ID",
+			customer: &stripe.Customer{
+				Name: "Foreign Customer",
+				Address: &stripe.Address{
+					Country: "DE",
+					City:    "Berlin",
+				},
+			},
+			regimeCountry: l10n.DE.Tax(),
+			expected: &org.Party{
+				Name: "Foreign Customer",
+				Addresses: []*org.Address{
+					{
+						Country:  "DE",
+						Locality: "Berlin",
+					},
+				},
+			},
+		},
+		{
+			name: "Italy regime with existing tax ID - should not override",
+			customer: &stripe.Customer{
+				Name: "Customer with Tax ID",
+				Address: &stripe.Address{
+					Country: "DE",
+					City:    "Berlin",
+				},
+				TaxIDs: &stripe.TaxIDList{
+					Data: []*stripe.TaxID{
+						{
+							Type:  "eu_vat",
+							Value: "DE123456789",
+						},
+					},
+				},
+			},
+			regimeCountry: l10n.IT.Tax(),
+			expected: &org.Party{
+				Name: "Customer with Tax ID",
+				Addresses: []*org.Address{
+					{
+						Country:  "DE",
+						Locality: "Berlin",
+					},
+				},
+				TaxID: &tax.Identity{
+					Country: "DE",
+					Code:    "123456789",
+				},
+			},
+		},
+		{
+			name: "Italy regime with existing org identity - should not override",
+			customer: &stripe.Customer{
+				Name: "Customer with Org Identity",
+				Address: &stripe.Address{
+					Country: "DE",
+					City:    "Berlin",
+				},
+				TaxIDs: &stripe.TaxIDList{
+					Data: []*stripe.TaxID{
+						{
+							Type:  "de_stn",
+							Value: "123456789",
+						},
+					},
+				},
+			},
+			regimeCountry: l10n.IT.Tax(),
+			expected: &org.Party{
+				Name: "Customer with Org Identity",
+				Addresses: []*org.Address{
+					{
+						Country:  "DE",
+						Locality: "Berlin",
+					},
+				},
+				Identities: []*org.Identity{
+					{
+						Key:  de.IdentityKeyTaxNumber,
+						Code: "123456789",
+					},
+				},
+			},
+		},
+		{
+			name: "Italy regime with no address - should not add tax ID",
+			customer: &stripe.Customer{
+				Name: "Customer without Address",
+			},
+			regimeCountry: l10n.IT.Tax(),
+			expected: &org.Party{
+				Name: "Customer without Address",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := goblstripe.FromCustomer(tt.customer, tt.regimeCountry)
 			assert.Equal(t, tt.expected, result)
 		})
 	}

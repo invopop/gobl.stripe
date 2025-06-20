@@ -10,6 +10,7 @@ import (
 const (
 	customDataItemExt     = "gobl-item-"
 	customDataCustomerExt = "gobl-customer-"
+	customDataVATExt      = "gobl-line-vat-"
 )
 
 // newExtensionsWithPrefix checks if the key starts with the provided prefix and returns a
