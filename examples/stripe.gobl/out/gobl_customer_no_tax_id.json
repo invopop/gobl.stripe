@@ -1,6 +1,6 @@
 {
   "$regime": "IT",
-  "uuid": "01978c97-22bf-7b78-ac0a-ba33b972e884",
+  "uuid": "01978db2-6b2c-7991-9871-9c21bbd75361",
   "type": "standard",
   "series": "E486556A",
   "code": "0039",
@@ -44,15 +44,6 @@
         "price": "5.00"
       },
       "sum": "5.00",
-      "taxes": [
-        {
-          "cat": "VAT",
-          "rate": "exempt",
-          "ext": {
-            "it-sdi-exempt": "N2.2"
-          }
-        }
-      ],
       "total": "5.00"
     }
   ],
@@ -65,25 +56,6 @@
   "totals": {
     "sum": "5.00",
     "total": "5.00",
-    "taxes": {
-      "categories": [
-        {
-          "code": "VAT",
-          "rates": [
-            {
-              "key": "exempt",
-              "ext": {
-                "it-sdi-exempt": "N2.2"
-              },
-              "base": "5.00",
-              "amount": "0.00"
-            }
-          ],
-          "amount": "0.00"
-        }
-      ],
-      "sum": "0.00"
-    },
     "tax": "0.00",
     "total_with_tax": "5.00",
     "payable": "5.00"

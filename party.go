@@ -283,11 +283,7 @@ func FromCustomer(customer *stripe.Customer) *org.Party {
 		}
 		customerParty.Addresses = append(customerParty.Addresses, FromAddress(customer.Address))
 
-		if customerParty.TaxID == nil && customerParty.Identities == nil {
-			customerParty.TaxID = &tax.Identity{
-				Country: l10n.TaxCountryCode(customer.Address.Country),
-			}
-		}
+		ensureDefaultTaxID(customerParty, l10n.ISOCountryCode(customer.Address.Country))
 	}
 
 	if len(customer.Metadata) != 0 {
@@ -350,14 +346,19 @@ func newCustomerFromInvoice(doc *stripe.Invoice) *org.Party {
 		}
 		customerParty.Addresses = append(customerParty.Addresses, FromAddress(doc.CustomerAddress))
 
-		if customerParty.TaxID == nil && customerParty.Identities == nil {
-			customerParty.TaxID = &tax.Identity{
-				Country: l10n.TaxCountryCode(customerParty.Addresses[0].Country),
-			}
-		}
+		ensureDefaultTaxID(customerParty, l10n.ISOCountryCode(customerParty.Addresses[0].Country))
 	}
 
 	return customerParty
+}
+
+// ensureDefaultTaxID creates a default tax identity if the party doesn't have a tax ID or identities
+func ensureDefaultTaxID(party *org.Party, countryCode l10n.ISOCountryCode) {
+	if party != nil && party.TaxID == nil && party.Identities == nil {
+		party.TaxID = &tax.Identity{
+			Country: l10n.TaxCountryCode(countryCode),
+		}
+	}
 }
 
 func newSupplierFromInvoice(doc *stripe.Invoice) *org.Party {

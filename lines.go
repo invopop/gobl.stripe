@@ -37,24 +37,6 @@ func FromInvoiceLine(line *stripe.InvoiceLineItem) *bill.Line {
 		invLine.Discounts = FromInvoiceLineDiscounts(line.Discounts)
 	}
 
-	// If there is an extension of exempt, we set VAT, tax category to exempt and skip the tax set
-	if line.Price != nil && line.Price.Product != nil && line.Price.Product.Metadata != nil {
-		ext := newExtensionsWithPrefix(line.Price.Product.Metadata, customDataVATExt)
-		// If one of the keys in extensions contains "exempt", we set VAT, tax category to exempt and skip the tax set
-		for key := range ext {
-			if strings.Contains(key.String(), "exempt") {
-				invLine.Taxes = tax.Set{}
-				taxCombo := &tax.Combo{
-					Category: tax.CategoryVAT,
-					Rate:     tax.RateExempt,
-					Ext:      ext,
-				}
-				invLine.Taxes = append(invLine.Taxes, taxCombo)
-				return invLine
-			}
-		}
-	}
-
 	invLine.Taxes = FromInvoiceTaxAmountsToTaxSet(line.TaxAmounts)
 
 	return invLine
