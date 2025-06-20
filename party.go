@@ -288,7 +288,7 @@ func FromCustomer(customer *stripe.Customer, regimeCountry l10n.TaxCountryCode) 
 		customerParty.Ext = newExtensionsWithPrefix(customer.Metadata, customDataCustomerExt)
 	}
 
-	// For Italy, if the tax id is empty, we jsut need to supply the country code
+	// For Italy, if the tax id is empty and the customer is not Italian, we set the tax id country code to the same as the address
 	if regimeCountry == l10n.IT.Tax() {
 		if customerParty != nil && customerParty.TaxID == nil && customerParty.Identities == nil && customerParty.Addresses != nil && len(customerParty.Addresses) > 0 && customerParty.Addresses[0].Country != "IT" {
 			customerParty.TaxID = &tax.Identity{
@@ -353,7 +353,7 @@ func newCustomerFromInvoice(doc *stripe.Invoice) *org.Party {
 		}
 	}
 
-	// Special case for Italy, if the tax id is empty, we jsut need to supply the country code
+	// Special case for Italy, if the tax id is empty and the customer is not Italian, we set the tax id country code to the same as the address
 	if doc.AccountCountry == "IT" {
 		if customerParty != nil && customerParty.TaxID == nil && customerParty.Identities == nil && customerParty.Addresses != nil && len(customerParty.Addresses) > 0 && customerParty.Addresses[0].Country != "IT" {
 			customerParty.TaxID = &tax.Identity{
