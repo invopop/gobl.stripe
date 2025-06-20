@@ -346,7 +346,7 @@ func newCustomerFromInvoice(doc *stripe.Invoice) *org.Party {
 		}
 		customerParty.Addresses = append(customerParty.Addresses, FromAddress(doc.CustomerAddress))
 
-		ensureDefaultTaxID(customerParty, l10n.ISOCountryCode(customerParty.Addresses[0].Country))
+		ensureDefaultTaxID(customerParty, l10n.ISOCountryCode(doc.CustomerAddress.Country))
 	}
 
 	return customerParty
