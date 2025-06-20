@@ -232,7 +232,7 @@ func ToCustomerParams(party *org.Party) *stripe.CustomerParams {
 }
 
 // FromCustomer converts a stripe customer object into a GOBL org.Party.
-func FromCustomer(customer *stripe.Customer, regimeCountry l10n.TaxCountryCode) *org.Party {
+func FromCustomer(customer *stripe.Customer) *org.Party {
 	/*
 		There are 2 options to get the customer from an invoice:
 		- Info already in the invoice in fields like customer_name, customer_email, etc.
@@ -245,15 +245,8 @@ func FromCustomer(customer *stripe.Customer, regimeCountry l10n.TaxCountryCode) 
 	*/
 	var customerParty *org.Party
 
-	if customer.Address != nil {
-		customerParty = new(org.Party)
-		customerParty.Addresses = append(customerParty.Addresses, FromAddress(customer.Address))
-	}
-
 	if customer.Email != "" {
-		if customerParty == nil {
-			customerParty = new(org.Party)
-		}
+		customerParty = new(org.Party)
 		customerParty.Emails = append(customerParty.Emails, FromEmail(customer.Email))
 	}
 
@@ -284,17 +277,21 @@ func FromCustomer(customer *stripe.Customer, regimeCountry l10n.TaxCountryCode) 
 		}
 	}
 
-	if len(customer.Metadata) != 0 {
-		customerParty.Ext = newExtensionsWithPrefix(customer.Metadata, customDataCustomerExt)
-	}
+	if customer.Address != nil {
+		if customerParty == nil {
+			customerParty = new(org.Party)
+		}
+		customerParty.Addresses = append(customerParty.Addresses, FromAddress(customer.Address))
 
-	// For Italy, if the tax id is empty and the customer is not Italian, we set the tax id country code to the same as the address
-	if regimeCountry == l10n.IT.Tax() {
-		if customerParty != nil && customerParty.TaxID == nil && customerParty.Identities == nil && customerParty.Addresses != nil && len(customerParty.Addresses) > 0 && customerParty.Addresses[0].Country != "IT" {
+		if customerParty.TaxID == nil && customerParty.Identities == nil {
 			customerParty.TaxID = &tax.Identity{
-				Country: l10n.TaxCountryCode(customerParty.Addresses[0].Country),
+				Country: l10n.TaxCountryCode(customer.Address.Country),
 			}
 		}
+	}
+
+	if len(customer.Metadata) != 0 {
+		customerParty.Ext = newExtensionsWithPrefix(customer.Metadata, customDataCustomerExt)
 	}
 
 	return customerParty
@@ -309,14 +306,8 @@ func newCustomerFromInvoice(doc *stripe.Invoice) *org.Party {
 
 	var customerParty *org.Party
 
-	if doc.CustomerAddress != nil {
-		customerParty = new(org.Party)
-		customerParty.Addresses = append(customerParty.Addresses, FromAddress(doc.CustomerAddress))
-	}
 	if doc.CustomerEmail != "" {
-		if customerParty == nil {
-			customerParty = new(org.Party)
-		}
+		customerParty = new(org.Party)
 		customerParty.Emails = append(customerParty.Emails, FromEmail(doc.CustomerEmail))
 	}
 
@@ -353,9 +344,13 @@ func newCustomerFromInvoice(doc *stripe.Invoice) *org.Party {
 		}
 	}
 
-	// Special case for Italy, if the tax id is empty and the customer is not Italian, we set the tax id country code to the same as the address
-	if doc.AccountCountry == "IT" {
-		if customerParty != nil && customerParty.TaxID == nil && customerParty.Identities == nil && customerParty.Addresses != nil && len(customerParty.Addresses) > 0 && customerParty.Addresses[0].Country != "IT" {
+	if doc.CustomerAddress != nil {
+		if customerParty == nil {
+			customerParty = new(org.Party)
+		}
+		customerParty.Addresses = append(customerParty.Addresses, FromAddress(doc.CustomerAddress))
+
+		if customerParty.TaxID == nil && customerParty.Identities == nil {
 			customerParty.TaxID = &tax.Identity{
 				Country: l10n.TaxCountryCode(customerParty.Addresses[0].Country),
 			}
