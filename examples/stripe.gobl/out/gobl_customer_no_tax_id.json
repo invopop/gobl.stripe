@@ -1,0 +1,67 @@
+{
+  "$regime": "IT",
+  "uuid": "01978db2-6b2c-7991-9871-9c21bbd75361",
+  "type": "standard",
+  "series": "E486556A",
+  "code": "0039",
+  "issue_date": "2025-06-20",
+  "op_date": "2025-06-20",
+  "currency": "EUR",
+  "supplier": {
+    "name": "Invopop Demo",
+    "tax_id": {
+      "country": "IT",
+      "code": "13267897331"
+    }
+  },
+  "customer": {
+    "name": "Pablo",
+    "tax_id": {
+      "country": "ES"
+    },
+    "addresses": [
+      {
+        "street": "Calle de la Princesa 1",
+        "locality": "Madrid",
+        "state": "MADRID",
+        "code": "28001",
+        "country": "ES"
+      }
+    ],
+    "emails": [
+      {
+        "addr": "pablo.menendez@invopop.com"
+      }
+    ]
+  },
+  "lines": [
+    {
+      "i": 1,
+      "quantity": "1",
+      "item": {
+        "name": "Cookie",
+        "currency": "EUR",
+        "price": "5.00"
+      },
+      "sum": "5.00",
+      "total": "5.00"
+    }
+  ],
+  "ordering": {
+    "period": {
+      "start": "2025-06-20",
+      "end": "2025-06-20"
+    }
+  },
+  "totals": {
+    "sum": "5.00",
+    "total": "5.00",
+    "tax": "0.00",
+    "total_with_tax": "5.00",
+    "payable": "5.00"
+  },
+  "meta": {
+    "stripe-document-id": "in_1Rc0gQQa2zMHSH4WcldrJDB7",
+    "stripe-document-type": "invoice"
+  }
+}
