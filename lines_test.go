@@ -680,3 +680,50 @@ func TestFromCNTaxAmountsToTaxSet(t *testing.T) {
 		})
 	}
 }
+
+func TestFreeTrialLine(t *testing.T) {
+	line := &stripe.InvoiceLineItem{
+		ID:                 "il_1234567890abcd",
+		Amount:             0,
+		AmountExcludingTax: 0,
+		Currency:           stripe.CurrencyMXN,
+		Quantity:           1,
+		Price: &stripe.Price{
+			BillingScheme: stripe.PriceBillingSchemePerUnit,
+			Currency:      stripe.CurrencyMXN,
+			TaxBehavior:   stripe.PriceTaxBehaviorUnspecified,
+			UnitAmount:    172840,
+		},
+		Period: &stripe.Period{
+			Start: 1750690831,
+			End:   1752505231,
+		},
+		Description: "Período de prueba para Plan Avanzado",
+		TaxAmounts: []*stripe.InvoiceTotalTaxAmount{
+			{
+				Amount:    0,
+				Inclusive: true,
+				TaxRate: &stripe.TaxRate{
+					TaxType:             stripe.TaxRateTaxTypeVAT,
+					Country:             "MX",
+					EffectivePercentage: 16.0,
+					Percentage:          16.0,
+				},
+				TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonStandardRated,
+				TaxableAmount:    0,
+			},
+		},
+		UnitAmountExcludingTax: 0,
+	}
+
+	result := goblstripe.FromInvoiceLine(line)
+
+	assert.NotNil(t, result, "Line conversion should not return nil")
+	assert.Equal(t, num.MakeAmount(1, 0), result.Quantity, "Quantity should match line quantity")
+	assert.Equal(t, "Período de prueba para Plan Avanzado", result.Item.Name, "Item name should match line description")
+	assert.Equal(t, currency.MXN, result.Item.Currency, "Item currency should match line currency")
+	assert.Equal(t, 0.0, result.Item.Price.Float64(), "Item price should be 0 for free trial")
+	assert.Equal(t, tax.CategoryVAT, result.Taxes[0].Category, "Tax category should match line tax")
+	assert.Equal(t, l10n.MX.Tax(), result.Taxes[0].Country, "Tax country should match line tax")
+	assert.Equal(t, num.NewPercentage(160, 3), result.Taxes[0].Percent, "Tax percentage should match line tax")
+}
