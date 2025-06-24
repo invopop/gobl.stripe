@@ -33,6 +33,9 @@ func FromInvoiceLine(line *stripe.InvoiceLineItem) *bill.Line {
 		Item:     fromInvoiceLineToItem(line),
 	}
 
+	price := currencyAmount(line.Amount, FromCurrency(line.Currency)).Divide(invLine.Quantity)
+	invLine.Item.Price = &price
+
 	if len(line.Discounts) > 0 && line.Discountable {
 		invLine.Discounts = FromInvoiceLineDiscounts(line.Discounts)
 	}
@@ -62,12 +65,10 @@ func newQuantityFromInvoiceLine(line *stripe.InvoiceLineItem) num.Amount {
 
 // fromInvoiceLineToItem creates a new GOBL item from a Stripe invoice line item.
 func fromInvoiceLineToItem(line *stripe.InvoiceLineItem) *org.Item {
-	price := resolveInvoiceLinePrice(line)
 
 	item := &org.Item{
 		Name:     setItemName(line),
 		Currency: currency.Code(strings.ToUpper(string(line.Currency))),
-		Price:    &price,
 	}
 
 	if line.Price != nil && line.Price.Product != nil && line.Price.Product.Metadata != nil {
@@ -96,24 +97,6 @@ func setItemName(line *stripe.InvoiceLineItem) string {
 	}
 
 	return ""
-}
-
-// resolveInvoiceLinePrice resolves the price for a GOBL invoice line item.
-// If it is a per unit scheme, the price is the unit amount.
-// If it is a tiered scheme, the price is the complete amount.
-func resolveInvoiceLinePrice(line *stripe.InvoiceLineItem) num.Amount {
-	if line.Price == nil {
-		return num.AmountZero
-	}
-
-	switch line.Price.BillingScheme {
-	case stripe.PriceBillingSchemePerUnit:
-		return currencyAmount(line.Price.UnitAmount, FromCurrency(line.Currency))
-	case stripe.PriceBillingSchemeTiered:
-		return currencyAmount(line.Amount, FromCurrency(line.Currency))
-	}
-
-	return num.AmountZero
 }
 
 // FromInvoiceLineDiscounts creates a list of discounts for a GOBL invoice line item.

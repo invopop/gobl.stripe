@@ -1,0 +1,97 @@
+{
+  "uuid": "0197a16f-caae-792f-8b55-9ba5669c3a55",
+  "type": "standard",
+  "series": "RANDOM",
+  "code": "0002",
+  "issue_date": "2025-06-23",
+  "op_date": "2025-06-23",
+  "currency": "MXN",
+  "tax": {
+    "prices_include": "VAT"
+  },
+  "supplier": {
+    "name": "Random Company"
+  },
+  "customer": {
+    "name": "Jane Doe",
+    "tax_id": {
+      "country": "MX",
+      "code": "DOJA820101ABC"
+    },
+    "addresses": [
+      {
+        "code": "12345",
+        "country": "MX"
+      }
+    ],
+    "emails": [
+      {
+        "addr": "random_company_2@example.com"
+      }
+    ],
+    "ext": {
+      "mx-cfdi-fiscal-regime": "626",
+      "mx-cfdi-use": "G03"
+    }
+  },
+  "lines": [
+    {
+      "i": 1,
+      "quantity": "1",
+      "item": {
+        "name": "Período de prueba para Plan Avanzado",
+        "currency": "MXN",
+        "price": "0.00",
+        "ext": {
+          "mx-cfdi-prod-serv": "43232611"
+        }
+      },
+      "sum": "0.00",
+      "taxes": [
+        {
+          "cat": "VAT",
+          "country": "MX",
+          "rate": "standard",
+          "percent": "16.0%"
+        }
+      ],
+      "total": "0.00"
+    }
+  ],
+  "ordering": {
+    "period": {
+      "start": "2025-06-23",
+      "end": "2025-06-23"
+    }
+  },
+  "totals": {
+    "sum": "0.00",
+    "tax_included": "0.00",
+    "total": "0.00",
+    "taxes": {
+      "categories": [
+        {
+          "code": "VAT",
+          "rates": [
+            {
+              "key": "standard",
+              "country": "MX",
+              "base": "0.00",
+              "percent": "16.0%",
+              "amount": "0.00"
+            }
+          ],
+          "amount": "0.00"
+        }
+      ],
+      "sum": "0.00"
+    },
+    "tax": "0.00",
+    "total_with_tax": "0.00",
+    "payable": "0.00"
+  },
+  "meta": {
+    "stripe-document-id": "in_1234567890abcd",
+    "stripe-document-type": "invoice"
+  }
+}
