@@ -33,6 +33,12 @@ func FromInvoiceLine(line *stripe.InvoiceLineItem) *bill.Line {
 		Item:     fromInvoiceLineToItem(line),
 	}
 
+	// Check if the price times the quantity matches the line amount
+	if invLine.Item.Price.Multiply(invLine.Quantity) != currencyAmount(line.Amount, FromCurrency(line.Currency)) {
+		newPrice := currencyAmount(line.Amount, FromCurrency(line.Currency)).Divide(invLine.Quantity)
+		invLine.Item.Price = &newPrice
+	}
+
 	if len(line.Discounts) > 0 && line.Discountable {
 		invLine.Discounts = FromInvoiceLineDiscounts(line.Discounts)
 	}
