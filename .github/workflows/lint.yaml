@@ -14,7 +14,7 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v4
-      
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
@@ -22,6 +22,4 @@ jobs:
         id: go
 
       - name: Lint
-        uses: golangci/golangci-lint-action@v3
-        with:
-          version: v1.62
+        uses: golangci/golangci-lint-action@v8
