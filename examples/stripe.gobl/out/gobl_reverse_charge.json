@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "8f084520433889110bbe7fd81dcf263146f5a16bc61519aaf7160a7e38055494"
+			"val": "d2d9091a553b61012217b096f64f991fd8f57b3907cc1021eeb37bb0b21a70e2"
 		}
 	},
 	"doc": {
@@ -12,7 +12,7 @@
 		"$tags": [
 			"reverse-charge"
 		],
-		"uuid": "019860f9-ce2b-7e72-bf42-a96745c4d8e9",
+		"uuid": "019860fc-7d4c-7922-a371-e848ca5141d3",
 		"type": "standard",
 		"series": "V7REHZYJ",
 		"code": "0013",

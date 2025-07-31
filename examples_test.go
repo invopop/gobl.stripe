@@ -99,12 +99,15 @@ func processFile(t *testing.T, path string) error {
 		return fmt.Errorf("unsupported Stripe object type: %s", objType)
 	}
 
+	// override the document UUID for consistent test results
+	goblInvoice.UUID = uuid.MustParse("019860fc-7d4c-7922-a371-e848ca5141d3")
+
 	env, err := gobl.Envelop(goblInvoice)
 	if err != nil {
 		return fmt.Errorf("failed to create envelop: %v", err)
 	}
 
-	// override the UUID
+	// override the envelope UUID for consistent test results
 	env.Head.UUID = uuid.MustParse("8a51fd30-2a27-11ee-be56-0242ac120002")
 
 	if err := env.Validate(); err != nil {

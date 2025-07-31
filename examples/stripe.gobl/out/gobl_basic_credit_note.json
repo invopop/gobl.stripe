@@ -4,12 +4,12 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "ce2ed7fbabb2edb22656bbb301813aca78ab1a9a5baa86efa144543adcc12386"
+			"val": "4c70e8927313855650d13fb72860f5a8cd0d84fa80c31e2c251bc509085af626"
 		}
 	},
 	"doc": {
 		"$schema": "https://gobl.org/draft-0/bill/invoice",
-		"uuid": "fb39c11f-6a0b-458f-a39f-17137c969f56",
+		"uuid": "019860fc-7d4c-7922-a371-e848ca5141d3",
 		"type": "credit-note",
 		"code": "FPOP-10027-CN-01",
 		"issue_date": "2025-01-24",
