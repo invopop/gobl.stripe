@@ -1,0 +1,116 @@
+{
+	"$schema": "https://gobl.org/draft-0/envelope",
+	"head": {
+		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
+		"dig": {
+			"alg": "sha256",
+			"val": "8f084520433889110bbe7fd81dcf263146f5a16bc61519aaf7160a7e38055494"
+		}
+	},
+	"doc": {
+		"$schema": "https://gobl.org/draft-0/bill/invoice",
+		"$tags": [
+			"reverse-charge"
+		],
+		"uuid": "019860f9-ce2b-7e72-bf42-a96745c4d8e9",
+		"type": "standard",
+		"series": "V7REHZYJ",
+		"code": "0013",
+		"issue_date": "2025-07-31",
+		"op_date": "2025-07-31",
+		"currency": "EUR",
+		"tax": {
+			"prices_include": "VAT"
+		},
+		"supplier": {
+			"name": "invopop-pt"
+		},
+		"customer": {
+			"name": "British guy",
+			"tax_id": {
+				"country": "GB",
+				"code": "844281425"
+			},
+			"addresses": [
+				{
+					"street": "Main Street 12",
+					"locality": "Hull",
+					"code": "HU17 7PQ",
+					"country": "GB"
+				}
+			],
+			"emails": [
+				{
+					"addr": "britishguy@gmail.com"
+				}
+			]
+		},
+		"lines": [
+			{
+				"i": 1,
+				"quantity": "1",
+				"item": {
+					"name": "1 × Software Services (recurrent) (at €100.00 / month)",
+					"currency": "EUR",
+					"price": "100.00"
+				},
+				"sum": "100.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"country": "PT",
+						"rate": "exempt"
+					}
+				],
+				"total": "100.00"
+			}
+		],
+		"ordering": {
+			"period": {
+				"start": "2025-07-31",
+				"end": "2025-07-31"
+			}
+		},
+		"delivery": {
+			"receiver": {
+				"addresses": [
+					{}
+				],
+				"telephones": [
+					{
+						"num": "+441212345678"
+					}
+				]
+			}
+		},
+		"totals": {
+			"sum": "100.00",
+			"tax_included": "0.00",
+			"total": "100.00",
+			"taxes": {
+				"categories": [
+					{
+						"code": "VAT",
+						"rates": [
+							{
+								"key": "exempt",
+								"country": "PT",
+								"base": "100.00",
+								"amount": "0.00"
+							}
+						],
+						"amount": "0.00"
+					}
+				],
+				"sum": "0.00"
+			},
+			"tax": "0.00",
+			"total_with_tax": "100.00",
+			"payable": "100.00"
+		},
+		"meta": {
+			"stripe-document-id": "in_1RqsftHRYe2PhVGCUkoKnqL8",
+			"stripe-document-type": "invoice"
+		}
+	}
+}

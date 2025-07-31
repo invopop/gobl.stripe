@@ -133,7 +133,7 @@ func FromCreditNote(doc *stripe.CreditNote) (*bill.Invoice, error) {
 		inv.Customer = FromCustomer(doc.Customer)
 	}
 
-	inv.Lines = FromCreditNoteLines(doc.Lines.Data, inv.Currency)
+	inv.Lines = FromCreditNoteLines(doc.Lines.Data, inv.Currency, regimeDef)
 	inv.Tax = taxFromCreditNoteTaxAmounts(doc.TaxAmounts)
 	inv.Preceding = []*org.DocumentRef{newPrecedingFromInvoice(doc.Invoice, string(doc.Reason))}
 

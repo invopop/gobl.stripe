@@ -538,6 +538,86 @@ func TestFromTaxAmountsExempt(t *testing.T) {
 	}
 }
 
+func TestFromInvoiceTaxAmountsReverseCharge(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    []*stripe.InvoiceTotalTaxAmount
+		regime   l10n.Code
+		expected tax.Set
+	}{
+		{
+			name: "reverse charge with exempt rate available",
+			input: []*stripe.InvoiceTotalTaxAmount{
+				{
+					TaxRate: &stripe.TaxRate{
+						Country:             "GB",
+						TaxType:             stripe.TaxRateTaxTypeVAT,
+						EffectivePercentage: 0.0,
+						Percentage:          20.0,
+						Created:             time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
+					},
+					TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonReverseCharge,
+				},
+			},
+			regime: l10n.DE, // Germanyregime looking at GB reverse charge
+			expected: tax.Set{
+				{
+					Category: tax.CategoryVAT,
+					Country:  l10n.DE.Tax(),
+					Rate:     tax.RateExempt,
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := goblstripe.FromInvoiceTaxAmountsToTaxSet(tt.input, tax.RegimeDefFor(tt.regime))
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestFromCreditNoteTaxAmountsReverseCharge(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    []*stripe.CreditNoteTaxAmount
+		regime   l10n.Code
+		expected tax.Set
+	}{
+		{
+			name: "credit note reverse charge with exempt rate available",
+			input: []*stripe.CreditNoteTaxAmount{
+				{
+					TaxRate: &stripe.TaxRate{
+						Country:             "GB",
+						TaxType:             stripe.TaxRateTaxTypeVAT,
+						EffectivePercentage: 0.0,
+						Percentage:          20.0,
+						Created:             time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
+					},
+					TaxabilityReason: stripe.CreditNoteTaxAmountTaxabilityReasonReverseCharge,
+				},
+			},
+			regime: l10n.DE, // Germany regime looking at GB reverse charge
+			expected: tax.Set{
+				{
+					Category: tax.CategoryVAT,
+					Country:  l10n.DE.Tax(),
+					Rate:     tax.RateExempt,
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := goblstripe.FromCreditNoteTaxAmountsToTaxSet(tt.input, tax.RegimeDefFor(tt.regime))
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
 // Credit Notes
 
 func validCreditNoteLine() *stripe.CreditNoteLineItem {
@@ -567,7 +647,7 @@ func validCreditNoteLine() *stripe.CreditNoteLineItem {
 
 func TestBasicFieldsCreditNote(t *testing.T) {
 	line := validCreditNoteLine()
-	result := goblstripe.FromCreditNoteLine(line, currency.EUR)
+	result := goblstripe.FromCreditNoteLine(line, currency.EUR, tax.RegimeDefFor(l10n.DE))
 
 	assert.NotNil(t, result, "Line conversion should not return nil")
 	assert.Equal(t, currency.EUR, result.Item.Currency, "Item currency should match line currency")
@@ -584,7 +664,7 @@ func TestCNLinePerUnit(t *testing.T) {
 	line.Quantity = 2
 	line.Description = "Stripe Addon"
 
-	result := goblstripe.FromCreditNoteLine(line, currency.EUR)
+	result := goblstripe.FromCreditNoteLine(line, currency.EUR, tax.RegimeDefFor(l10n.DE))
 
 	assert.NotNil(t, result, "Line conversion should not return nil")
 	assert.Equal(t, num.MakeAmount(2, 0), result.Quantity, "Quantity should match line quantity")
@@ -597,7 +677,7 @@ func TestCNLineTiered(t *testing.T) {
 	line.UnitAmount = 10294
 	line.Description = "Invopops"
 
-	result := goblstripe.FromCreditNoteLine(line, currency.EUR)
+	result := goblstripe.FromCreditNoteLine(line, currency.EUR, tax.RegimeDefFor(l10n.DE))
 
 	assert.NotNil(t, result, "Line conversion should not return nil")
 	assert.Equal(t, num.MakeAmount(1, 0), result.Quantity, "Quantity should match line quantity")
@@ -613,7 +693,7 @@ func TestCNDiscounts(t *testing.T) {
 		},
 	}
 
-	result := goblstripe.FromCreditNoteLine(line, currency.EUR)
+	result := goblstripe.FromCreditNoteLine(line, currency.EUR, tax.RegimeDefFor(l10n.DE))
 	assert.NotNil(t, result, "Line conversion should not return nil")
 	assert.Equal(t, 10.0, result.Discounts[0].Amount.Float64(), "Discount amount should match line discount")
 
@@ -623,7 +703,7 @@ func TestUnitAmountNil(t *testing.T) {
 	line := validCreditNoteLine()
 	line.Quantity = 2
 
-	result := goblstripe.FromCreditNoteLine(line, currency.EUR)
+	result := goblstripe.FromCreditNoteLine(line, currency.EUR, tax.RegimeDefFor(l10n.DE))
 	assert.NotNil(t, result, "Line conversion should not return nil")
 
 	assert.Equal(t, num.MakeAmount(2, 0), result.Quantity, "Quantity should match line quantity")
@@ -675,7 +755,7 @@ func TestFromCNTaxAmountsToTaxSet(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := goblstripe.FromCreditNoteTaxAmountsToTaxSet(tt.input)
+			result := goblstripe.FromCreditNoteTaxAmountsToTaxSet(tt.input, tax.RegimeDefFor(l10n.DE))
 			assert.Equal(t, tt.expected, result)
 		})
 	}
