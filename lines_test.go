@@ -559,7 +559,7 @@ func TestFromInvoiceTaxAmountsReverseCharge(t *testing.T) {
 					TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonReverseCharge,
 				},
 			},
-			regime: l10n.DE, // Germanyregime looking at GB reverse charge
+			regime: l10n.DE, // Germany regime looking at GB reverse charge
 			expected: tax.Set{
 				{
 					Category: tax.CategoryVAT,
