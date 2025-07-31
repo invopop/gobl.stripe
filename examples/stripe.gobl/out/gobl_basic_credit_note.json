@@ -1,48 +1,61 @@
 {
-  "uuid": "7972f211-9e2d-40be-9aba-57c9ce1096d3",
-  "type": "credit-note",
-  "code": "FPOP-10027-CN-01",
-  "issue_date": "2025-01-24",
-  "op_date": "2025-01-24",
-  "currency": "USD",
-  "exchange_rates": [
-    {
-      "from": "USD",
-      "to": "EUR",
-      "amount": "0.935"
-    }
-  ],
-  "preceding": [
-    {
-      "type": "standard",
-      "issue_date": "2025-01-24",
-      "code": "in_1QkqKVQhcl5B85YlT32LIsNm"
-    }
-  ],
-  "supplier": {
-    "name": "Invopop Development"
-  },
-  "lines": [
-    {
-      "i": 1,
-      "quantity": "1",
-      "item": {
-        "name": "(created by Stripe CLI)",
-        "currency": "USD",
-        "price": "10.00"
-      },
-      "sum": "10.00",
-      "total": "10.00"
-    }
-  ],
-  "totals": {
-    "sum": "10.00",
-    "total": "10.00",
-    "tax": "0.00",
-    "total_with_tax": "10.00",
-    "payable": "10.00"
-  },
-  "meta": {
-    "stripe-document-id": "cn_1QkqKXQhcl5B85YlskhbQXF1"
-  }
+	"$schema": "https://gobl.org/draft-0/envelope",
+	"head": {
+		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
+		"dig": {
+			"alg": "sha256",
+			"val": "1208d7e0bd5b66664c8e7826eee406f53ac6b9f61a397a9875b36fdbb1471b6f"
+		}
+	},
+	"doc": {
+		"$schema": "https://gobl.org/draft-0/bill/invoice",
+		"uuid": "0558fe5e-9495-44ad-8f2a-0e733204741a",
+		"type": "credit-note",
+		"code": "FPOP-10027-CN-01",
+		"issue_date": "2025-01-24",
+		"op_date": "2025-01-24",
+		"currency": "USD",
+		"exchange_rates": [
+			{
+				"from": "USD",
+				"to": "EUR",
+				"amount": "0.935"
+			}
+		],
+		"preceding": [
+			{
+				"type": "standard",
+				"issue_date": "2025-01-24",
+				"series": "FPOP",
+				"code": "10027"
+			}
+		],
+		"supplier": {
+			"name": "Invopop Development"
+		},
+		"lines": [
+			{
+				"i": 1,
+				"quantity": "1",
+				"item": {
+					"name": "(created by Stripe CLI)",
+					"currency": "USD",
+					"price": "10.00"
+				},
+				"sum": "10.00",
+				"total": "10.00"
+			}
+		],
+		"totals": {
+			"sum": "10.00",
+			"total": "10.00",
+			"tax": "0.00",
+			"total_with_tax": "10.00",
+			"payable": "10.00"
+		},
+		"meta": {
+			"stripe-document-id": "cn_1QkqKXQhcl5B85YlskhbQXF1",
+			"stripe-document-type": "credit_note"
+		}
+	}
 }
