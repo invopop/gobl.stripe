@@ -1,125 +1,114 @@
 {
-  "$regime": "ES",
-  "$tags": [
-    "reverse-charge"
-  ],
-  "uuid": "0195b2ff-de30-7399-a386-cbffd6f770d8",
-  "type": "standard",
-  "code": "in_1QpDx7Qhcl5B85Yls3Aj1n1Z",
-  "issue_date": "2025-02-05",
-  "currency": "EUR",
-  "supplier": {
-    "name": "Invopop Development",
-    "tax_id": {
-      "country": "ES",
-      "code": "A12345678"
-    }
-  },
-  "customer": {
-    "name": "Peter The Panda",
-    "tax_id": {
-      "country": "BE",
-      "code": "0123456789"
-    },
-    "addresses": [
-      {
-        "street": "Calle Pradillo",
-        "street_extra": "42",
-        "locality": "Madrid",
-        "state": "M",
-        "code": "28002",
-        "country": "ES"
-      }
-    ],
-    "emails": [
-      {
-        "addr": "peterthepanda@jungle.com"
-      }
-    ]
-  },
-  "lines": [
-    {
-      "i": 1,
-      "quantity": "1",
-      "item": {
-        "name": "Chargebee Addon",
-        "currency": "EUR",
-        "price": "300.00"
-      },
-      "sum": "300.00",
-      "taxes": [
-        {
-          "cat": "VAT",
-          "rate": "zero",
-          "percent": "0.0%"
-        }
-      ],
-      "total": "300.00"
-    },
-    {
-      "i": 2,
-      "quantity": "2",
-      "item": {
-        "name": "Physical good",
-        "currency": "EUR",
-        "price": "70.00"
-      },
-      "sum": "140.00",
-      "discounts": [
-        {
-          "reason": "First_coupon",
-          "percent": "10.0%",
-          "amount": "14.00"
-        }
-      ],
-      "taxes": [
-        {
-          "cat": "VAT",
-          "rate": "zero",
-          "percent": "0.0%"
-        }
-      ],
-      "total": "126.00"
-    }
-  ],
-  "ordering": {
-    "period": {
-      "start": "2025-02-05",
-      "end": "2025-02-05"
-    }
-  },
-  "totals": {
-    "sum": "426.00",
-    "total": "426.00",
-    "taxes": {
-      "categories": [
-        {
-          "code": "VAT",
-          "rates": [
-            {
-              "key": "zero",
-              "base": "426.00",
-              "percent": "0.0%",
-              "amount": "0.00"
-            }
-          ],
-          "amount": "0.00"
-        }
-      ],
-      "sum": "0.00"
-    },
-    "tax": "0.00",
-    "total_with_tax": "426.00",
-    "payable": "426.00"
-  },
-  "notes": [
-    {
-      "key": "legal",
-      "src": "reverse-charge",
-      "text": "Reverse Charge / Inversión del sujeto pasivo."
-    }
-  ],
-  "meta": {
-    "stripe-document-id": "in_1QpDx7Qhcl5B85Yls3Aj1n1Z"
-  }
+	"$schema": "https://gobl.org/draft-0/envelope",
+	"head": {
+		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
+		"dig": {
+			"alg": "sha256",
+			"val": "a9cf4551c8a0021d4c85def7b2ffaddd5b04e706c5fa6a01503967924adb692e"
+		}
+	},
+	"doc": {
+		"$schema": "https://gobl.org/draft-0/bill/invoice",
+		"$tags": [
+			"reverse-charge"
+		],
+		"uuid": "01986076-526f-78c0-8354-116089edd206",
+		"type": "standard",
+		"series": "V7REHZYJ",
+		"code": "0013",
+		"issue_date": "2025-07-31",
+		"op_date": "2025-07-31",
+		"currency": "EUR",
+		"tax": {
+			"prices_include": "VAT"
+		},
+		"supplier": {
+			"name": "invopop-pt"
+		},
+		"customer": {
+			"name": "British guy",
+			"tax_id": {
+				"country": "GB",
+				"code": "844281425"
+			},
+			"addresses": [
+				{
+					"street": "Main Street 12",
+					"locality": "Hull",
+					"code": "HU17 7PQ",
+					"country": "GB"
+				}
+			],
+			"emails": [
+				{
+					"addr": "britishguy@gmail.com"
+				}
+			]
+		},
+		"lines": [
+			{
+				"i": 1,
+				"quantity": "1",
+				"item": {
+					"name": "1 × Software Services (recurrent) (at €100.00 / month)",
+					"currency": "EUR",
+					"price": "100.00"
+				},
+				"sum": "100.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"rate": "exempt"
+					}
+				],
+				"total": "100.00"
+			}
+		],
+		"ordering": {
+			"period": {
+				"start": "2025-07-31",
+				"end": "2025-07-31"
+			}
+		},
+		"delivery": {
+			"receiver": {
+				"addresses": [
+					{}
+				],
+				"telephones": [
+					{
+						"num": "+441212345678"
+					}
+				]
+			}
+		},
+		"totals": {
+			"sum": "100.00",
+			"tax_included": "0.00",
+			"total": "100.00",
+			"taxes": {
+				"categories": [
+					{
+						"code": "VAT",
+						"rates": [
+							{
+								"key": "exempt",
+								"base": "100.00",
+								"amount": "0.00"
+							}
+						],
+						"amount": "0.00"
+					}
+				],
+				"sum": "0.00"
+			},
+			"tax": "0.00",
+			"total_with_tax": "100.00",
+			"payable": "100.00"
+		},
+		"meta": {
+			"stripe-document-id": "in_1RqsftHRYe2PhVGCUkoKnqL8",
+			"stripe-document-type": "invoice"
+		}
+	}
 }

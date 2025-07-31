@@ -50,12 +50,11 @@ func validInvoiceLine() *stripe.InvoiceLineItem {
 
 func TestBasicFields(t *testing.T) {
 	line := validInvoiceLine()
-	result := goblstripe.FromInvoiceLine(line)
+	result := goblstripe.FromInvoiceLine(line, tax.RegimeDefFor(l10n.ES))
 
 	assert.NotNil(t, result, "Line conversion should not return nil")
 	assert.Equal(t, currency.USD, result.Item.Currency, "Item currency should match line currency")
 	assert.Equal(t, tax.CategoryVAT, result.Taxes[0].Category, "Tax category should match line tax")
-	assert.Equal(t, l10n.ES.Tax(), result.Taxes[0].Country, "Tax country should match line tax")
 	assert.Equal(t, num.NewPercentage(210, 3), result.Taxes[0].Percent, "Tax percentage should match line tax")
 
 }
@@ -230,7 +229,6 @@ func TestSeveralLines(t *testing.T) {
 			Taxes: tax.Set{
 				{
 					Category: tax.CategoryVAT,
-					Country:  "ES",
 					Percent:  num.NewPercentage(210, 3),
 				},
 			},
@@ -245,7 +243,6 @@ func TestSeveralLines(t *testing.T) {
 			Taxes: tax.Set{
 				{
 					Category: tax.CategoryVAT,
-					Country:  "ES",
 					Percent:  num.NewPercentage(210, 3),
 				},
 			},
@@ -260,7 +257,6 @@ func TestSeveralLines(t *testing.T) {
 			Taxes: tax.Set{
 				{
 					Category: tax.CategoryVAT,
-					Country:  "ES",
 					Percent:  num.NewPercentage(210, 3),
 				},
 			},
@@ -275,7 +271,6 @@ func TestSeveralLines(t *testing.T) {
 			Taxes: tax.Set{
 				{
 					Category: tax.CategoryVAT,
-					Country:  "ES",
 					Percent:  num.NewPercentage(210, 3),
 				},
 			},
@@ -294,7 +289,7 @@ func TestSeveralLines(t *testing.T) {
 		},
 	}
 
-	result := goblstripe.FromInvoiceLines(lines)
+	result := goblstripe.FromInvoiceLines(lines, tax.RegimeDefFor(l10n.ES))
 	assert.Equal(t, expected, result, "Converted lines should match expected")
 
 	assert.Equal(t, len(lines), len(result), "Number of converted lines should match input")
@@ -335,7 +330,7 @@ func TestFromLinePerUnit(t *testing.T) {
 		UnitAmountExcludingTax: 8507,
 	}
 
-	result := goblstripe.FromInvoiceLine(line)
+	result := goblstripe.FromInvoiceLine(line, tax.RegimeDefFor(l10n.ES))
 
 	assert.NotNil(t, result, "Line conversion should not return nil")
 	assert.Equal(t, result.Quantity, num.MakeAmount(3, 0), "Quantity should match line quantity")
@@ -383,7 +378,7 @@ func TestFromLineTiered(t *testing.T) {
 		UnitAmountExcludingTax: 2,
 	}
 
-	result := goblstripe.FromInvoiceLine(line)
+	result := goblstripe.FromInvoiceLine(line, tax.RegimeDefFor(l10n.ES))
 
 	assert.NotNil(t, result, "Line conversion should not return nil")
 	assert.Equal(t, result.Quantity, num.MakeAmount(1, 0), "Quantity should match line quantity")
@@ -393,7 +388,6 @@ func TestFromLineTiered(t *testing.T) {
 	assert.Equal(t, 50.0, result.Discounts[0].Amount.Float64(), "Discount amount should match line discount")
 	assert.Equal(t, num.MakePercentage(210, 3), *result.Taxes[0].Percent, "Tax percentage should match line tax")
 	assert.Equal(t, tax.CategoryVAT, result.Taxes[0].Category, "Tax category should match line tax")
-	assert.Equal(t, l10n.ES.Tax(), result.Taxes[0].Country, "Tax country should match line tax")
 }
 
 func TestFromDiscount(t *testing.T) {
@@ -481,12 +475,10 @@ func TestFromTaxAmountsToTaxSet(t *testing.T) {
 			expected: tax.Set{
 				{
 					Category: tax.CategoryVAT,
-					Country:  "DE",
 					Rate:     tax.RateStandard,
 				},
 				{
 					Category: tax.CategoryVAT,
-					Country:  "ES",
 					Percent:  num.NewPercentage(8875, 5),
 				},
 			},
@@ -495,36 +487,38 @@ func TestFromTaxAmountsToTaxSet(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := goblstripe.FromInvoiceTaxAmountsToTaxSet(tt.input)
+			result := goblstripe.FromInvoiceTaxAmountsToTaxSet(tt.input, tax.RegimeDefFor(l10n.ES))
 			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
 
-func TestFromTaxAmountsExempt(t *testing.T) {
+func TestFromInvoiceTaxAmountsReverseCharge(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    []*stripe.InvoiceTotalTaxAmount
+		regime   l10n.Code
 		expected tax.Set
 	}{
 		{
-			name: "tax amount exempt",
+			name: "reverse charge with exempt rate available",
 			input: []*stripe.InvoiceTotalTaxAmount{
 				{
 					TaxRate: &stripe.TaxRate{
-						Country:             "DE",
+						Country:             "GB",
 						TaxType:             stripe.TaxRateTaxTypeVAT,
 						EffectivePercentage: 0.0,
-						Percentage:          19.0,
+						Percentage:          20.0,
 						Created:             time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
 					},
+					TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonReverseCharge,
 				},
 			},
+			regime: l10n.DE, // Germanyregime looking at GB reverse charge
 			expected: tax.Set{
 				{
 					Category: tax.CategoryVAT,
-					Country:  "DE",
-					Rate:     tax.RateZero,
+					Rate:     tax.RateExempt,
 				},
 			},
 		},
@@ -532,7 +526,46 @@ func TestFromTaxAmountsExempt(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := goblstripe.FromInvoiceTaxAmountsToTaxSet(tt.input)
+			result := goblstripe.FromInvoiceTaxAmountsToTaxSet(tt.input, tax.RegimeDefFor(tt.regime))
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestFromCreditNoteTaxAmountsReverseCharge(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    []*stripe.CreditNoteTaxAmount
+		regime   l10n.Code
+		expected tax.Set
+	}{
+		{
+			name: "credit note reverse charge with exempt rate available",
+			input: []*stripe.CreditNoteTaxAmount{
+				{
+					TaxRate: &stripe.TaxRate{
+						Country:             "GB",
+						TaxType:             stripe.TaxRateTaxTypeVAT,
+						EffectivePercentage: 0.0,
+						Percentage:          20.0,
+						Created:             time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
+					},
+					TaxabilityReason: stripe.CreditNoteTaxAmountTaxabilityReasonReverseCharge,
+				},
+			},
+			regime: l10n.DE, // Germany regime looking at GB reverse charge
+			expected: tax.Set{
+				{
+					Category: tax.CategoryVAT,
+					Rate:     tax.RateExempt,
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := goblstripe.FromCreditNoteTaxAmountsToTaxSet(tt.input, tax.RegimeDefFor(tt.regime))
 			assert.Equal(t, tt.expected, result)
 		})
 	}
@@ -567,12 +600,11 @@ func validCreditNoteLine() *stripe.CreditNoteLineItem {
 
 func TestBasicFieldsCreditNote(t *testing.T) {
 	line := validCreditNoteLine()
-	result := goblstripe.FromCreditNoteLine(line, currency.EUR)
+	result := goblstripe.FromCreditNoteLine(line, currency.EUR, tax.RegimeDefFor(l10n.ES))
 
 	assert.NotNil(t, result, "Line conversion should not return nil")
 	assert.Equal(t, currency.EUR, result.Item.Currency, "Item currency should match line currency")
 	assert.Equal(t, tax.CategoryVAT, result.Taxes[0].Category, "Tax category should match line tax")
-	assert.Equal(t, l10n.ES.Tax(), result.Taxes[0].Country, "Tax country should match line tax")
 	assert.Equal(t, num.NewPercentage(210, 3), result.Taxes[0].Percent, "Tax percentage should match line tax")
 	assert.Equal(t, 102.94, result.Item.Price.Float64(), "Item price should match line amount")
 	assert.Equal(t, num.MakeAmount(1, 0), result.Quantity, "Quantity should be 1")
@@ -584,7 +616,7 @@ func TestCNLinePerUnit(t *testing.T) {
 	line.Quantity = 2
 	line.Description = "Stripe Addon"
 
-	result := goblstripe.FromCreditNoteLine(line, currency.EUR)
+	result := goblstripe.FromCreditNoteLine(line, currency.EUR, tax.RegimeDefFor(l10n.ES))
 
 	assert.NotNil(t, result, "Line conversion should not return nil")
 	assert.Equal(t, num.MakeAmount(2, 0), result.Quantity, "Quantity should match line quantity")
@@ -597,7 +629,7 @@ func TestCNLineTiered(t *testing.T) {
 	line.UnitAmount = 10294
 	line.Description = "Invopops"
 
-	result := goblstripe.FromCreditNoteLine(line, currency.EUR)
+	result := goblstripe.FromCreditNoteLine(line, currency.EUR, tax.RegimeDefFor(l10n.ES))
 
 	assert.NotNil(t, result, "Line conversion should not return nil")
 	assert.Equal(t, num.MakeAmount(1, 0), result.Quantity, "Quantity should match line quantity")
@@ -613,7 +645,7 @@ func TestCNDiscounts(t *testing.T) {
 		},
 	}
 
-	result := goblstripe.FromCreditNoteLine(line, currency.EUR)
+	result := goblstripe.FromCreditNoteLine(line, currency.EUR, tax.RegimeDefFor(l10n.ES))
 	assert.NotNil(t, result, "Line conversion should not return nil")
 	assert.Equal(t, 10.0, result.Discounts[0].Amount.Float64(), "Discount amount should match line discount")
 
@@ -623,7 +655,7 @@ func TestUnitAmountNil(t *testing.T) {
 	line := validCreditNoteLine()
 	line.Quantity = 2
 
-	result := goblstripe.FromCreditNoteLine(line, currency.EUR)
+	result := goblstripe.FromCreditNoteLine(line, currency.EUR, tax.RegimeDefFor(l10n.ES))
 	assert.NotNil(t, result, "Line conversion should not return nil")
 
 	assert.Equal(t, num.MakeAmount(2, 0), result.Quantity, "Quantity should match line quantity")
@@ -661,12 +693,10 @@ func TestFromCNTaxAmountsToTaxSet(t *testing.T) {
 			expected: tax.Set{
 				{
 					Category: tax.CategoryVAT,
-					Country:  "DE",
 					Rate:     tax.RateStandard,
 				},
 				{
 					Category: tax.CategoryVAT,
-					Country:  "ES",
 					Percent:  num.NewPercentage(8875, 5),
 				},
 			},
@@ -675,7 +705,7 @@ func TestFromCNTaxAmountsToTaxSet(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := goblstripe.FromCreditNoteTaxAmountsToTaxSet(tt.input)
+			result := goblstripe.FromCreditNoteTaxAmountsToTaxSet(tt.input, tax.RegimeDefFor(l10n.ES))
 			assert.Equal(t, tt.expected, result)
 		})
 	}
@@ -716,7 +746,7 @@ func TestFreeTrialLine(t *testing.T) {
 		UnitAmountExcludingTax: 0,
 	}
 
-	result := goblstripe.FromInvoiceLine(line)
+	result := goblstripe.FromInvoiceLine(line, tax.RegimeDefFor(l10n.MX))
 
 	assert.NotNil(t, result, "Line conversion should not return nil")
 	assert.Equal(t, num.MakeAmount(1, 0), result.Quantity, "Quantity should match line quantity")
@@ -724,6 +754,5 @@ func TestFreeTrialLine(t *testing.T) {
 	assert.Equal(t, currency.MXN, result.Item.Currency, "Item currency should match line currency")
 	assert.Equal(t, 0.0, result.Item.Price.Float64(), "Item price should be 0 for free trial")
 	assert.Equal(t, tax.CategoryVAT, result.Taxes[0].Category, "Tax category should match line tax")
-	assert.Equal(t, l10n.MX.Tax(), result.Taxes[0].Country, "Tax country should match line tax")
-	assert.Equal(t, num.NewPercentage(160, 3), result.Taxes[0].Percent, "Tax percentage should match line tax")
+	assert.Equal(t, tax.RateStandard, result.Taxes[0].Rate, "Tax rate should match line tax")
 }
