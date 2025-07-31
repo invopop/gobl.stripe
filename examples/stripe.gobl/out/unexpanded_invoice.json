@@ -1,0 +1,87 @@
+{
+	"$schema": "https://gobl.org/draft-0/envelope",
+	"head": {
+		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
+		"dig": {
+			"alg": "sha256",
+			"val": "24f0a202cc09fd41af403377ee975a334d4d54a6c96cb567e4e901cc8b66af08"
+		}
+	},
+	"doc": {
+		"$schema": "https://gobl.org/draft-0/bill/invoice",
+		"$tags": [
+			"reverse-charge"
+		],
+		"uuid": "01986076-5278-74d1-9a52-36f0692203f9",
+		"type": "standard",
+		"code": "in_1QpCUMQhcl5B85YlfgMLxqMg",
+		"issue_date": "2025-02-05",
+		"currency": "EUR",
+		"supplier": {
+			"name": "Invopop Development"
+		},
+		"customer": {
+			"name": "Peter The Panda",
+			"tax_id": {
+				"country": "BE",
+				"code": "0123456789"
+			},
+			"addresses": [
+				{
+					"street": "Calle Pradillo",
+					"street_extra": "42",
+					"locality": "Madrid",
+					"state": "M",
+					"code": "28002",
+					"country": "ES"
+				}
+			],
+			"emails": [
+				{
+					"addr": "peterthepanda@jungle.com"
+				}
+			]
+		},
+		"lines": [
+			{
+				"i": 1,
+				"quantity": "1",
+				"item": {
+					"name": "Chargebee Addon",
+					"currency": "EUR",
+					"price": "300.00"
+				},
+				"sum": "300.00",
+				"total": "300.00"
+			},
+			{
+				"i": 2,
+				"quantity": "2",
+				"item": {
+					"name": "Physical good",
+					"currency": "EUR",
+					"price": "70.00"
+				},
+				"sum": "140.00",
+				"total": "140.00"
+			}
+		],
+		"ordering": {
+			"period": {
+				"start": "2025-02-05",
+				"end": "2025-02-05"
+			}
+		},
+		"totals": {
+			"sum": "440.00",
+			"total": "440.00",
+			"tax": "0.00",
+			"total_with_tax": "440.00",
+			"payable": "440.00"
+		},
+		"meta": {
+			"stripe-document-id": "in_1QpCUMQhcl5B85YlfgMLxqMg",
+			"stripe-document-type": "invoice"
+		}
+	}
+}

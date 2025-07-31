@@ -1,53 +1,66 @@
 {
-  "uuid": "0195b2ff-1ff2-7bf3-ad67-942499a34aff",
-  "type": "standard",
-  "code": "FPOP-10027",
-  "issue_date": "2025-01-24",
-  "op_date": "2025-01-24",
-  "currency": "USD",
-  "exchange_rates": [
-    {
-      "from": "USD",
-      "to": "EUR",
-      "amount": "0.935"
-    }
-  ],
-  "supplier": {
-    "name": "Invopop Development"
-  },
-  "lines": [
-    {
-      "i": 1,
-      "quantity": "1",
-      "item": {
-        "name": "(created by Stripe CLI)",
-        "currency": "USD",
-        "price": "20.00"
-      },
-      "sum": "20.00",
-      "total": "20.00"
-    }
-  ],
-  "ordering": {
-    "period": {
-      "start": "2025-01-24",
-      "end": "2025-01-24"
-    }
-  },
-  "payment": {
-    "instructions": {
-      "key": "card",
-      "detail": "Card"
-    }
-  },
-  "totals": {
-    "sum": "20.00",
-    "total": "20.00",
-    "tax": "0.00",
-    "total_with_tax": "20.00",
-    "payable": "20.00"
-  },
-  "meta": {
-    "stripe-document-id": "in_1QkqKVQhcl5B85YlT32LIsNm"
-  }
+	"$schema": "https://gobl.org/draft-0/envelope",
+	"head": {
+		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
+		"dig": {
+			"alg": "sha256",
+			"val": "f1965d3be7b5ed0bad83e10833c1fe3ae336e13c8dc80a844ec53468d73a35bc"
+		}
+	},
+	"doc": {
+		"$schema": "https://gobl.org/draft-0/bill/invoice",
+		"uuid": "01986076-5253-7aa2-a517-8cb5660bc99b",
+		"type": "standard",
+		"series": "FPOP",
+		"code": "10027",
+		"issue_date": "2025-01-24",
+		"op_date": "2025-01-24",
+		"currency": "USD",
+		"exchange_rates": [
+			{
+				"from": "USD",
+				"to": "EUR",
+				"amount": "0.935"
+			}
+		],
+		"supplier": {
+			"name": "Invopop Development"
+		},
+		"lines": [
+			{
+				"i": 1,
+				"quantity": "1",
+				"item": {
+					"name": "(created by Stripe CLI)",
+					"currency": "USD",
+					"price": "20.00"
+				},
+				"sum": "20.00",
+				"total": "20.00"
+			}
+		],
+		"ordering": {
+			"period": {
+				"start": "2025-01-24",
+				"end": "2025-01-24"
+			}
+		},
+		"payment": {
+			"instructions": {
+				"key": "card",
+				"detail": "Card"
+			}
+		},
+		"totals": {
+			"sum": "20.00",
+			"total": "20.00",
+			"tax": "0.00",
+			"total_with_tax": "20.00",
+			"payable": "20.00"
+		},
+		"meta": {
+			"stripe-document-id": "in_1QkqKVQhcl5B85YlT32LIsNm",
+			"stripe-document-type": "invoice"
+		}
+	}
 }

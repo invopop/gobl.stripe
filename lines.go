@@ -18,16 +18,16 @@ import (
 // Invoice Lines
 
 // FromInvoiceLines converts Stripe invoice line items into GOBL bill lines.
-func FromInvoiceLines(lines []*stripe.InvoiceLineItem) []*bill.Line {
+func FromInvoiceLines(lines []*stripe.InvoiceLineItem, regimeDef *tax.RegimeDef) []*bill.Line {
 	invLines := make([]*bill.Line, 0, len(lines))
 	for _, line := range lines {
-		invLines = append(invLines, FromInvoiceLine(line))
+		invLines = append(invLines, FromInvoiceLine(line, regimeDef))
 	}
 	return invLines
 }
 
 // FromInvoiceLine converts a single Stripe invoice line item into a GOBL bill line.
-func FromInvoiceLine(line *stripe.InvoiceLineItem) *bill.Line {
+func FromInvoiceLine(line *stripe.InvoiceLineItem, regimeDef *tax.RegimeDef) *bill.Line {
 	invLine := &bill.Line{
 		Quantity: newQuantityFromInvoiceLine(line),
 		Item:     fromInvoiceLineToItem(line),
@@ -40,7 +40,7 @@ func FromInvoiceLine(line *stripe.InvoiceLineItem) *bill.Line {
 		invLine.Discounts = FromInvoiceLineDiscounts(line.Discounts)
 	}
 
-	invLine.Taxes = FromInvoiceTaxAmountsToTaxSet(line.TaxAmounts)
+	invLine.Taxes = FromInvoiceTaxAmountsToTaxSet(line.TaxAmounts, regimeDef)
 
 	return invLine
 }
@@ -141,33 +141,39 @@ func FromInvoiceLineDiscount(discount *stripe.Discount) *bill.LineDiscount {
 }
 
 // FromInvoiceTaxAmountsToTaxSet converts Stripe invoice tax amounts into a GOBL tax set.
-func FromInvoiceTaxAmountsToTaxSet(taxAmounts []*stripe.InvoiceTotalTaxAmount) tax.Set {
+func FromInvoiceTaxAmountsToTaxSet(taxAmounts []*stripe.InvoiceTotalTaxAmount, regimeDef *tax.RegimeDef) tax.Set {
 	var ts tax.Set
 	for _, taxAmount := range taxAmounts {
-		taxCombo := FromInvoiceTaxAmountToTaxCombo(taxAmount)
+		taxCombo := FromInvoiceTaxAmountToTaxCombo(taxAmount, regimeDef)
 		if taxCombo != nil {
-			ts = append(ts, FromInvoiceTaxAmountToTaxCombo(taxAmount))
+			ts = append(ts, taxCombo)
 		}
 	}
 	return ts
 }
 
 // FromInvoiceTaxAmountToTaxCombo creates a new GOBL tax combo from a Stripe invoice tax amount.
-func FromInvoiceTaxAmountToTaxCombo(taxAmount *stripe.InvoiceTotalTaxAmount) *tax.Combo {
+func FromInvoiceTaxAmountToTaxCombo(taxAmount *stripe.InvoiceTotalTaxAmount, regimeDef *tax.RegimeDef) *tax.Combo {
 	if taxAmount.TaxRate.Country == "" && taxAmount.TaxRate.TaxType == "" {
 		return nil
 	}
-	tc := &tax.Combo{
-		Category: extractTaxCat(taxAmount.TaxRate),
-		Country:  l10n.TaxCountryCode(taxAmount.TaxRate.Country),
-	}
+
+	tc := new(tax.Combo)
+	tc.Category = extractTaxCat(taxAmount.TaxRate)
 
 	// Instead of the percentage we can also look at the taxability_reason field.
 	// There are different types defined and we could map them to the tax categories in GOBL.
 
+	if taxAmount.TaxabilityReason == stripe.InvoiceTotalTaxAmountTaxabilityReasonReverseCharge {
+		if hasRate(regimeDef.Country.Code(), tc.Category, tax.RateExempt) {
+			tc.Rate = tax.RateExempt
+		}
+		return tc
+	}
+
 	taxDate := newDateFromTS(taxAmount.TaxRate.Created)
 	// Based on the country and the percentage, we can determine the tax rate and value.
-	rate, val := lookupRateValue(taxAmount.TaxRate.EffectivePercentage, tc.Country.Code(), tc.Category, taxDate)
+	rate, val := lookupRateValue(taxAmount.TaxRate.EffectivePercentage, l10n.Code(taxAmount.TaxRate.Country), tc.Category, taxDate)
 	if val == nil {
 		// No matching rate found in the regime. Set the tax percent directly.
 		tc.Percent = percentFromFloat(taxAmount.TaxRate.EffectivePercentage)
@@ -183,16 +189,16 @@ func FromInvoiceTaxAmountToTaxCombo(taxAmount *stripe.InvoiceTotalTaxAmount) *ta
 // Credit Notes Lines
 
 // FromCreditNoteLines converts Stripe credit note line items into GOBL bill lines.
-func FromCreditNoteLines(lines []*stripe.CreditNoteLineItem, curr currency.Code) []*bill.Line {
+func FromCreditNoteLines(lines []*stripe.CreditNoteLineItem, curr currency.Code, regimeDef *tax.RegimeDef) []*bill.Line {
 	invLines := make([]*bill.Line, 0, len(lines))
 	for _, line := range lines {
-		invLines = append(invLines, FromCreditNoteLine(line, curr))
+		invLines = append(invLines, FromCreditNoteLine(line, curr, regimeDef))
 	}
 	return invLines
 }
 
 // FromCreditNoteLine converts a single Stripe credit note line item into a GOBL bill line.
-func FromCreditNoteLine(line *stripe.CreditNoteLineItem, curr currency.Code) *bill.Line {
+func FromCreditNoteLine(line *stripe.CreditNoteLineItem, curr currency.Code, regimeDef *tax.RegimeDef) *bill.Line {
 	invLine := &bill.Line{
 		Quantity: newQuantityFromCreditNote(line),
 		Item:     FromCreditNoteLineToItem(line, curr),
@@ -202,7 +208,7 @@ func FromCreditNoteLine(line *stripe.CreditNoteLineItem, curr currency.Code) *bi
 		invLine.Discounts = FromCreditNoteLineDiscounts(line.DiscountAmounts, curr)
 	}
 
-	invLine.Taxes = FromCreditNoteTaxAmountsToTaxSet(line.TaxAmounts)
+	invLine.Taxes = FromCreditNoteTaxAmountsToTaxSet(line.TaxAmounts, regimeDef)
 
 	return invLine
 }
@@ -262,31 +268,40 @@ func FromCreditNoteLineDiscount(discount *stripe.CreditNoteLineItemDiscountAmoun
 }
 
 // FromCreditNoteTaxAmountsToTaxSet converts Stripe credit note tax amounts into a GOBL tax set.
-func FromCreditNoteTaxAmountsToTaxSet(taxAmounts []*stripe.CreditNoteTaxAmount) tax.Set {
+func FromCreditNoteTaxAmountsToTaxSet(taxAmounts []*stripe.CreditNoteTaxAmount, regimeDef *tax.RegimeDef) tax.Set {
 	var ts tax.Set
 	for _, taxAmount := range taxAmounts {
-		ts = append(ts, FromCreditNoteTaxAmountToTaxCombo(taxAmount))
+		taxCombo := FromCreditNoteTaxAmountToTaxCombo(taxAmount, regimeDef)
+		if taxCombo != nil {
+			ts = append(ts, taxCombo)
+		}
 	}
 	return ts
 }
 
 // FromCreditNoteTaxAmountToTaxCombo creates a new GOBL tax combo from a Stripe credit note tax amount.
-func FromCreditNoteTaxAmountToTaxCombo(taxAmount *stripe.CreditNoteTaxAmount) *tax.Combo {
+func FromCreditNoteTaxAmountToTaxCombo(taxAmount *stripe.CreditNoteTaxAmount, regimeDef *tax.RegimeDef) *tax.Combo {
 	if taxAmount.TaxRate.Country == "" && taxAmount.TaxRate.TaxType == "" {
 		return nil
 	}
 
-	tc := &tax.Combo{
-		Category: extractTaxCat(taxAmount.TaxRate),
-		Country:  l10n.TaxCountryCode(taxAmount.TaxRate.Country),
-	}
+	tc := new(tax.Combo)
+	tc.Category = extractTaxCat(taxAmount.TaxRate)
 
 	// Instead of the percentage we can also look at the taxability_reason field.
 	// There are different types defined and we could map them to the tax categories in GOBL.
 
+	if taxAmount.TaxabilityReason == stripe.CreditNoteTaxAmountTaxabilityReasonReverseCharge {
+
+		if hasRate(regimeDef.Country.Code(), tc.Category, tax.RateExempt) {
+			tc.Rate = tax.RateExempt
+		}
+		return tc
+	}
+
 	taxDate := newDateFromTS(taxAmount.TaxRate.Created)
 	// Based on the country and the percentage, we can determine the tax rate and value.
-	rate, val := lookupRateValue(taxAmount.TaxRate.EffectivePercentage, tc.Country.Code(), tc.Category, taxDate)
+	rate, val := lookupRateValue(taxAmount.TaxRate.EffectivePercentage, l10n.Code(taxAmount.TaxRate.Country), tc.Category, taxDate)
 	if val == nil {
 		// No matching rate found in the regime. Set the tax percent directly.
 		tc.Percent = percentFromFloat(taxAmount.TaxRate.EffectivePercentage)
@@ -350,4 +365,21 @@ func percentFromFloat(f float64) *num.Percentage {
 	}
 
 	return &p
+}
+
+// hasRate checks if a tax rate is defined in the regime.
+func hasRate(country l10n.Code, cat cbc.Code, key cbc.Key) bool {
+	regimeDef := tax.RegimeDefFor(country)
+	catDef := regimeDef.CategoryDef(cat)
+	if catDef == nil {
+		return false
+	}
+
+	for _, r := range catDef.Rates {
+		if r.Key == key {
+			return true
+		}
+	}
+
+	return false
 }
