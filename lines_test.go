@@ -599,7 +599,7 @@ func TestFromCreditNoteTaxAmountsReverseCharge(t *testing.T) {
 					TaxabilityReason: stripe.CreditNoteTaxAmountTaxabilityReasonReverseCharge,
 				},
 			},
-			regime: l10n.DE, // Germany regime looking at GB reverse charge
+			regime: l10n.DE, // Germanyregime looking at GB reverse charge
 			expected: tax.Set{
 				{
 					Category: tax.CategoryVAT,
