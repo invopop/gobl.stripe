@@ -157,7 +157,6 @@ func FromInvoiceTaxAmountToTaxCombo(taxAmount *stripe.InvoiceTotalTaxAmount, reg
 	if taxAmount.TaxRate.Country == "" && taxAmount.TaxRate.TaxType == "" {
 		return nil
 	}
-
 	tc := new(tax.Combo)
 	tc.Category = extractTaxCat(taxAmount.TaxRate)
 
@@ -166,14 +165,16 @@ func FromInvoiceTaxAmountToTaxCombo(taxAmount *stripe.InvoiceTotalTaxAmount, reg
 
 	if taxAmount.TaxabilityReason == stripe.InvoiceTotalTaxAmountTaxabilityReasonReverseCharge {
 		if hasRate(regimeDef.Country.Code(), tc.Category, tax.RateExempt) {
+			tc.Country = regimeDef.Country
 			tc.Rate = tax.RateExempt
 		}
 		return tc
 	}
 
 	taxDate := newDateFromTS(taxAmount.TaxRate.Created)
+	tc.Country = l10n.TaxCountryCode(taxAmount.TaxRate.Country)
 	// Based on the country and the percentage, we can determine the tax rate and value.
-	rate, val := lookupRateValue(taxAmount.TaxRate.EffectivePercentage, l10n.Code(taxAmount.TaxRate.Country), tc.Category, taxDate)
+	rate, val := lookupRateValue(taxAmount.TaxRate.EffectivePercentage, tc.Country.Code(), tc.Category, taxDate)
 	if val == nil {
 		// No matching rate found in the regime. Set the tax percent directly.
 		tc.Percent = percentFromFloat(taxAmount.TaxRate.EffectivePercentage)
@@ -271,9 +272,9 @@ func FromCreditNoteLineDiscount(discount *stripe.CreditNoteLineItemDiscountAmoun
 func FromCreditNoteTaxAmountsToTaxSet(taxAmounts []*stripe.CreditNoteTaxAmount, regimeDef *tax.RegimeDef) tax.Set {
 	var ts tax.Set
 	for _, taxAmount := range taxAmounts {
-		taxCombo := FromCreditNoteTaxAmountToTaxCombo(taxAmount, regimeDef)
-		if taxCombo != nil {
-			ts = append(ts, taxCombo)
+		tc := FromCreditNoteTaxAmountToTaxCombo(taxAmount, regimeDef)
+		if tc != nil {
+			ts = append(ts, tc)
 		}
 	}
 	return ts
@@ -292,16 +293,17 @@ func FromCreditNoteTaxAmountToTaxCombo(taxAmount *stripe.CreditNoteTaxAmount, re
 	// There are different types defined and we could map them to the tax categories in GOBL.
 
 	if taxAmount.TaxabilityReason == stripe.CreditNoteTaxAmountTaxabilityReasonReverseCharge {
-
 		if hasRate(regimeDef.Country.Code(), tc.Category, tax.RateExempt) {
+			tc.Country = regimeDef.Country
 			tc.Rate = tax.RateExempt
 		}
 		return tc
 	}
 
 	taxDate := newDateFromTS(taxAmount.TaxRate.Created)
+	tc.Country = l10n.TaxCountryCode(taxAmount.TaxRate.Country)
 	// Based on the country and the percentage, we can determine the tax rate and value.
-	rate, val := lookupRateValue(taxAmount.TaxRate.EffectivePercentage, l10n.Code(taxAmount.TaxRate.Country), tc.Category, taxDate)
+	rate, val := lookupRateValue(taxAmount.TaxRate.EffectivePercentage, tc.Country.Code(), tc.Category, taxDate)
 	if val == nil {
 		// No matching rate found in the regime. Set the tax percent directly.
 		tc.Percent = percentFromFloat(taxAmount.TaxRate.EffectivePercentage)

@@ -4,12 +4,12 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "05eace2e374e3a2a77feec3bef4b6f69fe83f6749153849e10eb6301a0ef9f06"
+			"val": "277111df8898e802bf11bfc38a3ed4d616d7e4aec69ad957be82e45dcb095294"
 		}
 	},
 	"doc": {
 		"$schema": "https://gobl.org/draft-0/bill/invoice",
-		"uuid": "01986076-526a-7464-b0c0-2f0b82c7e1c2",
+		"uuid": "019860fc-7d4c-7922-a371-e848ca5141d3",
 		"type": "standard",
 		"series": "JV64HIWA",
 		"code": "0009",
@@ -59,7 +59,9 @@
 				"taxes": [
 					{
 						"cat": "VAT",
-						"rate": "standard"
+						"country": "MX",
+						"rate": "standard",
+						"percent": "16.0%"
 					}
 				],
 				"total": "3360.00"
@@ -76,7 +78,7 @@
 				"due_dates": [
 					{
 						"date": "2025-07-10",
-						"amount": "3360.00",
+						"amount": "3897.60",
 						"percent": "100%"
 					}
 				]
@@ -96,18 +98,20 @@
 						"rates": [
 							{
 								"key": "standard",
+								"country": "MX",
 								"base": "3360.00",
-								"amount": "0.00"
+								"percent": "16.0%",
+								"amount": "537.60"
 							}
 						],
-						"amount": "0.00"
+						"amount": "537.60"
 					}
 				],
-				"sum": "0.00"
+				"sum": "537.60"
 			},
-			"tax": "0.00",
-			"total_with_tax": "3360.00",
-			"payable": "3360.00"
+			"tax": "537.60",
+			"total_with_tax": "3897.60",
+			"payable": "3897.60"
 		},
 		"meta": {
 			"stripe-document-id": "in_1RYN7YH4o6QqbU8hGDmIcfdb",

@@ -81,9 +81,8 @@ func FromInvoice(doc *stripe.Invoice) (*bill.Invoice, error) {
 	} else {
 		inv.Customer = newCustomerFromInvoice(doc)
 	}
-	if doc.CustomerTaxExempt != nil {
-		inv.Tags = newTags(doc)
-	}
+
+	inv.Tags = newTags(doc)
 
 	inv.Lines = FromInvoiceLines(doc.Lines.Data, regimeDef)
 	inv.Tax = taxFromInvoiceTaxAmounts(doc.TotalTaxAmounts)
@@ -185,8 +184,10 @@ func newPrecedingFromInvoice(doc *stripe.Invoice, reason string) *org.DocumentRe
 
 // newTags creates a tax tags object from a customer tax exempt status.
 func newTags(doc *stripe.Invoice) tax.Tags {
-	if doc.CustomerTaxExempt != nil && *doc.CustomerTaxExempt == stripe.CustomerTaxExemptReverse {
-		return tax.WithTags(tax.TagReverseCharge)
+	if doc.CustomerTaxExempt != nil {
+		if *doc.CustomerTaxExempt == stripe.CustomerTaxExemptReverse {
+			return tax.WithTags(tax.TagReverseCharge)
+		}
 	}
 
 	for _, taxAmount := range doc.TotalTaxAmounts {

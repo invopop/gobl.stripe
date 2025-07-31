@@ -100,7 +100,7 @@
   "customer_tax_ids": [
     {
       "type": "eu_vat",
-      "value": "BE0123456789"
+      "value": "DE111111125"
     }
   ],
   "custom_fields": null,

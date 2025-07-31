@@ -4,12 +4,12 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "64336acfe14ec270358a4f9c5b1af11df1ca6984bd27963e50973afee397cc94"
+			"val": "cd6c7d696afab3897cb482a666479edd76aa56e480d59b37a43131f3ae27d4ab"
 		}
 	},
 	"doc": {
 		"$schema": "https://gobl.org/draft-0/bill/invoice",
-		"uuid": "01986076-525d-7630-99b1-2c226875d1e0",
+		"uuid": "019860fc-7d4c-7922-a371-e848ca5141d3",
 		"type": "standard",
 		"series": "RANDOM",
 		"code": "0002",
@@ -60,7 +60,9 @@
 				"taxes": [
 					{
 						"cat": "VAT",
-						"rate": "standard"
+						"country": "MX",
+						"rate": "standard",
+						"percent": "16.0%"
 					}
 				],
 				"total": "0.00"
@@ -83,7 +85,9 @@
 						"rates": [
 							{
 								"key": "standard",
+								"country": "MX",
 								"base": "0.00",
+								"percent": "16.0%",
 								"amount": "0.00"
 							}
 						],
