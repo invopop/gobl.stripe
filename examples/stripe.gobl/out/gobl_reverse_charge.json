@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "d2d9091a553b61012217b096f64f991fd8f57b3907cc1021eeb37bb0b21a70e2"
+			"val": "8d7da01cfde880e6e95bce48469df99bc42d9bfd19cb50b4faf178b8fd96f070"
 		}
 	},
 	"doc": {
@@ -16,7 +16,7 @@
 		"type": "standard",
 		"series": "V7REHZYJ",
 		"code": "0013",
-		"issue_date": "2025-07-31",
+		"issue_date": "2025-08-05",
 		"op_date": "2025-07-31",
 		"currency": "EUR",
 		"tax": {

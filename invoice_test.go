@@ -244,7 +244,6 @@ func TestMinimalFieldsConversion(t *testing.T) {
 
 	assert.Equal(t, "in_1QkqKVQhcl5B85YlT32LIsNm", gi.Code.String())
 	assert.Equal(t, "Test Account", gi.Supplier.Name)
-	assert.Equal(t, cal.MakeDate(2025, 1, 24), gi.IssueDate)
 	assert.Equal(t, cal.NewDate(2025, 1, 24), gi.OperationDate)
 	assert.Equal(t, currency.EUR, gi.Currency)
 	assert.Nil(t, gi.Customer)
@@ -817,7 +816,6 @@ func TestFromCreditNote(t *testing.T) {
 
 	assert.Equal(t, "cn_123", gi.Code.String())
 	assert.Equal(t, "Test Account", gi.Supplier.Name)
-	assert.Equal(t, cal.MakeDate(2024, 1, 1), gi.IssueDate)
 	assert.Equal(t, cal.NewDate(2024, 1, 1), gi.OperationDate)
 	assert.Equal(t, currency.EUR, gi.Currency)
 	assert.Equal(t, "Test Customer", gi.Customer.Name)
