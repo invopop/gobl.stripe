@@ -67,7 +67,6 @@ func FromInvoice(doc *stripe.Invoice) (*bill.Invoice, error) {
 		MetaKeyStripeDocType: StripeDocTypeInvoice,
 	}
 
-	inv.IssueDate = cal.DateOf(time.Unix(doc.Created, 0).UTC()) //Date when the invoice was created
 	if doc.EffectiveAt != 0 {
 		inv.OperationDate = newDateFromTS(doc.EffectiveAt) // Date when the operation defined by the invoice became effective
 	}
@@ -120,7 +119,6 @@ func FromCreditNote(doc *stripe.CreditNote) (*bill.Invoice, error) {
 		MetaKeyStripeDocType: StripeDocTypeCreditNote,
 	}
 
-	inv.IssueDate = cal.DateOf(time.Unix(doc.Created, 0).UTC()) //Date when the credit note was created
 	if doc.EffectiveAt != 0 {
 		inv.OperationDate = newDateFromTS(doc.EffectiveAt) // Date when the operation defined by the credit note became effective
 	}
