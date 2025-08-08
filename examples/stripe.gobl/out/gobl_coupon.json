@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "30bd155150ffd199ee864c1f2f1d2a882b4a5eab8c988ec89af94a9c0dc6dd19"
+			"val": "4e07baa05892eb28a381af57780e40993147140ed8a78e06b134de3dcc72a081"
 		}
 	},
 	"doc": {
@@ -15,9 +15,9 @@
 		"uuid": "019860fc-7d4c-7922-a371-e848ca5141d3",
 		"type": "standard",
 		"series": "V7REHZYJ",
-		"code": "0013",
+		"code": "0019",
 		"issue_date": "2025-08-08",
-		"op_date": "2025-07-31",
+		"op_date": "2025-08-08",
 		"currency": "EUR",
 		"tax": {
 			"prices_include": "VAT"
@@ -50,7 +50,35 @@
 				"i": 1,
 				"quantity": "1",
 				"item": {
-					"name": "1 × Software Services (recurrent) (at €100.00 / month)",
+					"name": "Item with discount",
+					"currency": "EUR",
+					"price": "149.00"
+				},
+				"sum": "149.00",
+				"discounts": [
+					{
+						"reason": "PabloDiscount",
+						"amount": "50.00"
+					},
+					{
+						"reason": "PabloPercentage",
+						"amount": "9.90"
+					}
+				],
+				"taxes": [
+					{
+						"cat": "VAT",
+						"country": "PT",
+						"rate": "exempt"
+					}
+				],
+				"total": "89.10"
+			},
+			{
+				"i": 2,
+				"quantity": "1",
+				"item": {
+					"name": "Software services",
 					"currency": "EUR",
 					"price": "100.00"
 				},
@@ -67,8 +95,23 @@
 		],
 		"ordering": {
 			"period": {
-				"start": "2025-07-31",
-				"end": "2025-07-31"
+				"start": "2025-08-08",
+				"end": "2025-08-08"
+			}
+		},
+		"payment": {
+			"terms": {
+				"due_dates": [
+					{
+						"date": "2025-09-07",
+						"amount": "189.10",
+						"percent": "100%"
+					}
+				]
+			},
+			"instructions": {
+				"key": "online+card",
+				"detail": "Bancontact, Card, EPS, giropay, Link"
 			}
 		},
 		"delivery": {
@@ -84,9 +127,9 @@
 			}
 		},
 		"totals": {
-			"sum": "100.00",
+			"sum": "189.10",
 			"tax_included": "0.00",
-			"total": "100.00",
+			"total": "189.10",
 			"taxes": {
 				"categories": [
 					{
@@ -95,7 +138,7 @@
 							{
 								"key": "exempt",
 								"country": "PT",
-								"base": "100.00",
+								"base": "189.10",
 								"amount": "0.00"
 							}
 						],
@@ -105,11 +148,11 @@
 				"sum": "0.00"
 			},
 			"tax": "0.00",
-			"total_with_tax": "100.00",
-			"payable": "100.00"
+			"total_with_tax": "189.10",
+			"payable": "189.10"
 		},
 		"meta": {
-			"stripe-document-id": "in_1RqsftHRYe2PhVGCUkoKnqL8",
+			"stripe-document-id": "in_1RtqukHRYe2PhVGCbTTCgXyC",
 			"stripe-document-type": "invoice"
 		}
 	}

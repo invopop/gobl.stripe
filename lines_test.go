@@ -352,8 +352,8 @@ func TestFromLineTiered(t *testing.T) {
 		Currency:           stripe.CurrencyEUR,
 		Discountable:       true,
 		Quantity:           10000,
-		Discounts: []*stripe.Discount{
-			{Coupon: &stripe.Coupon{AmountOff: 5000, Currency: stripe.CurrencyEUR, Valid: true}},
+		DiscountAmounts: []*stripe.InvoiceLineItemDiscountAmount{
+			{Amount: 5000, Discount: &stripe.Discount{Coupon: &stripe.Coupon{AmountOff: 5000, Currency: stripe.CurrencyEUR, Valid: true}}},
 		},
 		Period: &stripe.Period{
 			Start: 1736351413,
@@ -399,31 +399,37 @@ func TestFromLineTiered(t *testing.T) {
 func TestFromDiscount(t *testing.T) {
 	tests := []struct {
 		name     string
-		input    *stripe.Discount
+		input    *stripe.InvoiceLineItemDiscountAmount
 		expected *bill.LineDiscount
 	}{
 		{
 			name: "percentage discount",
-			input: &stripe.Discount{
-				Coupon: &stripe.Coupon{
-					Valid:      true,
-					PercentOff: 15.0,
-					Name:       "New Customer",
+			input: &stripe.InvoiceLineItemDiscountAmount{
+				Amount: 1500,
+				Discount: &stripe.Discount{
+					Coupon: &stripe.Coupon{
+						Valid:      true,
+						PercentOff: 15.0,
+						Name:       "New Customer",
+					},
 				},
 			},
 			expected: &bill.LineDiscount{
-				Percent: num.NewPercentage(150, 3),
-				Reason:  "New Customer",
+				Amount: num.MakeAmount(1500, 2),
+				Reason: "New Customer",
 			},
 		},
 		{
 			name: "amount discount",
-			input: &stripe.Discount{
-				Coupon: &stripe.Coupon{
-					Valid:     true,
-					AmountOff: 1000,
-					Currency:  "eur",
-					Name:      "Welcome Bonus",
+			input: &stripe.InvoiceLineItemDiscountAmount{
+				Amount: 1000,
+				Discount: &stripe.Discount{
+					Coupon: &stripe.Coupon{
+						Valid:     true,
+						AmountOff: 1000,
+						Currency:  "eur",
+						Name:      "Welcome Bonus",
+					},
 				},
 			},
 			expected: &bill.LineDiscount{
@@ -431,20 +437,11 @@ func TestFromDiscount(t *testing.T) {
 				Reason: "Welcome Bonus",
 			},
 		},
-		{
-			name: "invalid coupon",
-			input: &stripe.Discount{
-				Coupon: &stripe.Coupon{
-					Valid: false,
-				},
-			},
-			expected: nil,
-		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := goblstripe.FromInvoiceLineDiscount(tt.input)
+			result := goblstripe.FromInvoiceLineDiscount(tt.input, stripe.CurrencyEUR)
 			assert.Equal(t, tt.expected, result)
 		})
 	}

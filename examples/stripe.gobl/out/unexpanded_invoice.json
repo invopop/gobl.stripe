@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "3e09ce7d65e06b38ffb8d6aaedf6861db8be9dcbfb43544dd77e587d3461b890"
+			"val": "89a4875308231c1394d6b3ae5ccb8dd28e25c7f9c9ec94bf2c3548ec36e5598c"
 		}
 	},
 	"doc": {
@@ -15,7 +15,7 @@
 		"uuid": "019860fc-7d4c-7922-a371-e848ca5141d3",
 		"type": "standard",
 		"code": "in_1QpCUMQhcl5B85YlfgMLxqMg",
-		"issue_date": "2025-08-05",
+		"issue_date": "2025-08-08",
 		"currency": "EUR",
 		"supplier": {
 			"name": "Invopop Development"
@@ -63,7 +63,12 @@
 					"price": "70.00"
 				},
 				"sum": "140.00",
-				"total": "140.00"
+				"discounts": [
+					{
+						"amount": "14.00"
+					}
+				],
+				"total": "126.00"
 			}
 		],
 		"ordering": {
@@ -73,11 +78,11 @@
 			}
 		},
 		"totals": {
-			"sum": "440.00",
-			"total": "440.00",
+			"sum": "426.00",
+			"total": "426.00",
 			"tax": "0.00",
-			"total_with_tax": "440.00",
-			"payable": "440.00"
+			"total_with_tax": "426.00",
+			"payable": "426.00"
 		},
 		"meta": {
 			"stripe-document-id": "in_1QpCUMQhcl5B85YlfgMLxqMg",

@@ -36,8 +36,8 @@ func FromInvoiceLine(line *stripe.InvoiceLineItem, regimeDef *tax.RegimeDef) *bi
 	price := currencyAmount(line.Amount, FromCurrency(line.Currency)).Divide(invLine.Quantity)
 	invLine.Item.Price = &price
 
-	if len(line.Discounts) > 0 && line.Discountable {
-		invLine.Discounts = FromInvoiceLineDiscounts(line.Discounts)
+	if len(line.DiscountAmounts) > 0 && line.Discountable {
+		invLine.Discounts = FromInvoiceLineDiscounts(line.DiscountAmounts, line.Currency)
 	}
 
 	invLine.Taxes = FromInvoiceTaxAmountsToTaxSet(line.TaxAmounts, regimeDef)
@@ -100,44 +100,36 @@ func setItemName(line *stripe.InvoiceLineItem) string {
 }
 
 // FromInvoiceLineDiscounts creates a list of discounts for a GOBL invoice line item.
-func FromInvoiceLineDiscounts(discounts []*stripe.Discount) []*bill.LineDiscount {
+func FromInvoiceLineDiscounts(discounts []*stripe.InvoiceLineItemDiscountAmount, curr stripe.Currency) []*bill.LineDiscount {
 	invDiscounts := make([]*bill.LineDiscount, 0)
 	for _, discount := range discounts {
-		lineDiscount := FromInvoiceLineDiscount(discount)
+		lineDiscount := FromInvoiceLineDiscount(discount, curr)
 		if lineDiscount != nil {
-			invDiscounts = append(invDiscounts, FromInvoiceLineDiscount(discount))
+			invDiscounts = append(invDiscounts, lineDiscount)
 		}
 	}
 	return invDiscounts
 }
 
 // FromInvoiceLineDiscount creates a discount for a GOBL invoice line item.
-func FromInvoiceLineDiscount(discount *stripe.Discount) *bill.LineDiscount {
-	if discount.Coupon == nil {
-		return nil
-	}
-
-	if !discount.Coupon.Valid {
-		return nil
-	}
-
-	// If the discount is a percentage, we can directly set the percent.
-	if discount.Coupon.PercentOff != 0 {
+func FromInvoiceLineDiscount(discountAmount *stripe.InvoiceLineItemDiscountAmount, curr stripe.Currency) *bill.LineDiscount {
+	// We can set the amount directly from the one received in Stripe
+	if discountAmount.Discount == nil {
 		return &bill.LineDiscount{
-			Percent: percentFromFloat(discount.Coupon.PercentOff),
-			Reason:  discount.Coupon.Name,
+			Amount: currencyAmount(discountAmount.Amount, FromCurrency(curr)),
 		}
 	}
 
-	// If the discount is an amount, we can directly set the amount.
-	if discount.Coupon.AmountOff != 0 {
+	if discountAmount.Discount.Coupon == nil {
 		return &bill.LineDiscount{
-			Amount: currencyAmount(discount.Coupon.AmountOff, FromCurrency(discount.Coupon.Currency)),
-			Reason: discount.Coupon.Name,
+			Amount: currencyAmount(discountAmount.Amount, FromCurrency(curr)),
 		}
 	}
 
-	return nil
+	return &bill.LineDiscount{
+		Amount: currencyAmount(discountAmount.Amount, FromCurrency(curr)),
+		Reason: discountAmount.Discount.Coupon.Name,
+	}
 }
 
 // FromInvoiceTaxAmountsToTaxSet converts Stripe invoice tax amounts into a GOBL tax set.
@@ -262,9 +254,22 @@ func FromCreditNoteLineDiscounts(discounts []*stripe.CreditNoteLineItemDiscountA
 }
 
 // FromCreditNoteLineDiscount creates a discount for a GOBL credit note line item.
-func FromCreditNoteLineDiscount(discount *stripe.CreditNoteLineItemDiscountAmount, curr currency.Code) *bill.LineDiscount {
+func FromCreditNoteLineDiscount(discountAmount *stripe.CreditNoteLineItemDiscountAmount, curr currency.Code) *bill.LineDiscount {
+	if discountAmount.Discount == nil {
+		return &bill.LineDiscount{
+			Amount: currencyAmount(discountAmount.Amount, curr),
+		}
+	}
+
+	if discountAmount.Discount.Coupon == nil {
+		return &bill.LineDiscount{
+			Amount: currencyAmount(discountAmount.Amount, curr),
+		}
+	}
+
 	return &bill.LineDiscount{
-		Amount: currencyAmount(discount.Amount, curr),
+		Amount: currencyAmount(discountAmount.Amount, curr),
+		Reason: discountAmount.Discount.Coupon.Name,
 	}
 }
 
