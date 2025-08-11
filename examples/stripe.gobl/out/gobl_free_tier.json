@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "ac3ba21ac841be449f20e67fb8cf0a13d57ede2660078662fabdc1d1f450ff3a"
+			"val": "725abd0bc8105d4724a830f904f22c397cac53bf23968e7ca3c54e64fcfa9cce"
 		}
 	},
 	"doc": {
@@ -13,7 +13,7 @@
 		"type": "standard",
 		"series": "RANDOM",
 		"code": "0002",
-		"issue_date": "2025-08-05",
+		"issue_date": "2025-08-11",
 		"op_date": "2025-06-23",
 		"currency": "MXN",
 		"tax": {

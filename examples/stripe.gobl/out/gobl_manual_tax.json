@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "50f515b5d9e782d80ee85d4302635aa3745c69edf9c805a45291e2eb9690ffa1"
+			"val": "e298d7f0185154422d858dabc4ef069ebd57ffdb901147b4a6025535412afb31"
 		}
 	},
 	"doc": {
@@ -14,7 +14,7 @@
 		"type": "standard",
 		"series": "E486556A",
 		"code": "0033",
-		"issue_date": "2025-08-05",
+		"issue_date": "2025-08-11",
 		"op_date": "2025-06-13",
 		"currency": "EUR",
 		"tax": {
@@ -61,8 +61,6 @@
 				"sum": "10.00",
 				"discounts": [
 					{
-						"reason": "2 for 1",
-						"percent": "50.0%",
 						"amount": "5.00"
 					}
 				],
