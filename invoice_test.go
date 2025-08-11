@@ -645,6 +645,26 @@ func TestUnexpandedTax(t *testing.T) {
 	err = gi.Calculate()
 	require.NoError(t, err)
 
+	assert.Equal(t, goblstripe.ExpectedInvoiceTotal(s), gi.Totals.Payable)
+
+	err = gi.Validate()
+	require.NoError(t, err)
+}
+
+func TestStripeCoupon(t *testing.T) {
+	data, _ := os.ReadFile("examples/stripe.gobl/stripe_coupon.json")
+	s := new(stripe.Invoice)
+	err := json.Unmarshal(data, s)
+	require.NoError(t, err)
+
+	gi, err := goblstripe.FromInvoice(s)
+	require.NoError(t, err)
+
+	err = gi.Calculate()
+	require.NoError(t, err)
+
+	assert.Equal(t, goblstripe.ExpectedInvoiceTotal(s), gi.Totals.Payable)
+
 	err = gi.Validate()
 	require.NoError(t, err)
 }

@@ -236,3 +236,11 @@ func MaxRoundingError(gi *bill.Invoice) num.Amount {
 	// 0.5 of the smallest subunit of the currency per line
 	return num.MakeAmount(5*int64(len(gi.Lines)), gi.Currency.Def().Subunits+1)
 }
+
+func ExpectedInvoiceTotal(doc *stripe.Invoice) num.Amount {
+	return currencyAmount(doc.Total, FromCurrency(doc.Currency))
+}
+
+func ExpectedCreditNoteTotal(doc *stripe.CreditNote) num.Amount {
+	return currencyAmount(doc.Total, FromCurrency(doc.Currency))
+}
