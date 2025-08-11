@@ -237,10 +237,12 @@ func MaxRoundingError(gi *bill.Invoice) num.Amount {
 	return num.MakeAmount(5*int64(len(gi.Lines)), gi.Currency.Def().Subunits+1)
 }
 
+// ExpectedInvoiceTotal returns the expected total of an invoice.
 func ExpectedInvoiceTotal(doc *stripe.Invoice) num.Amount {
 	return currencyAmount(doc.Total, FromCurrency(doc.Currency))
 }
 
+// ExpectedCreditNoteTotal returns the expected total of a credit note.
 func ExpectedCreditNoteTotal(doc *stripe.CreditNote) num.Amount {
 	return currencyAmount(doc.Total, FromCurrency(doc.Currency))
 }
