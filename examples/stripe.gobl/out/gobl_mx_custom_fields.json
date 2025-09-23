@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "7f5ac0025b8f2d5b6f3292c81df00cf83621654012562b54037ef353fb1d148e"
+			"val": "09075942b14ea367b553ad1626d0f4ebabc0d5d4163a24b3e26575709c5c2588"
 		}
 	},
 	"doc": {
@@ -13,7 +13,7 @@
 		"type": "standard",
 		"series": "JV64HIWA",
 		"code": "0009",
-		"issue_date": "2025-08-11",
+		"issue_date": "2025-09-23",
 		"op_date": "2025-06-10",
 		"currency": "MXN",
 		"supplier": {

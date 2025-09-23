@@ -29,6 +29,15 @@ func FromCurrency(curr stripe.Currency) currency.Code {
 	return currency.Code(strings.ToUpper(string(curr)))
 }
 
+// ToStripeInt converts a GOBL amount into a Stripe int64.
+func ToStripeInt(amount *num.Amount, curr currency.Code) int64 {
+	r := amount.Rescale(2)
+	if slices.Contains(zeroDecimalCurrencies, curr) {
+		r = amount.Rescale(0)
+	}
+	return r.Value()
+}
+
 // currencyAmount creates a currency amount object from a value and a currency code.
 func currencyAmount(val int64, curr currency.Code) num.Amount {
 	var exp uint32 = 2
