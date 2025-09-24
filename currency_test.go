@@ -34,3 +34,45 @@ func TestZeroDecimalCurrencies(t *testing.T) {
 	assert.Equal(t, currency.JPY, gi.Currency)
 	assert.Equal(t, num.NewAmount(-11000, 0), gi.Lines[0].Item.Price)
 }
+
+func TestToStripeInt(t *testing.T) {
+	tests := []struct {
+		amount   *num.Amount
+		curr     currency.Code
+		expected int64
+	}{
+		{
+			amount:   num.NewAmount(11000, 2),
+			curr:     currency.EUR,
+			expected: 11000,
+		},
+		{
+			amount:   num.NewAmount(1234567, 4),
+			curr:     currency.EUR,
+			expected: 12346,
+		},
+		{
+			amount:   num.NewAmount(1234, 1),
+			curr:     currency.EUR,
+			expected: 12340,
+		},
+		{
+			amount:   num.NewAmount(11000, 0),
+			curr:     currency.JPY,
+			expected: 11000,
+		},
+		{
+			amount:   num.NewAmount(11000, 2),
+			curr:     currency.JPY,
+			expected: 110,
+		},
+		{
+			amount:   num.NewAmount(11230, 2),
+			curr:     currency.JPY,
+			expected: 112,
+		},
+	}
+	for _, test := range tests {
+		assert.Equal(t, test.expected, goblstripe.ToStripeInt(test.amount, test.curr))
+	}
+}
