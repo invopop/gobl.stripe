@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "d945e6746b3f199712b0679994a4fa82afdce6d56a40f2d35415656d1b2b9717"
+			"val": "2e1f77d3d13ef1a1d1929b50857b60d1ed21b91ff51942c8214a914f7a2e85b7"
 		}
 	},
 	"doc": {
@@ -12,7 +12,7 @@
 		"uuid": "019860fc-7d4c-7922-a371-e848ca5141d3",
 		"type": "credit-note",
 		"code": "FPOP-10027-CN-01",
-		"issue_date": "2025-09-23",
+		"issue_date": "2025-09-25",
 		"op_date": "2025-01-24",
 		"currency": "USD",
 		"exchange_rates": [
