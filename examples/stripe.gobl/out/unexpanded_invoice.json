@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "1e72d25bb695d8678271aac59a782fc97edf6086e2cd9e135ad0e69e58a1a1d3"
+			"val": "d2bef0e03bf148df0734430195660dfec1ab9a148ee9a56d74f99696024ca585"
 		}
 	},
 	"doc": {
@@ -15,7 +15,7 @@
 		"uuid": "019860fc-7d4c-7922-a371-e848ca5141d3",
 		"type": "standard",
 		"code": "in_1QpCUMQhcl5B85YlfgMLxqMg",
-		"issue_date": "2025-09-23",
+		"issue_date": "2025-09-25",
 		"currency": "EUR",
 		"supplier": {
 			"name": "Invopop Development"

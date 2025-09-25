@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "64a6930e1dbed4174cc616c18e8012ba6c723eebf36744fc3666954084ffde89"
+			"val": "54597bca2487afe2c7f01089d32db00759d6e61ab36915b78fe199176c2cd746"
 		}
 	},
 	"doc": {
@@ -13,7 +13,7 @@
 		"type": "standard",
 		"series": "RANDOM",
 		"code": "0002",
-		"issue_date": "2025-09-23",
+		"issue_date": "2025-09-25",
 		"op_date": "2025-06-23",
 		"currency": "MXN",
 		"tax": {
@@ -61,7 +61,8 @@
 					{
 						"cat": "VAT",
 						"country": "MX",
-						"rate": "standard",
+						"key": "standard",
+						"rate": "general",
 						"percent": "16.0%"
 					}
 				],
@@ -84,8 +85,8 @@
 						"code": "VAT",
 						"rates": [
 							{
-								"key": "standard",
 								"country": "MX",
+								"key": "standard",
 								"base": "0.00",
 								"percent": "16.0%",
 								"amount": "0.00"

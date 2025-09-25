@@ -156,10 +156,8 @@ func FromInvoiceTaxAmountToTaxCombo(taxAmount *stripe.InvoiceTotalTaxAmount, reg
 	// There are different types defined and we could map them to the tax categories in GOBL.
 
 	if taxAmount.TaxabilityReason == stripe.InvoiceTotalTaxAmountTaxabilityReasonReverseCharge {
-		if hasRate(regimeDef.Country.Code(), tc.Category, tax.RateExempt) {
-			tc.Country = regimeDef.Country
-			tc.Rate = tax.RateExempt
-		}
+		tc.Country = regimeDef.Country
+		tc.Key = tax.KeyReverseCharge
 		return tc
 	}
 
@@ -173,7 +171,7 @@ func FromInvoiceTaxAmountToTaxCombo(taxAmount *stripe.InvoiceTotalTaxAmount, reg
 		return tc
 	}
 
-	tc.Rate = rate.Key
+	tc.Rate = rate.Rate
 	tc.Ext = val.Ext
 
 	return tc
@@ -298,10 +296,8 @@ func FromCreditNoteTaxAmountToTaxCombo(taxAmount *stripe.CreditNoteTaxAmount, re
 	// There are different types defined and we could map them to the tax categories in GOBL.
 
 	if taxAmount.TaxabilityReason == stripe.CreditNoteTaxAmountTaxabilityReasonReverseCharge {
-		if hasRate(regimeDef.Country.Code(), tc.Category, tax.RateExempt) {
-			tc.Country = regimeDef.Country
-			tc.Rate = tax.RateExempt
-		}
+		tc.Country = regimeDef.Country
+		tc.Key = tax.KeyReverseCharge
 		return tc
 	}
 
@@ -315,7 +311,7 @@ func FromCreditNoteTaxAmountToTaxCombo(taxAmount *stripe.CreditNoteTaxAmount, re
 		return tc
 	}
 
-	tc.Rate = rate.Key
+	tc.Rate = rate.Rate
 	tc.Ext = val.Ext
 
 	return tc
@@ -342,7 +338,7 @@ func lookupRateValue(sRate float64, country l10n.Code, cat cbc.Code, date *cal.D
 				continue
 			}
 
-			if v != r.Value(*date, v.Tags, v.Ext) {
+			if v != r.Value(*date, v.Ext) {
 				// Value rate is not applicable on the date of invoicing.
 				continue
 			}
@@ -372,21 +368,4 @@ func percentFromFloat(f float64) *num.Percentage {
 	}
 
 	return &p
-}
-
-// hasRate checks if a tax rate is defined in the regime.
-func hasRate(country l10n.Code, cat cbc.Code, key cbc.Key) bool {
-	regimeDef := tax.RegimeDefFor(country)
-	catDef := regimeDef.CategoryDef(cat)
-	if catDef == nil {
-		return false
-	}
-
-	for _, r := range catDef.Rates {
-		if r.Key == key {
-			return true
-		}
-	}
-
-	return false
 }
