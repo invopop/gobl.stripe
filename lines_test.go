@@ -480,7 +480,6 @@ func TestFromTaxAmountsToTaxSet(t *testing.T) {
 					Category: tax.CategoryVAT,
 					Country:  "DE",
 					Rate:     tax.RateGeneral,
-					//Key:      tax.KeyStandard,
 				},
 				{
 					Category: tax.CategoryVAT,
@@ -741,7 +740,6 @@ func TestFromCNTaxAmountsToTaxSet(t *testing.T) {
 					Category: tax.CategoryVAT,
 					Country:  "DE",
 					Rate:     tax.RateGeneral,
-					//Key:      tax.KeyStandard,
 				},
 				{
 					Category: tax.CategoryVAT,
