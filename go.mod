@@ -3,7 +3,7 @@ module github.com/invopop/gobl.stripe
 go 1.23.4
 
 require (
-	github.com/invopop/gobl v0.300.2
+	github.com/invopop/gobl v0.301.0
 	github.com/joho/godotenv v1.5.1
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
