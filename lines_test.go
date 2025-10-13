@@ -479,7 +479,7 @@ func TestFromTaxAmountsToTaxSet(t *testing.T) {
 				{
 					Category: tax.CategoryVAT,
 					Country:  "DE",
-					Rate:     tax.RateStandard,
+					Rate:     tax.RateGeneral,
 				},
 				{
 					Category: tax.CategoryVAT,
@@ -521,7 +521,7 @@ func TestFromTaxAmountsExempt(t *testing.T) {
 				{
 					Category: tax.CategoryVAT,
 					Country:  "DE",
-					Rate:     tax.RateZero,
+					Percent:  num.NewPercentage(0, 3),
 				},
 			},
 		},
@@ -561,7 +561,7 @@ func TestFromInvoiceTaxAmountsReverseCharge(t *testing.T) {
 				{
 					Category: tax.CategoryVAT,
 					Country:  l10n.DE.Tax(),
-					Rate:     tax.RateExempt,
+					Key:      tax.KeyReverseCharge,
 				},
 			},
 		},
@@ -601,7 +601,7 @@ func TestFromCreditNoteTaxAmountsReverseCharge(t *testing.T) {
 				{
 					Category: tax.CategoryVAT,
 					Country:  l10n.DE.Tax(),
-					Rate:     tax.RateExempt,
+					Key:      tax.KeyReverseCharge,
 				},
 			},
 		},
@@ -739,7 +739,7 @@ func TestFromCNTaxAmountsToTaxSet(t *testing.T) {
 				{
 					Category: tax.CategoryVAT,
 					Country:  "DE",
-					Rate:     tax.RateStandard,
+					Rate:     tax.RateGeneral,
 				},
 				{
 					Category: tax.CategoryVAT,

@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "09075942b14ea367b553ad1626d0f4ebabc0d5d4163a24b3e26575709c5c2588"
+			"val": "34cb41758678c8d3122e06e532e360d406e2625a4e0fd2049ca2ace0f574a8b3"
 		}
 	},
 	"doc": {
@@ -13,7 +13,7 @@
 		"type": "standard",
 		"series": "JV64HIWA",
 		"code": "0009",
-		"issue_date": "2025-09-23",
+		"issue_date": "2025-10-13",
 		"op_date": "2025-06-10",
 		"currency": "MXN",
 		"supplier": {
@@ -60,7 +60,8 @@
 					{
 						"cat": "VAT",
 						"country": "MX",
-						"rate": "standard",
+						"key": "standard",
+						"rate": "general",
 						"percent": "16.0%"
 					}
 				],
@@ -97,8 +98,8 @@
 						"code": "VAT",
 						"rates": [
 							{
-								"key": "standard",
 								"country": "MX",
+								"key": "standard",
 								"base": "3360.00",
 								"percent": "16.0%",
 								"amount": "537.60"

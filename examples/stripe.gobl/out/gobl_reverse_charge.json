@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "c2c8f34efa4e41179022daef6409ef4d1399e58cc9409acbab477bca5cac7a83"
+			"val": "7f7a5ef19a966d6ac4e4032f9bbe39d5de625b7bdbe5795e335a344935bf2fda"
 		}
 	},
 	"doc": {
@@ -16,7 +16,7 @@
 		"type": "standard",
 		"series": "V7REHZYJ",
 		"code": "0013",
-		"issue_date": "2025-09-23",
+		"issue_date": "2025-10-13",
 		"op_date": "2025-07-31",
 		"currency": "EUR",
 		"tax": {
@@ -59,7 +59,7 @@
 					{
 						"cat": "VAT",
 						"country": "PT",
-						"rate": "exempt"
+						"key": "reverse-charge"
 					}
 				],
 				"total": "100.00"
@@ -93,8 +93,8 @@
 						"code": "VAT",
 						"rates": [
 							{
-								"key": "exempt",
 								"country": "PT",
+								"key": "reverse-charge",
 								"base": "100.00",
 								"amount": "0.00"
 							}

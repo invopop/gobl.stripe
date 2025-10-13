@@ -200,7 +200,7 @@ func FromTaxIDToOrg(taxID *stripe.TaxID) *org.Identity {
 			Code: cbc.Code(taxID.Value),
 		}
 	}
-	oid.Normalize(nil)
+	oid.Normalize()
 	return oid
 }
 

@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "3a644a3084e32679cd3bccb40a09b2398159850148c79575cf95bd7afead9420"
+			"val": "b9b585c559a0777816a1ff6a58e17917db97f10409afce4dc80a88d52463ae0a"
 		}
 	},
 	"doc": {
@@ -13,7 +13,7 @@
 		"type": "standard",
 		"series": "FPOP",
 		"code": "10027",
-		"issue_date": "2025-09-23",
+		"issue_date": "2025-10-13",
 		"op_date": "2025-01-24",
 		"currency": "USD",
 		"exchange_rates": [

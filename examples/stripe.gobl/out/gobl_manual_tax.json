@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "3262b37923381221af69dab31e6f642ed56e44cb375681e8dd0ad061fed9f313"
+			"val": "c340f0c59f19050e91a10c83988328d8c5cd02eaa44aed8d519aba65a2bc125a"
 		}
 	},
 	"doc": {
@@ -14,7 +14,7 @@
 		"type": "standard",
 		"series": "E486556A",
 		"code": "0033",
-		"issue_date": "2025-09-23",
+		"issue_date": "2025-10-13",
 		"op_date": "2025-06-13",
 		"currency": "EUR",
 		"tax": {
@@ -67,7 +67,8 @@
 				"taxes": [
 					{
 						"cat": "VAT",
-						"rate": "standard",
+						"key": "standard",
+						"rate": "general",
 						"percent": "21.0%"
 					}
 				],
@@ -85,7 +86,8 @@
 				"taxes": [
 					{
 						"cat": "VAT",
-						"rate": "standard",
+						"key": "standard",
+						"rate": "general",
 						"percent": "21.0%"
 					}
 				],
