@@ -16,8 +16,6 @@ import (
 	"github.com/stripe/stripe-go/v81"
 )
 
-//TODO: Add the first part of the invoice number as series
-
 // Meta constants used in the Stripe to GOBL conversion
 const (
 	MetaKeyStripeDocID   = "stripe-document-id"
