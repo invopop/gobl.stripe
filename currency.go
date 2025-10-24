@@ -38,8 +38,8 @@ func ToStripeInt(amount *num.Amount, curr currency.Code) int64 {
 	return r.Value()
 }
 
-// currencyAmount creates a currency amount object from a value and a currency code.
-func currencyAmount(val int64, curr currency.Code) num.Amount {
+// CurrencyAmount creates a currency amount object from a value and a currency code.
+func CurrencyAmount(val int64, curr currency.Code) num.Amount {
 	var exp uint32 = 2
 	if slices.Contains(zeroDecimalCurrencies, curr) {
 		exp = 0

@@ -224,7 +224,7 @@ func newOrdering(doc *stripe.Invoice) *bill.Ordering {
 // which can lead to a mismatch with the total amount in GOBL.
 func AdjustRounding(gi *bill.Invoice, total int64, curr stripe.Currency) error {
 	// Calculate the difference between the expected and the calculated totals
-	exp := currencyAmount(total, FromCurrency(curr))
+	exp := CurrencyAmount(total, FromCurrency(curr))
 	diff := exp.Subtract(gi.Totals.Payable)
 	if diff.IsZero() {
 		// No difference. No adjustment needed
@@ -251,10 +251,10 @@ func MaxRoundingError(gi *bill.Invoice) num.Amount {
 
 // ExpectedInvoiceTotal returns the expected total of an invoice.
 func ExpectedInvoiceTotal(doc *stripe.Invoice) num.Amount {
-	return currencyAmount(doc.Total, FromCurrency(doc.Currency))
+	return CurrencyAmount(doc.Total, FromCurrency(doc.Currency))
 }
 
 // ExpectedCreditNoteTotal returns the expected total of a credit note.
 func ExpectedCreditNoteTotal(doc *stripe.CreditNote) num.Amount {
-	return currencyAmount(doc.Total, FromCurrency(doc.Currency))
+	return CurrencyAmount(doc.Total, FromCurrency(doc.Currency))
 }
