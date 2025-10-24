@@ -1,0 +1,104 @@
+{
+	"$schema": "https://gobl.org/draft-0/envelope",
+	"head": {
+		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
+		"dig": {
+			"alg": "sha256",
+			"val": "cc4164a46ea81ab2db6360ad58f24d9b9ee8e9a32c5d24a95045b357ad3ff1e9"
+		}
+	},
+	"doc": {
+		"$schema": "https://gobl.org/draft-0/bill/invoice",
+		"$regime": "ES",
+		"uuid": "019860fc-7d4c-7922-a371-e848ca5141d3",
+		"type": "standard",
+		"series": "EXAMPLE",
+		"code": "12345",
+		"issue_date": "2025-10-24",
+		"op_date": "2025-10-24",
+		"currency": "EUR",
+		"supplier": {
+			"name": "Example Company SL",
+			"tax_id": {
+				"country": "ES",
+				"code": "B65410011"
+			}
+		},
+		"customer": {
+			"name": "John Doe",
+			"tax_id": {
+				"country": "ES",
+				"code": "12345678Z"
+			},
+			"addresses": [
+				{
+					"street": "Calle Ejemplo 123",
+					"locality": "Madrid",
+					"state": "MADRID",
+					"code": "28001",
+					"country": "ES"
+				}
+			],
+			"emails": [
+				{
+					"addr": "customer@example.com"
+				}
+			]
+		},
+		"lines": [
+			{
+				"i": 1,
+				"quantity": "1",
+				"item": {
+					"name": "1 × Pack Autónomos de Taxfix (at €39.90 / month)",
+					"currency": "EUR",
+					"price": "39.90"
+				},
+				"sum": "39.90",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "standard",
+						"rate": "general",
+						"percent": "21.0%"
+					}
+				],
+				"total": "39.90"
+			}
+		],
+		"ordering": {
+			"period": {
+				"start": "2025-10-24",
+				"end": "2025-10-24"
+			}
+		},
+		"totals": {
+			"sum": "39.90",
+			"total": "39.90",
+			"taxes": {
+				"categories": [
+					{
+						"code": "VAT",
+						"rates": [
+							{
+								"key": "standard",
+								"base": "39.90",
+								"percent": "21.0%",
+								"amount": "8.38"
+							}
+						],
+						"amount": "8.38"
+					}
+				],
+				"sum": "8.38"
+			},
+			"tax": "8.38",
+			"total_with_tax": "48.28",
+			"payable": "48.28"
+		},
+		"meta": {
+			"stripe-document-id": "in_1EXAMPLE67prVnmPFv47NdyqH",
+			"stripe-document-type": "invoice"
+		}
+	}
+}

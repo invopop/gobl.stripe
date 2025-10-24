@@ -1,6 +1,8 @@
 package goblstripe
 
 import (
+	"strings"
+
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/tax"
@@ -53,11 +55,11 @@ func taxFromCreditNoteTaxAmounts(taxAmounts []*stripe.CreditNoteTaxAmount) *bill
 
 // extractTaxCat extracts the tax category from a Stripe tax rate.
 // If the tax type is not set, we use the display name to determine the tax category.
-func extractTaxCat(taxType *stripe.TaxRate) cbc.Code {
-	if taxType == nil {
+func extractTaxCat(taxRate *stripe.TaxRate) cbc.Code {
+	if taxRate == nil {
 		return ""
 	}
-	switch taxType.TaxType {
+	switch taxRate.TaxType {
 	case stripe.TaxRateTaxTypeVAT:
 		return tax.CategoryVAT
 	case stripe.TaxRateTaxTypeSalesTax:
@@ -66,14 +68,14 @@ func extractTaxCat(taxType *stripe.TaxRate) cbc.Code {
 		return tax.CategoryGST
 	}
 
-	switch taxType.DisplayName {
-	case "VAT", "IVA":
+	switch strings.ToLower(strings.TrimSpace(taxRate.DisplayName)) {
+	case "vat", "iva":
 		return tax.CategoryVAT
-	case "Sales Tax":
+	case "sales tax":
 		return tax.CategoryST
-	case "GST":
+	case "gst":
 		return tax.CategoryGST
 	}
 
-	return cbc.Code(taxType.DisplayName)
+	return cbc.Code(taxRate.DisplayName)
 }
