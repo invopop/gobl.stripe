@@ -75,5 +75,5 @@ func extractTaxCat(taxType *stripe.TaxRate) cbc.Code {
 		return tax.CategoryGST
 	}
 
-	return ""
+	return cbc.Code(taxType.DisplayName)
 }

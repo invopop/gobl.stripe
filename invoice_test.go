@@ -630,6 +630,114 @@ func TestOrderingPeriod(t *testing.T) {
 	assert.Equal(t, "2025-01-24", gi.Ordering.Period.End.String())
 }
 
+func TestNewOrdering(t *testing.T) {
+	t.Run("basic period dates", func(t *testing.T) {
+		s := minimalStripeInvoice()
+		s.PeriodStart = 1704067200 // 2024-01-01 00:00:00 UTC
+		s.PeriodEnd = 1706745599   // 2024-01-31 23:59:59 UTC
+
+		gi, err := goblstripe.FromInvoice(s)
+		require.NoError(t, err)
+
+		require.NotNil(t, gi.Ordering)
+		require.NotNil(t, gi.Ordering.Period)
+		assert.Equal(t, "2024-01-01", gi.Ordering.Period.Start.String())
+		assert.Equal(t, "2024-01-31", gi.Ordering.Period.End.String())
+		assert.Empty(t, gi.Ordering.Code)
+	})
+
+	t.Run("with PO number in custom fields", func(t *testing.T) {
+		s := minimalStripeInvoice()
+		s.PeriodStart = 1704067200
+		s.PeriodEnd = 1706745599
+		s.CustomFields = []*stripe.InvoiceCustomField{
+			{
+				Name:  "po number",
+				Value: "PO-12345",
+			},
+		}
+
+		gi, err := goblstripe.FromInvoice(s)
+		require.NoError(t, err)
+
+		require.NotNil(t, gi.Ordering)
+		require.NotNil(t, gi.Ordering.Period)
+		assert.Equal(t, "2024-01-01", gi.Ordering.Period.Start.String())
+		assert.Equal(t, "2024-01-31", gi.Ordering.Period.End.String())
+		assert.Equal(t, cbc.Code("PO-12345"), gi.Ordering.Code)
+	})
+
+	t.Run("case insensitive PO number field matching", func(t *testing.T) {
+		testCases := []struct {
+			name        string
+			fieldName   string
+			expected    string
+			shouldMatch bool
+		}{
+			{"lowercase", "po number", "PO-12345", true},
+			{"uppercase", "PO NUMBER", "PO-12345", true},
+			{"mixed case", "Po Number", "PO-12345", true},
+			{"with spaces", "  po number  ", "PO-12345", true},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				s := minimalStripeInvoice()
+				s.PeriodStart = 1704067200
+				s.PeriodEnd = 1706745599
+				s.CustomFields = []*stripe.InvoiceCustomField{
+					{
+						Name:  tc.fieldName,
+						Value: tc.expected,
+					},
+				}
+
+				gi, err := goblstripe.FromInvoice(s)
+				require.NoError(t, err)
+
+				require.NotNil(t, gi.Ordering)
+				if tc.shouldMatch {
+					assert.Equal(t, cbc.Code(tc.expected), gi.Ordering.Code)
+				} else {
+					assert.Empty(t, gi.Ordering.Code)
+				}
+			})
+		}
+	})
+
+	t.Run("no custom fields", func(t *testing.T) {
+		s := minimalStripeInvoice()
+		s.PeriodStart = 1704067200
+		s.PeriodEnd = 1706745599
+		s.CustomFields = nil
+
+		gi, err := goblstripe.FromInvoice(s)
+		require.NoError(t, err)
+
+		require.NotNil(t, gi.Ordering)
+		require.NotNil(t, gi.Ordering.Period)
+		assert.Equal(t, "2024-01-01", gi.Ordering.Period.Start.String())
+		assert.Equal(t, "2024-01-31", gi.Ordering.Period.End.String())
+		assert.Empty(t, gi.Ordering.Code)
+	})
+
+	t.Run("empty custom fields", func(t *testing.T) {
+		s := minimalStripeInvoice()
+		s.PeriodStart = 1704067200
+		s.PeriodEnd = 1706745599
+		s.CustomFields = []*stripe.InvoiceCustomField{}
+
+		gi, err := goblstripe.FromInvoice(s)
+		require.NoError(t, err)
+
+		require.NotNil(t, gi.Ordering)
+		require.NotNil(t, gi.Ordering.Period)
+		assert.Equal(t, "2024-01-01", gi.Ordering.Period.Start.String())
+		assert.Equal(t, "2024-01-31", gi.Ordering.Period.End.String())
+		assert.Empty(t, gi.Ordering.Code)
+	})
+}
+
 func TestUnexpandedTax(t *testing.T) {
 	data, _ := os.ReadFile("examples/stripe.gobl/unexpanded_invoice.json")
 	s := new(stripe.Invoice)

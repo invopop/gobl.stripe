@@ -16,8 +16,6 @@ import (
 	"github.com/stripe/stripe-go/v81"
 )
 
-//TODO: Add the first part of the invoice number as series
-
 // Meta constants used in the Stripe to GOBL conversion
 const (
 	MetaKeyStripeDocID   = "stripe-document-id"
@@ -29,6 +27,11 @@ const (
 const (
 	StripeDocTypeInvoice    = "invoice"
 	StripeDocTypeCreditNote = "credit_note"
+)
+
+// Custom field constants used in the Stripe to GOBL conversion
+const (
+	CustomFieldPONumber = "po number"
 )
 
 // ToInvoice converts a GOBL bill.Invoice into a stripe invoice object.
@@ -199,12 +202,21 @@ func newTags(doc *stripe.Invoice) tax.Tags {
 
 // newOrdering creates an ordering object from an invoice.
 func newOrdering(doc *stripe.Invoice) *bill.Ordering {
-	return &bill.Ordering{
+	ordering := &bill.Ordering{
 		Period: &cal.Period{
 			Start: *newDateFromTS(doc.PeriodStart),
 			End:   *newDateFromTS(doc.PeriodEnd),
 		},
 	}
+	if doc.CustomFields != nil {
+		for _, field := range doc.CustomFields {
+			if strings.ToLower(strings.TrimSpace(field.Name)) == CustomFieldPONumber {
+				ordering.Code = cbc.Code(field.Value)
+				break
+			}
+		}
+	}
+	return ordering
 }
 
 // AdjustRounding checks and, if need be, adjusts the rounding in the GOBL invoice to match the

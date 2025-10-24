@@ -408,6 +408,6 @@ func TestExtractTaxCat(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, gi.Tax)
 		// Should return empty code for unknown tax types
-		assert.Equal(t, "", string(gi.Tax.PricesInclude))
+		assert.Equal(t, "Unknown Tax", string(gi.Tax.PricesInclude))
 	})
 }
