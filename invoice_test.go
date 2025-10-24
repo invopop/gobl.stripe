@@ -677,7 +677,7 @@ func TestNewOrdering(t *testing.T) {
 			{"lowercase", "po number", "PO-12345", true},
 			{"uppercase", "PO NUMBER", "PO-12345", true},
 			{"mixed case", "Po Number", "PO-12345", true},
-			{"with spaces", "  po number  ", "PO-12345", false}, // spaces are not trimmed in current implementation
+			{"with spaces", "  po number  ", "PO-12345", true},
 		}
 
 		for _, tc := range testCases {

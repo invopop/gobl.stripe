@@ -210,7 +210,7 @@ func newOrdering(doc *stripe.Invoice) *bill.Ordering {
 	}
 	if doc.CustomFields != nil {
 		for _, field := range doc.CustomFields {
-			if strings.ToLower(field.Name) == CustomFieldPONumber {
+			if strings.ToLower(strings.TrimSpace(field.Name)) == CustomFieldPONumber {
 				ordering.Code = cbc.Code(field.Value)
 				break
 			}
