@@ -146,11 +146,12 @@ func FromInvoiceTaxAmountsToTaxSet(taxAmounts []*stripe.InvoiceTotalTaxAmount, r
 
 // FromInvoiceTaxAmountToTaxCombo creates a new GOBL tax combo from a Stripe invoice tax amount.
 func FromInvoiceTaxAmountToTaxCombo(taxAmount *stripe.InvoiceTotalTaxAmount, regimeDef *tax.RegimeDef) *tax.Combo {
-	if taxAmount.TaxRate.Country == "" && taxAmount.TaxRate.TaxType == "" {
-		return nil
-	}
 	tc := new(tax.Combo)
 	tc.Category = extractTaxCat(taxAmount.TaxRate)
+
+	if tc.Category == "" {
+		return nil
+	}
 
 	// Instead of the percentage we can also look at the taxability_reason field.
 	// There are different types defined and we could map them to the tax categories in GOBL.
@@ -162,7 +163,11 @@ func FromInvoiceTaxAmountToTaxCombo(taxAmount *stripe.InvoiceTotalTaxAmount, reg
 	}
 
 	taxDate := newDateFromTS(taxAmount.TaxRate.Created)
-	tc.Country = l10n.TaxCountryCode(taxAmount.TaxRate.Country)
+	if taxAmount.TaxRate.Country == "" {
+		tc.Country = regimeDef.Country
+	} else {
+		tc.Country = l10n.TaxCountryCode(taxAmount.TaxRate.Country)
+	}
 	// Based on the country and the percentage, we can determine the tax rate and value.
 	rate, val := lookupRateValue(taxAmount.TaxRate.EffectivePercentage, tc.Country.Code(), tc.Category, taxDate)
 	if val == nil {
@@ -285,12 +290,12 @@ func FromCreditNoteTaxAmountsToTaxSet(taxAmounts []*stripe.CreditNoteTaxAmount, 
 
 // FromCreditNoteTaxAmountToTaxCombo creates a new GOBL tax combo from a Stripe credit note tax amount.
 func FromCreditNoteTaxAmountToTaxCombo(taxAmount *stripe.CreditNoteTaxAmount, regimeDef *tax.RegimeDef) *tax.Combo {
-	if taxAmount.TaxRate.Country == "" && taxAmount.TaxRate.TaxType == "" {
-		return nil
-	}
-
 	tc := new(tax.Combo)
 	tc.Category = extractTaxCat(taxAmount.TaxRate)
+
+	if tc.Category == "" {
+		return nil
+	}
 
 	// Instead of the percentage we can also look at the taxability_reason field.
 	// There are different types defined and we could map them to the tax categories in GOBL.
@@ -302,7 +307,11 @@ func FromCreditNoteTaxAmountToTaxCombo(taxAmount *stripe.CreditNoteTaxAmount, re
 	}
 
 	taxDate := newDateFromTS(taxAmount.TaxRate.Created)
-	tc.Country = l10n.TaxCountryCode(taxAmount.TaxRate.Country)
+	if taxAmount.TaxRate.Country == "" {
+		tc.Country = regimeDef.Country
+	} else {
+		tc.Country = l10n.TaxCountryCode(taxAmount.TaxRate.Country)
+	}
 	// Based on the country and the percentage, we can determine the tax rate and value.
 	rate, val := lookupRateValue(taxAmount.TaxRate.EffectivePercentage, tc.Country.Code(), tc.Category, taxDate)
 	if val == nil {

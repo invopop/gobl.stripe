@@ -1,0 +1,106 @@
+{
+	"$schema": "https://gobl.org/draft-0/envelope",
+	"head": {
+		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
+		"dig": {
+			"alg": "sha256",
+			"val": "9f38ed87af4de5fabb250ca1c954c35c1b2f527c36e63de698eed41236a7194f"
+		}
+	},
+	"doc": {
+		"$schema": "https://gobl.org/draft-0/bill/invoice",
+		"$regime": "ES",
+		"uuid": "019860fc-7d4c-7922-a371-e848ca5141d3",
+		"type": "credit-note",
+		"code": "EXAMPLE-12345-CN-01",
+		"issue_date": "2025-10-24",
+		"op_date": "2025-10-24",
+		"currency": "EUR",
+		"preceding": [
+			{
+				"type": "standard",
+				"issue_date": "2025-10-24",
+				"series": "EXAMPLE",
+				"code": "12345",
+				"reason": "product_unsatisfactory"
+			}
+		],
+		"supplier": {
+			"name": "Example Company SL",
+			"tax_id": {
+				"country": "ES",
+				"code": "B65410011"
+			}
+		},
+		"customer": {
+			"name": "John Doe",
+			"tax_id": {
+				"country": "ES",
+				"code": "12345678Z"
+			},
+			"addresses": [
+				{
+					"street": "Calle Ejemplo 123",
+					"locality": "Madrid",
+					"state": "MADRID",
+					"code": "28001",
+					"country": "ES"
+				}
+			],
+			"emails": [
+				{
+					"addr": "customer@example.com"
+				}
+			]
+		},
+		"lines": [
+			{
+				"i": 1,
+				"quantity": "1",
+				"item": {
+					"name": "1 × Pack Autónomos de Taxfix (at €39.90 / month)",
+					"currency": "EUR",
+					"price": "25.00"
+				},
+				"sum": "25.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "standard",
+						"rate": "general",
+						"percent": "21.0%"
+					}
+				],
+				"total": "25.00"
+			}
+		],
+		"totals": {
+			"sum": "25.00",
+			"total": "25.00",
+			"taxes": {
+				"categories": [
+					{
+						"code": "VAT",
+						"rates": [
+							{
+								"key": "standard",
+								"base": "25.00",
+								"percent": "21.0%",
+								"amount": "5.25"
+							}
+						],
+						"amount": "5.25"
+					}
+				],
+				"sum": "5.25"
+			},
+			"tax": "5.25",
+			"total_with_tax": "30.25",
+			"payable": "30.25"
+		},
+		"meta": {
+			"stripe-document-id": "cn_1EXAMPLE67prVnmPFXTUp0AuL",
+			"stripe-document-type": "credit_note"
+		}
+	}
+}
