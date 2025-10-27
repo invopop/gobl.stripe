@@ -19,6 +19,36 @@ import (
 	"github.com/stripe/stripe-go/v81"
 )
 
+func validStripeAccount() *stripe.Account {
+	return &stripe.Account{
+		ID: "acct_test",
+		BusinessProfile: &stripe.AccountBusinessProfile{
+			Name: "Test Account",
+			SupportAddress: &stripe.Address{
+				City:       "Munich",
+				Country:    "DE",
+				Line1:      "Test Street 123",
+				PostalCode: "80331",
+				State:      "BY",
+			},
+			SupportEmail: "support@testaccount.com",
+			SupportPhone: "+4989123456",
+		},
+		Settings: &stripe.AccountSettings{
+			Invoices: &stripe.AccountSettingsInvoices{
+				DefaultAccountTaxIDs: []*stripe.TaxID{
+					{
+						Created: 1736351225,
+						Type:    stripe.TaxIDTypeEUVAT,
+						Value:   "DE813495425",
+						Country: "DE",
+					},
+				},
+			},
+		},
+	}
+}
+
 func minimalStripeInvoice() *stripe.Invoice {
 	return &stripe.Invoice{
 		ID:             "in_1QkqKVQhcl5B85YlT32LIsNm",
@@ -239,7 +269,7 @@ func completeStripeInvoice() *stripe.Invoice {
 
 func TestMinimalFieldsConversion(t *testing.T) {
 	s := minimalStripeInvoice()
-	gi, err := goblstripe.FromInvoice(s)
+	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 	require.NoError(t, err)
 
 	assert.Equal(t, "in_1QkqKVQhcl5B85YlT32LIsNm", gi.Code.String())
@@ -249,26 +279,6 @@ func TestMinimalFieldsConversion(t *testing.T) {
 	assert.Nil(t, gi.Customer)
 	assert.Nil(t, gi.Tax)
 }
-
-/*func TestBasicFieldsConversion(t *testing.T) {
-	s := validStripeInvoice()
-	gi, err := goblstripe.FromInvoice(s)
-	require.NoError(t, err)
-
-	assert.Equal(t, "inv_123", gi.Code.String())
-	assert.Equal(t, "Test Account", gi.Supplier.Name)
-	assert.Equal(t, "86f836a6-47ee-302e-90df-2ad86a2f7060", gi.UUID.String())
-	assert.Equal(t, cal.MakeDate(2024, 1, 1), gi.IssueDate)
-	assert.Equal(t, cal.NewDate(2024, 1, 1), gi.OperationDate)
-	assert.Equal(t, currency.EUR, gi.Currency)
-	assert.Equal(t, "Test Customer", gi.Customer.Name)
-	assert.Equal(t, l10n.DE.Tax(), gi.Customer.TaxID.Country)
-	assert.Equal(t, "282741168", gi.Customer.TaxID.Code.String())
-	assert.Equal(t, "Unused time on 2000 × Pro Plan after 08 Jan 2025", gi.Lines[0].Item.Name)
-	assert.Equal(t, currency.EUR, gi.Lines[0].Item.Currency)
-	assert.Equal(t, num.MakeAmount(-11000, 2), gi.Lines[0].Item.Price)
-	assert.Nil(t, gi.Tax)
-}*/
 
 func TestSupplier(t *testing.T) {
 	s := minimalStripeInvoice()
@@ -280,7 +290,7 @@ func TestSupplier(t *testing.T) {
 			Country: "DE",
 		},
 	}
-	gi, err := goblstripe.FromInvoice(s)
+	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 	require.NoError(t, err)
 
 	assert.Equal(t, "Test Account", gi.Supplier.Name)
@@ -321,7 +331,7 @@ func TestCustomer(t *testing.T) {
 		},
 	}
 	s.CustomerTaxExempt = nil
-	gi, err := goblstripe.FromInvoice(s)
+	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 	require.NoError(t, err)
 
 	assert.Equal(t, "Test Customer", gi.Customer.Name)
@@ -343,7 +353,7 @@ func TestCustomerWithMetadata(t *testing.T) {
 		"another-key":          "another-value",
 	}
 
-	gi, err := goblstripe.FromInvoice(s)
+	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 	require.NoError(t, err)
 
 	c := gi.Customer
@@ -373,7 +383,7 @@ func TestCustomerMetadataCondition(t *testing.T) {
 		s.Customer = validStripeCustomer()
 		s.Customer.Metadata = map[string]string{} // Empty metadata
 
-		gi, err := goblstripe.FromInvoice(s)
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 
 		// Should use newCustomerFromInvoice fallback
@@ -387,7 +397,7 @@ func TestCustomerMetadataCondition(t *testing.T) {
 		s.Customer = validStripeCustomer()
 		s.Customer.Metadata = nil // Nil metadata
 
-		gi, err := goblstripe.FromInvoice(s)
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 
 		// Should use newCustomerFromInvoice fallback
@@ -403,7 +413,7 @@ func TestCustomerMetadataCondition(t *testing.T) {
 			"gobl-customer-my-key": "my-value",
 		}
 
-		gi, err := goblstripe.FromInvoice(s)
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 
 		// Should use FromCustomer
@@ -420,7 +430,7 @@ func TestCustomerMetadataCondition(t *testing.T) {
 		s := completeStripeInvoice()
 		s.Customer = nil
 
-		gi, err := goblstripe.FromInvoice(s)
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 
 		// Should use newCustomerFromInvoice fallback
@@ -532,7 +542,7 @@ func TestCalculate(t *testing.T) {
 			},
 		},
 	}
-	gi, err := goblstripe.FromInvoice(s)
+	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 	require.NoError(t, err)
 
 	err = gi.Calculate()
@@ -546,7 +556,7 @@ func TestCalculate(t *testing.T) {
 
 func TestValidate(t *testing.T) {
 	s := completeStripeInvoice()
-	gi, err := goblstripe.FromInvoice(s)
+	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 	require.NoError(t, err)
 
 	err = gi.Calculate()
@@ -604,7 +614,7 @@ func TestReverseCharge(t *testing.T) {
 		},
 	}
 
-	gi, err := goblstripe.FromInvoice(s)
+	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 	require.NoError(t, err)
 
 	assert.Equal(t, tax.TagReverseCharge, gi.Tags.List[0])
@@ -623,7 +633,7 @@ func TestOrderingPeriod(t *testing.T) {
 	s := minimalStripeInvoice()
 	s.PeriodStart = 1737738363
 	s.PeriodEnd = 1737738363
-	gi, err := goblstripe.FromInvoice(s)
+	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 	require.NoError(t, err)
 
 	assert.Equal(t, "2025-01-24", gi.Ordering.Period.Start.String())
@@ -636,7 +646,7 @@ func TestNewOrdering(t *testing.T) {
 		s.PeriodStart = 1704067200 // 2024-01-01 00:00:00 UTC
 		s.PeriodEnd = 1706745599   // 2024-01-31 23:59:59 UTC
 
-		gi, err := goblstripe.FromInvoice(s)
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 
 		require.NotNil(t, gi.Ordering)
@@ -657,7 +667,7 @@ func TestNewOrdering(t *testing.T) {
 			},
 		}
 
-		gi, err := goblstripe.FromInvoice(s)
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 
 		require.NotNil(t, gi.Ordering)
@@ -692,7 +702,7 @@ func TestNewOrdering(t *testing.T) {
 					},
 				}
 
-				gi, err := goblstripe.FromInvoice(s)
+				gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 				require.NoError(t, err)
 
 				require.NotNil(t, gi.Ordering)
@@ -711,7 +721,7 @@ func TestNewOrdering(t *testing.T) {
 		s.PeriodEnd = 1706745599
 		s.CustomFields = nil
 
-		gi, err := goblstripe.FromInvoice(s)
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 
 		require.NotNil(t, gi.Ordering)
@@ -727,7 +737,7 @@ func TestNewOrdering(t *testing.T) {
 		s.PeriodEnd = 1706745599
 		s.CustomFields = []*stripe.InvoiceCustomField{}
 
-		gi, err := goblstripe.FromInvoice(s)
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 
 		require.NotNil(t, gi.Ordering)
@@ -747,7 +757,7 @@ func TestUnexpandedTax(t *testing.T) {
 	customerExempt := stripe.CustomerTaxExemptNone
 	s.CustomerTaxExempt = &customerExempt
 
-	gi, err := goblstripe.FromInvoice(s)
+	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 	require.NoError(t, err)
 
 	err = gi.Calculate()
@@ -765,7 +775,7 @@ func TestStripeCoupon(t *testing.T) {
 	err := json.Unmarshal(data, s)
 	require.NoError(t, err)
 
-	gi, err := goblstripe.FromInvoice(s)
+	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 	require.NoError(t, err)
 
 	err = gi.Calculate()
@@ -939,7 +949,7 @@ func validCreditNote() *stripe.CreditNote {
 
 func TestFromCreditNote(t *testing.T) {
 	s := validCreditNote()
-	gi, err := goblstripe.FromCreditNote(s)
+	gi, err := goblstripe.FromCreditNote(s, validStripeAccount())
 	require.NoError(t, err)
 
 	assert.Equal(t, "cn_123", gi.Code.String())
@@ -963,7 +973,7 @@ func TestNotesInInvoiceConversion(t *testing.T) {
 		s := minimalStripeInvoice()
 		s.Footer = "Thank you for your business\nPlease pay within 30 days"
 
-		gi, err := goblstripe.FromInvoice(s)
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 
 		require.NotNil(t, gi.Notes)
@@ -976,7 +986,7 @@ func TestNotesInInvoiceConversion(t *testing.T) {
 		s := minimalStripeInvoice()
 		s.Footer = ""
 
-		gi, err := goblstripe.FromInvoice(s)
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 
 		assert.Nil(t, gi.Notes)
@@ -986,7 +996,7 @@ func TestNotesInInvoiceConversion(t *testing.T) {
 		s := minimalStripeInvoice()
 		s.Footer = "Terms:\n1. Payment due in 30 days\n2. Late fees apply\n\nThank you!"
 
-		gi, err := goblstripe.FromInvoice(s)
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 
 		require.NotNil(t, gi.Notes)

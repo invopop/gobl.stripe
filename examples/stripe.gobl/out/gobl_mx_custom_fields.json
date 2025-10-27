@@ -4,20 +4,51 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "2beda9ed5208e7a69d2cbd37a489ce750a78a2ca00d007f7109acb5e11e92dff"
+			"val": "54c4e6d0ac51f6833f7dcc7c4eac9d8e9b35b8513feb6e286bc43e8be1c578e9"
 		}
 	},
 	"doc": {
 		"$schema": "https://gobl.org/draft-0/bill/invoice",
+		"$regime": "DE",
 		"uuid": "019860fc-7d4c-7922-a371-e848ca5141d3",
 		"type": "standard",
 		"series": "JV64HIWA",
 		"code": "0009",
 		"issue_date": "2025-10-27",
 		"op_date": "2025-06-10",
-		"currency": "MXN",
+		"currency": "EUR",
+		"exchange_rates": [
+			{
+				"from": "EUR",
+				"to": "MXN",
+				"amount": "19.751"
+			}
+		],
 		"supplier": {
-			"name": "ESCUELA KEMPER URGATE"
+			"name": "Test Account",
+			"tax_id": {
+				"country": "DE",
+				"code": "813495425"
+			},
+			"addresses": [
+				{
+					"street": "Test Street 123",
+					"locality": "Munich",
+					"state": "BY",
+					"code": "80331",
+					"country": "DE"
+				}
+			],
+			"emails": [
+				{
+					"addr": "support@testaccount.com"
+				}
+			],
+			"telephones": [
+				{
+					"num": "+4989123456"
+				}
+			]
 		},
 		"customer": {
 			"name": "MARIA FERNANDA ESPEJO MARIN",
@@ -49,7 +80,7 @@
 				"quantity": "1",
 				"item": {
 					"name": "Equipo para uso de software punto de venta",
-					"currency": "MXN",
+					"currency": "EUR",
 					"price": "3360.00",
 					"ext": {
 						"mx-cfdi-prod-serv": "43211505"

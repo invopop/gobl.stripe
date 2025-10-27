@@ -83,7 +83,7 @@ func (c *convertOpts) stripeToGobl(data []byte) error {
 		if err := json.Unmarshal(data, &stripeInvoice); err != nil {
 			return fmt.Errorf("failed to parse Stripe invoice: %v", err)
 		}
-		goblInvoice, err = goblstripe.FromInvoice(&stripeInvoice)
+		goblInvoice, err = goblstripe.FromInvoice(&stripeInvoice, nil)
 		if err != nil {
 			return fmt.Errorf("failed to convert to GOBL: %v", err)
 		}
@@ -92,7 +92,7 @@ func (c *convertOpts) stripeToGobl(data []byte) error {
 		if err := json.Unmarshal(data, &stripeCreditNote); err != nil {
 			return fmt.Errorf("failed to parse Stripe credit note: %v", err)
 		}
-		goblInvoice, err = goblstripe.FromCreditNote(&stripeCreditNote)
+		goblInvoice, err = goblstripe.FromCreditNote(&stripeCreditNote, nil)
 		if err != nil {
 			return fmt.Errorf("failed to convert to GOBL: %v", err)
 		}

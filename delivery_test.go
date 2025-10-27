@@ -10,7 +10,7 @@ import (
 
 func TestShippingDetails(t *testing.T) {
 	s := completeStripeInvoice()
-	gi, err := goblstripe.FromInvoice(s)
+	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 	require.NoError(t, err)
 
 	assert.Equal(t, "Test Customer", gi.Delivery.Receiver.Name)

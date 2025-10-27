@@ -4,23 +4,54 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "826da64d0e527551e2fb55ac2e9455628fddf8976fea179eb0f1b29fae5df7f3"
+			"val": "dd047bf72b7b2e6956f3e7bf5a8eabdc61e915cdbe3dd508dc2b9de48fba6771"
 		}
 	},
 	"doc": {
 		"$schema": "https://gobl.org/draft-0/bill/invoice",
+		"$regime": "DE",
 		"uuid": "019860fc-7d4c-7922-a371-e848ca5141d3",
 		"type": "standard",
 		"series": "RANDOM",
 		"code": "0002",
 		"issue_date": "2025-10-27",
 		"op_date": "2025-06-23",
-		"currency": "MXN",
+		"currency": "EUR",
+		"exchange_rates": [
+			{
+				"from": "EUR",
+				"to": "MXN",
+				"amount": "19.751"
+			}
+		],
 		"tax": {
 			"prices_include": "VAT"
 		},
 		"supplier": {
-			"name": "Random Company"
+			"name": "Test Account",
+			"tax_id": {
+				"country": "DE",
+				"code": "813495425"
+			},
+			"addresses": [
+				{
+					"street": "Test Street 123",
+					"locality": "Munich",
+					"state": "BY",
+					"code": "80331",
+					"country": "DE"
+				}
+			],
+			"emails": [
+				{
+					"addr": "support@testaccount.com"
+				}
+			],
+			"telephones": [
+				{
+					"num": "+4989123456"
+				}
+			]
 		},
 		"customer": {
 			"name": "Jane Doe",
@@ -50,7 +81,7 @@
 				"quantity": "1",
 				"item": {
 					"name": "Período de prueba para Plan Avanzado",
-					"currency": "MXN",
+					"currency": "EUR",
 					"price": "0.00",
 					"ext": {
 						"mx-cfdi-prod-serv": "43232611"

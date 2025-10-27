@@ -10,7 +10,7 @@ import (
 
 func TestNoTermsWhenPaid(t *testing.T) {
 	s := completeStripeInvoice()
-	gi, err := goblstripe.FromInvoice(s)
+	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 	require.NoError(t, err)
 
 	assert.Nil(t, gi.Payment)

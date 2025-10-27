@@ -41,7 +41,7 @@ const (
 }*/
 
 // FromInvoice converts a stripe invoice object into a GOBL bill.Invoice.
-func FromInvoice(doc *stripe.Invoice) (*bill.Invoice, error) {
+func FromInvoice(doc *stripe.Invoice, account *stripe.Account) (*bill.Invoice, error) {
 	inv := new(bill.Invoice)
 	inv.Type = bill.InvoiceTypeStandard
 
@@ -77,7 +77,10 @@ func FromInvoice(doc *stripe.Invoice) (*bill.Invoice, error) {
 	inv.Currency = FromCurrency(doc.Currency)
 	inv.ExchangeRates = newExchangeRates(inv.Currency, regimeDef)
 
-	inv.Supplier = newSupplierFromInvoice(doc)
+	inv.Supplier = NewSupplierFromAccount(account)
+	if inv.Supplier == nil {
+		inv.Supplier = newSupplierFromInvoice(doc)
+	}
 	if doc.Customer != nil && len(doc.Customer.Metadata) != 0 {
 		inv.Customer = FromCustomer(doc.Customer)
 	} else {
@@ -101,7 +104,7 @@ func FromInvoice(doc *stripe.Invoice) (*bill.Invoice, error) {
 }
 
 // FromCreditNote converts a stripe credit note object into a GOBL bill.Invoice.
-func FromCreditNote(doc *stripe.CreditNote) (*bill.Invoice, error) {
+func FromCreditNote(doc *stripe.CreditNote, account *stripe.Account) (*bill.Invoice, error) {
 	inv := new(bill.Invoice)
 	inv.Type = bill.InvoiceTypeCreditNote
 
@@ -130,7 +133,10 @@ func FromCreditNote(doc *stripe.CreditNote) (*bill.Invoice, error) {
 	inv.Currency = FromCurrency(doc.Currency)
 	inv.ExchangeRates = newExchangeRates(inv.Currency, regimeDef)
 
-	inv.Supplier = newSupplierFromInvoice(doc.Invoice)
+	inv.Supplier = NewSupplierFromAccount(account)
+	if inv.Supplier == nil && doc.Invoice != nil {
+		inv.Supplier = newSupplierFromInvoice(doc.Invoice)
+	}
 	if doc.Customer != nil {
 		inv.Customer = FromCustomer(doc.Customer)
 	}
