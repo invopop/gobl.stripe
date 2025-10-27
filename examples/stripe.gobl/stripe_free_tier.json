@@ -267,7 +267,7 @@
     "due_date": 0,
     "effective_at": 1750690831,
     "ending_balance": 0,
-    "footer": "",
+    "footer": "This is a test footer\nThis is a test footer",
     "from_invoice": null,
     "hosted_invoice_url": "https://invoice.stripe.com/i/acct_1MV1OFAhZnAZr76q/test_1234567890abcdefghijklmnopqrstuvwxyz",
     "id": "in_1234567890abcd",
