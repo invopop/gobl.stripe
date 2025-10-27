@@ -12,13 +12,13 @@ import (
 
 func TestExchangeRateConversionDefault(t *testing.T) {
 	s := completeStripeInvoice()
-	gi, err := goblstripe.FromInvoice(s)
+	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 	require.NoError(t, err)
 
 	assert.Nil(t, gi.ExchangeRates)
 
 	s.Currency = "usd"
-	gi, err = goblstripe.FromInvoice(s)
+	gi, err = goblstripe.FromInvoice(s, validStripeAccount())
 	require.NoError(t, err)
 
 	assert.Equal(t, num.MakeAmount(935, 3), gi.ExchangeRates[0].Amount)
@@ -28,7 +28,7 @@ func TestZeroDecimalCurrencies(t *testing.T) {
 	s := completeStripeInvoice()
 	s.Currency = "jpy"
 	s.Lines.Data[0].Currency = "jpy"
-	gi, err := goblstripe.FromInvoice(s)
+	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 	require.NoError(t, err)
 
 	assert.Equal(t, currency.JPY, gi.Currency)

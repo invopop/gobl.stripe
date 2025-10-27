@@ -22,7 +22,7 @@
     "charge": null,
     "collection_method": "send_invoice",
     "created": 1749542484,
-    "currency": "mxn",
+    "currency": "eur",
     "customer": {
       "address": {
         "city": "San Andrés Cholula",
@@ -35,7 +35,7 @@
       "balance": 0,
       "cash_balance": null,
       "created": 1749479666,
-      "currency": "mxn",
+      "currency": "eur",
       "default_source": null,
       "deleted": false,
       "delinquent": false,
@@ -208,7 +208,7 @@
         {
           "amount": 336000,
           "amount_excluding_tax": 336000,
-          "currency": "mxn",
+          "currency": "eur",
           "description": "Equipo para uso de software punto de venta",
           "discountable": true,
           "discount_amounts": [],
@@ -254,7 +254,7 @@
             "active": true,
             "billing_scheme": "per_unit",
             "created": 1749482415,
-            "currency": "mxn",
+            "currency": "eur",
             "currency_options": null,
             "custom_unit_amount": null,
             "deleted": false,
@@ -408,7 +408,7 @@
       "client_secret": "pi_3RYN7vH4o6QqbU8h1XbxYD2q_secret_ZTlxOvKSw0N2koxCXR4Dk1wgN",
       "confirmation_method": "automatic",
       "created": 1749542507,
-      "currency": "mxn",
+      "currency": "eur",
       "customer": {
         "address": null,
         "balance": 0,

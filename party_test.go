@@ -612,3 +612,203 @@ func TestFromCustomerItalyTaxIDLogic(t *testing.T) {
 		})
 	}
 }
+
+func TestNewSupplierFromAccount(t *testing.T) {
+	tests := []struct {
+		name     string
+		account  *stripe.Account
+		expected *org.Party
+	}{
+		{
+			name: "account with all business profile fields",
+			account: &stripe.Account{
+				ID: "acct_123",
+				BusinessProfile: &stripe.AccountBusinessProfile{
+					Name: "Test Business",
+					SupportAddress: &stripe.Address{
+						City:       "Munich",
+						Country:    "DE",
+						Line1:      "Test Street 123",
+						PostalCode: "80331",
+						State:      "BY",
+					},
+					SupportEmail: "support@testbusiness.com",
+					SupportPhone: "+4989123456",
+				},
+				Settings: &stripe.AccountSettings{
+					Invoices: &stripe.AccountSettingsInvoices{
+						DefaultAccountTaxIDs: []*stripe.TaxID{
+							{
+								Created: 1736351225,
+								Type:    stripe.TaxIDTypeEUVAT,
+								Value:   "DE813495425",
+								Country: "DE",
+							},
+						},
+					},
+				},
+			},
+			expected: &org.Party{
+				Name: "Test Business",
+				Addresses: []*org.Address{
+					{
+						Locality:    "Munich",
+						Country:     "DE",
+						Street:      "Test Street 123",
+						StreetExtra: "",
+						Code:        "80331",
+						State:       "BY",
+					},
+				},
+				Emails: []*org.Email{
+					{
+						Address: "support@testbusiness.com",
+					},
+				},
+				Telephones: []*org.Telephone{
+					{
+						Number: "+4989123456",
+					},
+				},
+				TaxID: &tax.Identity{
+					Country: "DE",
+					Code:    "813495425",
+				},
+			},
+		},
+		{
+			name: "account with org identity (de_stn)",
+			account: &stripe.Account{
+				ID: "acct_456",
+				BusinessProfile: &stripe.AccountBusinessProfile{
+					Name: "German Business",
+				},
+				Settings: &stripe.AccountSettings{
+					Invoices: &stripe.AccountSettingsInvoices{
+						DefaultAccountTaxIDs: []*stripe.TaxID{
+							{
+								Created: 1736351225,
+								Type:    stripe.TaxIDTypeDEStn,
+								Value:   "123456789",
+							},
+						},
+					},
+				},
+			},
+			expected: &org.Party{
+				Name: "German Business",
+				Identities: []*org.Identity{
+					{
+						Key:  de.IdentityKeyTaxNumber,
+						Code: "123456789",
+					},
+				},
+			},
+		},
+		{
+			name: "account with minimal fields",
+			account: &stripe.Account{
+				ID: "acct_789",
+				BusinessProfile: &stripe.AccountBusinessProfile{
+					Name: "Minimal Business",
+				},
+			},
+			expected: &org.Party{
+				Name: "Minimal Business",
+			},
+		},
+		{
+			name: "account with no business profile",
+			account: &stripe.Account{
+				ID: "acct_000",
+			},
+			expected: nil,
+		},
+		{
+			name: "account with email and phone only",
+			account: &stripe.Account{
+				ID: "acct_111",
+				BusinessProfile: &stripe.AccountBusinessProfile{
+					SupportEmail: "info@company.com",
+					SupportPhone: "+123456789",
+				},
+			},
+			expected: &org.Party{
+				Emails: []*org.Email{
+					{
+						Address: "info@company.com",
+					},
+				},
+				Telephones: []*org.Telephone{
+					{
+						Number: "+123456789",
+					},
+				},
+			},
+		},
+		{
+			name: "account with address only",
+			account: &stripe.Account{
+				ID: "acct_222",
+				BusinessProfile: &stripe.AccountBusinessProfile{
+					SupportAddress: &stripe.Address{
+						City:       "Berlin",
+						Country:    "DE",
+						Line1:      "Main Street 1",
+						Line2:      "Apt 42",
+						PostalCode: "10115",
+						State:      "BE",
+					},
+				},
+			},
+			expected: &org.Party{
+				Addresses: []*org.Address{
+					{
+						Locality:    "Berlin",
+						Country:     "DE",
+						Street:      "Main Street 1",
+						StreetExtra: "Apt 42",
+						Code:        "10115",
+						State:       "BE",
+					},
+				},
+			},
+		},
+		{
+			name: "account with tax IDs but no created timestamp",
+			account: &stripe.Account{
+				ID: "acct_333",
+				BusinessProfile: &stripe.AccountBusinessProfile{
+					Name: "Business Name",
+				},
+				Settings: &stripe.AccountSettings{
+					Invoices: &stripe.AccountSettingsInvoices{
+						DefaultAccountTaxIDs: []*stripe.TaxID{
+							{
+								Created: 0, // No created timestamp
+								Type:    stripe.TaxIDTypeEUVAT,
+								Value:   "DE123456789",
+								Country: "DE",
+							},
+						},
+					},
+				},
+			},
+			expected: &org.Party{
+				Name: "Business Name",
+			},
+		},
+		{
+			name:     "nil account",
+			account:  nil,
+			expected: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := goblstripe.NewSupplierFromAccount(tt.account)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}

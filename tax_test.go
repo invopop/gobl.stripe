@@ -15,12 +15,12 @@ func TestTaxInclusive(t *testing.T) {
 	s := completeStripeInvoice()
 
 	// Check that tax are inclusive
-	gi, err := goblstripe.FromInvoice(s)
+	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 	require.NoError(t, err)
 	assert.Nil(t, gi.Tax)
 
 	s.TotalTaxAmounts[0].Inclusive = true
-	gi, err = goblstripe.FromInvoice(s)
+	gi, err = goblstripe.FromInvoice(s, validStripeAccount())
 	require.NoError(t, err)
 	assert.Equal(t, tax.CategoryVAT, gi.Tax.PricesInclude)
 }
@@ -30,7 +30,7 @@ func TestTaxFromInvoiceTaxAmounts(t *testing.T) {
 		s := minimalStripeInvoice()
 		s.TotalTaxAmounts = []*stripe.InvoiceTotalTaxAmount{}
 
-		gi, err := goblstripe.FromInvoice(s)
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 		assert.Nil(t, gi.Tax)
 	})
@@ -39,7 +39,7 @@ func TestTaxFromInvoiceTaxAmounts(t *testing.T) {
 		s := minimalStripeInvoice()
 		s.TotalTaxAmounts = nil
 
-		gi, err := goblstripe.FromInvoice(s)
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 		assert.Nil(t, gi.Tax)
 	})
@@ -59,7 +59,7 @@ func TestTaxFromInvoiceTaxAmounts(t *testing.T) {
 			},
 		}
 
-		gi, err := goblstripe.FromInvoice(s)
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 		assert.Nil(t, gi.Tax)
 	})
@@ -78,7 +78,7 @@ func TestTaxFromInvoiceTaxAmounts(t *testing.T) {
 			},
 		}
 
-		gi, err := goblstripe.FromInvoice(s)
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 		assert.Nil(t, gi.Tax)
 	})
@@ -97,7 +97,7 @@ func TestTaxFromInvoiceTaxAmounts(t *testing.T) {
 			},
 		}
 
-		gi, err := goblstripe.FromInvoice(s)
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 		require.NotNil(t, gi.Tax)
 		assert.Equal(t, tax.CategoryVAT, gi.Tax.PricesInclude)
@@ -117,7 +117,7 @@ func TestTaxFromInvoiceTaxAmounts(t *testing.T) {
 			},
 		}
 
-		gi, err := goblstripe.FromInvoice(s)
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 		require.NotNil(t, gi.Tax)
 		assert.Equal(t, tax.CategoryST, gi.Tax.PricesInclude)
@@ -137,7 +137,7 @@ func TestTaxFromInvoiceTaxAmounts(t *testing.T) {
 			},
 		}
 
-		gi, err := goblstripe.FromInvoice(s)
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 		require.NotNil(t, gi.Tax)
 		assert.Equal(t, tax.CategoryGST, gi.Tax.PricesInclude)
@@ -149,7 +149,7 @@ func TestTaxFromCreditNoteTaxAmounts(t *testing.T) {
 		s := validCreditNote()
 		s.TaxAmounts = []*stripe.CreditNoteTaxAmount{}
 
-		gi, err := goblstripe.FromCreditNote(s)
+		gi, err := goblstripe.FromCreditNote(s, validStripeAccount())
 		require.NoError(t, err)
 		assert.Nil(t, gi.Tax)
 	})
@@ -158,7 +158,7 @@ func TestTaxFromCreditNoteTaxAmounts(t *testing.T) {
 		s := validCreditNote()
 		s.TaxAmounts = nil
 
-		gi, err := goblstripe.FromCreditNote(s)
+		gi, err := goblstripe.FromCreditNote(s, validStripeAccount())
 		require.NoError(t, err)
 		assert.Nil(t, gi.Tax)
 	})
@@ -178,7 +178,7 @@ func TestTaxFromCreditNoteTaxAmounts(t *testing.T) {
 			},
 		}
 
-		gi, err := goblstripe.FromCreditNote(s)
+		gi, err := goblstripe.FromCreditNote(s, validStripeAccount())
 		require.NoError(t, err)
 		assert.Nil(t, gi.Tax)
 	})
@@ -197,7 +197,7 @@ func TestTaxFromCreditNoteTaxAmounts(t *testing.T) {
 			},
 		}
 
-		gi, err := goblstripe.FromCreditNote(s)
+		gi, err := goblstripe.FromCreditNote(s, validStripeAccount())
 		require.NoError(t, err)
 		assert.Nil(t, gi.Tax)
 	})
@@ -216,7 +216,7 @@ func TestTaxFromCreditNoteTaxAmounts(t *testing.T) {
 			},
 		}
 
-		gi, err := goblstripe.FromCreditNote(s)
+		gi, err := goblstripe.FromCreditNote(s, validStripeAccount())
 		require.NoError(t, err)
 		require.NotNil(t, gi.Tax)
 		assert.Equal(t, tax.CategoryVAT, gi.Tax.PricesInclude)
@@ -236,7 +236,7 @@ func TestTaxFromCreditNoteTaxAmounts(t *testing.T) {
 			},
 		}
 
-		gi, err := goblstripe.FromCreditNote(s)
+		gi, err := goblstripe.FromCreditNote(s, validStripeAccount())
 		require.NoError(t, err)
 		require.NotNil(t, gi.Tax)
 		assert.Equal(t, tax.CategoryGST, gi.Tax.PricesInclude)
@@ -259,7 +259,7 @@ func TestExtractTaxCat(t *testing.T) {
 			},
 		}
 
-		gi, err := goblstripe.FromInvoice(s)
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 		require.NotNil(t, gi.Tax)
 		assert.Equal(t, tax.CategoryVAT, gi.Tax.PricesInclude)
@@ -279,7 +279,7 @@ func TestExtractTaxCat(t *testing.T) {
 			},
 		}
 
-		gi, err := goblstripe.FromInvoice(s)
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 		require.NotNil(t, gi.Tax)
 		assert.Equal(t, tax.CategoryST, gi.Tax.PricesInclude)
@@ -299,7 +299,7 @@ func TestExtractTaxCat(t *testing.T) {
 			},
 		}
 
-		gi, err := goblstripe.FromInvoice(s)
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 		require.NotNil(t, gi.Tax)
 		assert.Equal(t, tax.CategoryGST, gi.Tax.PricesInclude)
@@ -320,7 +320,7 @@ func TestExtractTaxCat(t *testing.T) {
 			},
 		}
 
-		gi, err := goblstripe.FromInvoice(s)
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 		require.NotNil(t, gi.Tax)
 		assert.Equal(t, tax.CategoryVAT, gi.Tax.PricesInclude)
@@ -341,7 +341,7 @@ func TestExtractTaxCat(t *testing.T) {
 			},
 		}
 
-		gi, err := goblstripe.FromInvoice(s)
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 		require.NotNil(t, gi.Tax)
 		assert.Equal(t, tax.CategoryVAT, gi.Tax.PricesInclude)
@@ -362,7 +362,7 @@ func TestExtractTaxCat(t *testing.T) {
 			},
 		}
 
-		gi, err := goblstripe.FromInvoice(s)
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 		require.NotNil(t, gi.Tax)
 		assert.Equal(t, tax.CategoryST, gi.Tax.PricesInclude)
@@ -383,7 +383,7 @@ func TestExtractTaxCat(t *testing.T) {
 			},
 		}
 
-		gi, err := goblstripe.FromInvoice(s)
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 		require.NotNil(t, gi.Tax)
 		assert.Equal(t, tax.CategoryGST, gi.Tax.PricesInclude)
@@ -404,7 +404,7 @@ func TestExtractTaxCat(t *testing.T) {
 			},
 		}
 
-		gi, err := goblstripe.FromInvoice(s)
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 		require.NotNil(t, gi.Tax)
 		// Should return empty code for unknown tax types

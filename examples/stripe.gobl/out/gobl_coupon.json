@@ -4,11 +4,12 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "4b7787f36aef1ed324f244ebc6efbc17f3ef1638ace1c3a8c9e5de971a425f95"
+			"val": "8e8e66a07f8616131a131e2645cdb4a69fb7275819c457fa76a59d3756d65a31"
 		}
 	},
 	"doc": {
 		"$schema": "https://gobl.org/draft-0/bill/invoice",
+		"$regime": "DE",
 		"$tags": [
 			"reverse-charge"
 		],
@@ -23,7 +24,30 @@
 			"prices_include": "VAT"
 		},
 		"supplier": {
-			"name": "invopop-pt"
+			"name": "Test Account",
+			"tax_id": {
+				"country": "DE",
+				"code": "813495425"
+			},
+			"addresses": [
+				{
+					"street": "Test Street 123",
+					"locality": "Munich",
+					"state": "BY",
+					"code": "80331",
+					"country": "DE"
+				}
+			],
+			"emails": [
+				{
+					"addr": "support@testaccount.com"
+				}
+			],
+			"telephones": [
+				{
+					"num": "+4989123456"
+				}
+			]
 		},
 		"customer": {
 			"name": "British guy",
@@ -151,6 +175,13 @@
 			"total_with_tax": "189.10",
 			"payable": "189.10"
 		},
+		"notes": [
+			{
+				"key": "legal",
+				"src": "reverse-charge",
+				"text": "Reverse Charge / Umkehr der Steuerschuld."
+			}
+		],
 		"meta": {
 			"stripe-document-id": "in_1RtqukHRYe2PhVGCbTTCgXyC",
 			"stripe-document-type": "invoice"

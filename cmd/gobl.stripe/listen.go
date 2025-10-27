@@ -47,7 +47,6 @@ func (l *listenOpts) cmd() *cobra.Command {
 	cmd.Flags().StringVarP(&l.stripeKey, "stripe-key", "k", " ", "Stripe secret key")
 	cmd.Flags().StringVarP(&l.webhookSecret, "webhook-secret", "s", " ", "Stripe webhook secret")
 	cmd.Flags().BoolVarP(&l.convertToGOBL, "convert", "c", true, "Convert Stripe invoices to GOBL format")
-	//cmd.Flags().StringVarP(&c.directory, "directory", "d", ".", "Directory to save GOBL JSON files")
 
 	return cmd
 }
@@ -186,7 +185,7 @@ func createInvoiceExpandParams() *stripe.InvoiceParams {
 }
 
 func convertInvoiceToGOBL(invoiceNew *stripe.Invoice) (*bill.Invoice, error) {
-	gi, err := goblstripe.FromInvoice(invoiceNew)
+	gi, err := goblstripe.FromInvoice(invoiceNew, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -232,7 +231,7 @@ func (l *listenOpts) processCreditNote(w http.ResponseWriter, event stripe.Event
 }
 
 func convertCreditNoteToGOBL(creditNoteNew *stripe.CreditNote) (*bill.Invoice, error) {
-	gi, err := goblstripe.FromCreditNote(creditNoteNew)
+	gi, err := goblstripe.FromCreditNote(creditNoteNew, nil)
 	if err != nil {
 		return nil, err
 	}

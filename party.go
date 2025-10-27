@@ -333,7 +333,7 @@ func newCustomerFromInvoice(doc *stripe.Invoice) *org.Party {
 			}
 
 			if slices.Contains(orgIDKeys, stripeTaxID.Type) {
-				customerParty.Identities[0] = FromTaxIDToOrg(stripeTaxID)
+				customerParty.Identities = []*org.Identity{FromTaxIDToOrg(stripeTaxID)}
 			} else {
 				customerParty.TaxID = FromTaxIDToTax(stripeTaxID)
 			}
@@ -361,42 +361,92 @@ func ensureDefaultTaxID(party *org.Party, countryCode l10n.ISOCountryCode) {
 	}
 }
 
+// newSupplierFromInvoice creates a basic supplier from the invoice account data
 func newSupplierFromInvoice(doc *stripe.Invoice) *org.Party {
-	/*
-		Here we have 2 options:
-		- Do a call to the API here to fetch the supplier (account) tax id
-		- Assume the received invoice has the supplier data
-
-		We will assume the second option for now
-	*/
-	// For the moment, we only support the issuer being the account itself
+	if doc == nil {
+		return nil
+	}
 	var supplierParty *org.Party
+
 	if doc.AccountName != "" {
-		supplierParty = new(org.Party)
-		supplierParty.Name = doc.AccountName
+		supplierParty = &org.Party{
+			Name: doc.AccountName,
+		}
 	}
 
-	if doc.AccountTaxIDs != nil {
-		if len(doc.AccountTaxIDs) > 0 {
-			// When we have several accounttaxids, we assume the first one is the main one
-			accountTaxID := doc.AccountTaxIDs[0]
-
-			if accountTaxID.Created != 0 {
-				// When the field is not expanded it has created == 0
-				if supplierParty == nil {
-					supplierParty = new(org.Party)
-				}
-
-				if slices.Contains(orgIDKeys, accountTaxID.Type) {
-					supplierParty.Identities[0] = FromTaxIDToOrg(accountTaxID)
-				} else {
-					supplierParty.TaxID = FromTaxIDToTax(accountTaxID)
-				}
+	if len(doc.AccountTaxIDs) > 0 {
+		// Only process if the tax ID has a created timestamp (indicating it's expanded)
+		if doc.AccountTaxIDs[0].Created != 0 {
+			if supplierParty == nil {
+				supplierParty = new(org.Party)
+			}
+			if slices.Contains(orgIDKeys, doc.AccountTaxIDs[0].Type) {
+				supplierParty.Identities = []*org.Identity{FromTaxIDToOrg(doc.AccountTaxIDs[0])}
+			} else {
+				supplierParty.TaxID = FromTaxIDToTax(doc.AccountTaxIDs[0])
 			}
 		}
 	}
 
-	// TODO: If supplier is nil, we should get it from Invopop
+	return supplierParty
+}
+
+// NewSupplierFromAccount creates a GOBL supplier from the Stripe account object
+func NewSupplierFromAccount(account *stripe.Account) *org.Party {
+	if account == nil {
+		return nil
+	}
+	var supplierParty *org.Party
+	if account.BusinessProfile != nil {
+		if account.BusinessProfile.Name != "" {
+			supplierParty = &org.Party{
+				Name: account.BusinessProfile.Name,
+			}
+		}
+
+		if account.BusinessProfile.SupportAddress != nil {
+			if supplierParty == nil {
+				supplierParty = new(org.Party)
+			}
+			supplierParty.Addresses = append(supplierParty.Addresses, FromAddress(account.BusinessProfile.SupportAddress))
+		}
+
+		if account.BusinessProfile.SupportEmail != "" {
+			if supplierParty == nil {
+				supplierParty = new(org.Party)
+			}
+			supplierParty.Emails = append(supplierParty.Emails, FromEmail(account.BusinessProfile.SupportEmail))
+		}
+
+		if account.BusinessProfile.SupportPhone != "" {
+			if supplierParty == nil {
+				supplierParty = new(org.Party)
+			}
+			supplierParty.Telephones = append(supplierParty.Telephones, FromTelephone(account.BusinessProfile.SupportPhone))
+		}
+	}
+
+	if account.Settings != nil {
+		if account.Settings.Invoices != nil {
+			if account.Settings.Invoices.DefaultAccountTaxIDs != nil {
+				if len(account.Settings.Invoices.DefaultAccountTaxIDs) > 0 {
+					accountTaxID := account.Settings.Invoices.DefaultAccountTaxIDs[0]
+
+					if accountTaxID.Created != 0 {
+						if supplierParty == nil {
+							supplierParty = new(org.Party)
+						}
+						if slices.Contains(orgIDKeys, accountTaxID.Type) {
+							supplierParty.Identities = []*org.Identity{FromTaxIDToOrg(accountTaxID)}
+						} else {
+							supplierParty.TaxID = FromTaxIDToTax(accountTaxID)
+						}
+					}
+				}
+			}
+		}
+
+	}
 
 	return supplierParty
 }

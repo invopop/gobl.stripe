@@ -82,7 +82,7 @@ func processFile(t *testing.T, path string) error {
 		if err := json.Unmarshal(data, &stripeInvoice); err != nil {
 			return fmt.Errorf("failed to parse Stripe invoice: %v", err)
 		}
-		goblInvoice, err = goblstripe.FromInvoice(&stripeInvoice)
+		goblInvoice, err = goblstripe.FromInvoice(&stripeInvoice, validStripeAccount())
 		if err != nil {
 			return fmt.Errorf("failed to convert to GOBL: %v", err)
 		}
@@ -91,7 +91,7 @@ func processFile(t *testing.T, path string) error {
 		if err := json.Unmarshal(data, &stripeCreditNote); err != nil {
 			return fmt.Errorf("failed to parse Stripe credit note: %v", err)
 		}
-		goblInvoice, err = goblstripe.FromCreditNote(&stripeCreditNote)
+		goblInvoice, err = goblstripe.FromCreditNote(&stripeCreditNote, validStripeAccount())
 		if err != nil {
 			return fmt.Errorf("failed to convert to GOBL: %v", err)
 		}

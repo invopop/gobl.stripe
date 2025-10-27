@@ -4,12 +4,12 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "1145c27edb8cfc305eb3d727e6f2e145fde8a65b63db2511dde0126093658dad"
+			"val": "9aafe9df56bb5356f6a7bdb3514a346d37d299fb58ff47110eb807472a2de057"
 		}
 	},
 	"doc": {
 		"$schema": "https://gobl.org/draft-0/bill/invoice",
-		"$regime": "ES",
+		"$regime": "DE",
 		"uuid": "019860fc-7d4c-7922-a371-e848ca5141d3",
 		"type": "standard",
 		"series": "EXAMPLE",
@@ -18,11 +18,30 @@
 		"op_date": "2025-10-24",
 		"currency": "EUR",
 		"supplier": {
-			"name": "Example Company SL",
+			"name": "Test Account",
 			"tax_id": {
-				"country": "ES",
-				"code": "B65410011"
-			}
+				"country": "DE",
+				"code": "813495425"
+			},
+			"addresses": [
+				{
+					"street": "Test Street 123",
+					"locality": "Munich",
+					"state": "BY",
+					"code": "80331",
+					"country": "DE"
+				}
+			],
+			"emails": [
+				{
+					"addr": "support@testaccount.com"
+				}
+			],
+			"telephones": [
+				{
+					"num": "+4989123456"
+				}
+			]
 		},
 		"customer": {
 			"name": "John Doe",
@@ -58,6 +77,7 @@
 				"taxes": [
 					{
 						"cat": "VAT",
+						"country": "ES",
 						"key": "standard",
 						"rate": "general",
 						"percent": "21.0%"
@@ -81,6 +101,7 @@
 						"code": "VAT",
 						"rates": [
 							{
+								"country": "ES",
 								"key": "standard",
 								"base": "39.90",
 								"percent": "21.0%",
