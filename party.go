@@ -448,8 +448,6 @@ func NewSupplierFromAccount(account *stripe.Account) *org.Party {
 
 	}
 
-	// TODO: If supplier is nil, we should get it from Invopop
-
 	return supplierParty
 }
 
