@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "af0eeea594334f680a642c7ac5586c1c5dd6d80f6e720fcae07c4dcb06abdb5f"
+			"val": "826da64d0e527551e2fb55ac2e9455628fddf8976fea179eb0f1b29fae5df7f3"
 		}
 	},
 	"doc": {
@@ -13,7 +13,7 @@
 		"type": "standard",
 		"series": "RANDOM",
 		"code": "0002",
-		"issue_date": "2025-10-24",
+		"issue_date": "2025-10-27",
 		"op_date": "2025-06-23",
 		"currency": "MXN",
 		"tax": {
@@ -101,6 +101,12 @@
 			"total_with_tax": "0.00",
 			"payable": "0.00"
 		},
+		"notes": [
+			{
+				"src": "stripe",
+				"text": "This is a test footer\u003cbr\u003eThis is a test footer"
+			}
+		],
 		"meta": {
 			"stripe-document-id": "in_1234567890abcd",
 			"stripe-document-type": "invoice"

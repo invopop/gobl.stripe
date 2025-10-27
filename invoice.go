@@ -91,6 +91,7 @@ func FromInvoice(doc *stripe.Invoice) (*bill.Invoice, error) {
 	inv.Ordering = newOrdering(doc)
 	inv.Delivery = newDelivery(doc)
 	inv.Payment = newPayment(doc)
+	inv.Notes = newNotes(doc.Footer)
 
 	//Remaining fields
 	//Addons: TODO
@@ -217,6 +218,21 @@ func newOrdering(doc *stripe.Invoice) *bill.Ordering {
 		}
 	}
 	return ordering
+}
+
+// newNotes creates a notes object from the Stripe footer field.
+func newNotes(footer string) []*org.Note {
+	if footer == "" {
+		return nil
+	}
+	// We need to replace /n by <br> to be displayed correctly in the GOBL invoice.
+	footer = strings.ReplaceAll(footer, "\n", "<br>")
+	return []*org.Note{
+		{
+			Src:  "stripe",
+			Text: footer,
+		},
+	}
 }
 
 // AdjustRounding checks and, if need be, adjusts the rounding in the GOBL invoice to match the

@@ -957,3 +957,41 @@ func TestFromCreditNote(t *testing.T) {
 	assert.Equal(t, "INV", gi.Preceding[0].Series.String())
 	assert.Nil(t, gi.Tax)
 }
+
+func TestNotesInInvoiceConversion(t *testing.T) {
+	t.Run("invoice with footer", func(t *testing.T) {
+		s := minimalStripeInvoice()
+		s.Footer = "Thank you for your business\nPlease pay within 30 days"
+
+		gi, err := goblstripe.FromInvoice(s)
+		require.NoError(t, err)
+
+		require.NotNil(t, gi.Notes)
+		require.Len(t, gi.Notes, 1)
+		assert.Equal(t, cbc.Key("stripe"), gi.Notes[0].Src)
+		assert.Equal(t, "Thank you for your business<br>Please pay within 30 days", gi.Notes[0].Text)
+	})
+
+	t.Run("invoice without footer", func(t *testing.T) {
+		s := minimalStripeInvoice()
+		s.Footer = ""
+
+		gi, err := goblstripe.FromInvoice(s)
+		require.NoError(t, err)
+
+		assert.Nil(t, gi.Notes)
+	})
+
+	t.Run("invoice with multiline footer", func(t *testing.T) {
+		s := minimalStripeInvoice()
+		s.Footer = "Terms:\n1. Payment due in 30 days\n2. Late fees apply\n\nThank you!"
+
+		gi, err := goblstripe.FromInvoice(s)
+		require.NoError(t, err)
+
+		require.NotNil(t, gi.Notes)
+		require.Len(t, gi.Notes, 1)
+		assert.Equal(t, cbc.Key("stripe"), gi.Notes[0].Src)
+		assert.Equal(t, "Terms:<br>1. Payment due in 30 days<br>2. Late fees apply<br><br>Thank you!", gi.Notes[0].Text)
+	})
+}
