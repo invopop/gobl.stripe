@@ -80,7 +80,10 @@ func FromInvoice(doc *stripe.Invoice, account *stripe.Account) (*bill.Invoice, e
 	inv.Supplier = NewSupplierFromAccount(account)
 	if inv.Supplier == nil {
 		inv.Supplier = newSupplierFromInvoice(doc)
+	} else if inv.Supplier.Name == "" && doc.AccountName != "" {
+		inv.Supplier.Name = doc.AccountName
 	}
+
 	if doc.Customer != nil && len(doc.Customer.Metadata) != 0 {
 		inv.Customer = FromCustomer(doc.Customer)
 	} else {
@@ -136,7 +139,10 @@ func FromCreditNote(doc *stripe.CreditNote, account *stripe.Account) (*bill.Invo
 	inv.Supplier = NewSupplierFromAccount(account)
 	if inv.Supplier == nil && doc.Invoice != nil {
 		inv.Supplier = newSupplierFromInvoice(doc.Invoice)
+	} else if inv.Supplier.Name == "" && doc.Invoice.AccountName != "" {
+		inv.Supplier.Name = doc.Invoice.AccountName
 	}
+
 	if doc.Customer != nil {
 		inv.Customer = FromCustomer(doc.Customer)
 	}
