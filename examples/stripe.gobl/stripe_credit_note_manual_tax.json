@@ -800,7 +800,7 @@
       ]
     },
     "livemode": false,
-    "memo": "",
+    "memo": "This is a credit note for a product that was unsatisfactory.",
     "metadata": {},
     "number": "EXAMPLE-12345-CN-01",
     "object": "credit_note",
