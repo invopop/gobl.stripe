@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "9aafe9df56bb5356f6a7bdb3514a346d37d299fb58ff47110eb807472a2de057"
+			"val": "a712cebfda1ce662eadf630d886cbf3ead6995ac98e1283c658f4b7965752e27"
 		}
 	},
 	"doc": {
@@ -14,7 +14,7 @@
 		"type": "standard",
 		"series": "EXAMPLE",
 		"code": "12345",
-		"issue_date": "2025-10-27",
+		"issue_date": "2025-11-07",
 		"op_date": "2025-10-24",
 		"currency": "EUR",
 		"supplier": {
