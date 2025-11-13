@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "caeb25509b0a73d768db3d3b3c576b24b2dc52d6d87961f47bdbf7e62fd35274"
+			"val": "495ca22aedb2209277f8c745f4854341883cfcb95c3f42cecd64e9171eee78cb"
 		}
 	},
 	"doc": {
@@ -14,7 +14,7 @@
 		"type": "standard",
 		"series": "JV64HIWA",
 		"code": "0009",
-		"issue_date": "2025-11-07",
+		"issue_date": "2025-11-13",
 		"op_date": "2025-06-10",
 		"currency": "EUR",
 		"exchange_rates": [
@@ -78,6 +78,10 @@
 			{
 				"i": 1,
 				"quantity": "1",
+				"period": {
+					"start": "2025-06-09",
+					"end": "2025-06-09"
+				},
 				"item": {
 					"name": "Equipo para uso de software punto de venta",
 					"currency": "EUR",
@@ -101,8 +105,8 @@
 		],
 		"ordering": {
 			"period": {
-				"start": "2025-06-10",
-				"end": "2025-06-10"
+				"start": "2025-06-09",
+				"end": "2025-06-09"
 			}
 		},
 		"payment": {

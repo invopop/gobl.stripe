@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "672fb8ca454c3cb207b8fe9e27cd3101cdd863c81b9e5f21fb15124f0bc639a5"
+			"val": "1d31039b540f033398422d66db2b45432194857608daf826226733a546278041"
 		}
 	},
 	"doc": {
@@ -17,7 +17,7 @@
 		"type": "standard",
 		"series": "V7REHZYJ",
 		"code": "0013",
-		"issue_date": "2025-11-07",
+		"issue_date": "2025-11-13",
 		"op_date": "2025-07-31",
 		"currency": "EUR",
 		"tax": {
@@ -73,6 +73,10 @@
 			{
 				"i": 1,
 				"quantity": "1",
+				"period": {
+					"start": "2025-07-31",
+					"end": "2025-08-31"
+				},
 				"item": {
 					"name": "1 × Software Services (recurrent) (at €100.00 / month)",
 					"currency": "EUR",
@@ -92,7 +96,7 @@
 		"ordering": {
 			"period": {
 				"start": "2025-07-31",
-				"end": "2025-07-31"
+				"end": "2025-08-31"
 			}
 		},
 		"delivery": {

@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "b8b85fadbfb835973c6ae18434243ae6e471a37d43e040e6b8a3f65e9e50d6b7"
+			"val": "372f2b7724e810b4d6bb42f9d1df98a342e2ed035dafbb84b0b89601ce63d1e1"
 		}
 	},
 	"doc": {
@@ -17,7 +17,7 @@
 		"type": "standard",
 		"series": "V7REHZYJ",
 		"code": "0019",
-		"issue_date": "2025-11-07",
+		"issue_date": "2025-11-13",
 		"op_date": "2025-08-08",
 		"currency": "EUR",
 		"tax": {
@@ -73,6 +73,10 @@
 			{
 				"i": 1,
 				"quantity": "1",
+				"period": {
+					"start": "2025-08-08",
+					"end": "2025-08-08"
+				},
 				"item": {
 					"name": "Item with discount",
 					"currency": "EUR",
@@ -101,6 +105,10 @@
 			{
 				"i": 2,
 				"quantity": "1",
+				"period": {
+					"start": "2025-07-31",
+					"end": "2025-07-31"
+				},
 				"item": {
 					"name": "Software services",
 					"currency": "EUR",
@@ -119,7 +127,7 @@
 		],
 		"ordering": {
 			"period": {
-				"start": "2025-08-08",
+				"start": "2025-07-31",
 				"end": "2025-08-08"
 			}
 		},

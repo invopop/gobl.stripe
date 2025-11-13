@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "34887f253f3d467c7594bed83d9e078521b5bc2cca75a9c02292263c13b25df2"
+			"val": "091b9de9be9c3b0085543c1b858bcefec016f638a1693cad35caa6524b107ba2"
 		}
 	},
 	"doc": {
@@ -14,7 +14,7 @@
 		"type": "standard",
 		"series": "E486556A",
 		"code": "0039",
-		"issue_date": "2025-11-07",
+		"issue_date": "2025-11-13",
 		"op_date": "2025-06-20",
 		"currency": "EUR",
 		"supplier": {
@@ -67,6 +67,10 @@
 			{
 				"i": 1,
 				"quantity": "1",
+				"period": {
+					"start": "2025-06-20",
+					"end": "2025-06-20"
+				},
 				"item": {
 					"name": "Cookie",
 					"currency": "EUR",
