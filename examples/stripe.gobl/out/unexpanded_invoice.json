@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "82f9f55e8ec5f884e27146c6a712d9383ed48a873ebc06f9971b904a128f6179"
+			"val": "8b51fc45364f71f6deeccd617ef4923e1f30009354eeb9cd1e6f6d59c6662852"
 		}
 	},
 	"doc": {
@@ -16,7 +16,7 @@
 		"uuid": "019860fc-7d4c-7922-a371-e848ca5141d3",
 		"type": "standard",
 		"code": "in_1QpCUMQhcl5B85YlfgMLxqMg",
-		"issue_date": "2025-11-07",
+		"issue_date": "2025-11-13",
 		"currency": "EUR",
 		"supplier": {
 			"name": "Test Account",
@@ -70,6 +70,10 @@
 			{
 				"i": 1,
 				"quantity": "1",
+				"period": {
+					"start": "2025-01-21",
+					"end": "2025-01-21"
+				},
 				"item": {
 					"name": "Chargebee Addon",
 					"currency": "EUR",
@@ -81,6 +85,10 @@
 			{
 				"i": 2,
 				"quantity": "2",
+				"period": {
+					"start": "2025-01-20",
+					"end": "2025-01-20"
+				},
 				"item": {
 					"name": "Physical good",
 					"currency": "EUR",
@@ -97,8 +105,8 @@
 		],
 		"ordering": {
 			"period": {
-				"start": "2025-02-05",
-				"end": "2025-02-05"
+				"start": "2025-01-20",
+				"end": "2025-01-21"
 			}
 		},
 		"totals": {

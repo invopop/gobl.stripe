@@ -6,6 +6,7 @@ import (
 
 	goblstripe "github.com/invopop/gobl.stripe"
 	"github.com/invopop/gobl/bill"
+	"github.com/invopop/gobl/cal"
 	"github.com/invopop/gobl/currency"
 	"github.com/invopop/gobl/l10n"
 	"github.com/invopop/gobl/num"
@@ -234,6 +235,10 @@ func TestSeveralLines(t *testing.T) {
 					Percent:  num.NewPercentage(210, 3),
 				},
 			},
+			Period: &cal.Period{
+				Start: *cal.NewDate(2025, 1, 8),
+				End:   *cal.NewDate(2025, 2, 8),
+			},
 		},
 		{
 			Quantity: num.MakeAmount(1, 0),
@@ -248,6 +253,10 @@ func TestSeveralLines(t *testing.T) {
 					Country:  "ES",
 					Percent:  num.NewPercentage(210, 3),
 				},
+			},
+			Period: &cal.Period{
+				Start: *cal.NewDate(2025, 1, 8),
+				End:   *cal.NewDate(2025, 2, 8),
 			},
 		},
 		{
@@ -264,6 +273,10 @@ func TestSeveralLines(t *testing.T) {
 					Percent:  num.NewPercentage(210, 3),
 				},
 			},
+			Period: &cal.Period{
+				Start: *cal.NewDate(2025, 1, 8),
+				End:   *cal.NewDate(2025, 2, 8),
+			},
 		},
 		{
 			Quantity: num.MakeAmount(3, 0),
@@ -279,6 +292,10 @@ func TestSeveralLines(t *testing.T) {
 					Percent:  num.NewPercentage(210, 3),
 				},
 			},
+			Period: &cal.Period{
+				Start: *cal.NewDate(2025, 1, 8),
+				End:   *cal.NewDate(2025, 2, 8),
+			},
 		},
 		{
 			Quantity: num.MakeAmount(1, 0),
@@ -291,6 +308,10 @@ func TestSeveralLines(t *testing.T) {
 				},
 			},
 			Taxes: nil,
+			Period: &cal.Period{
+				Start: *cal.NewDate(2025, 1, 8),
+				End:   *cal.NewDate(2025, 2, 8),
+			},
 		},
 	}
 

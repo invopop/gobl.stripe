@@ -68,8 +68,8 @@ func minimalStripeInvoice() *stripe.Invoice {
 					Quantity:     1,
 					Discountable: true,
 					Period: &stripe.Period{
-						Start: 1737738363,
-						End:   1737738363,
+						Start: 1704067200, // 2024-01-01 00:00:00 UTC
+						End:   1706745599, // 2024-01-31 23:59:59 UTC
 					},
 					Price: &stripe.Price{
 						BillingScheme: stripe.PriceBillingSchemePerUnit,
@@ -636,15 +636,15 @@ func TestOrderingPeriod(t *testing.T) {
 	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 	require.NoError(t, err)
 
-	assert.Equal(t, "2025-01-24", gi.Ordering.Period.Start.String())
-	assert.Equal(t, "2025-01-24", gi.Ordering.Period.End.String())
+	assert.Equal(t, "2024-01-01", gi.Ordering.Period.Start.String())
+	assert.Equal(t, "2024-01-31", gi.Ordering.Period.End.String())
 }
 
 func TestNewOrdering(t *testing.T) {
 	t.Run("basic period dates", func(t *testing.T) {
 		s := minimalStripeInvoice()
 		s.PeriodStart = 1704067200 // 2024-01-01 00:00:00 UTC
-		s.PeriodEnd = 1706745599   // 2024-01-31 23:59:59 UTC
+		s.PeriodEnd = 1704067200   // 2024-01-01 23:59:59 UTC
 
 		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
@@ -659,7 +659,7 @@ func TestNewOrdering(t *testing.T) {
 	t.Run("with PO number in custom fields", func(t *testing.T) {
 		s := minimalStripeInvoice()
 		s.PeriodStart = 1704067200
-		s.PeriodEnd = 1706745599
+		s.PeriodEnd = 1704067200
 		s.CustomFields = []*stripe.InvoiceCustomField{
 			{
 				Name:  "po number",

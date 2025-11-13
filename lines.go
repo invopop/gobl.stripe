@@ -42,6 +42,13 @@ func FromInvoiceLine(line *stripe.InvoiceLineItem, regimeDef *tax.RegimeDef) *bi
 
 	invLine.Taxes = FromInvoiceTaxAmountsToTaxSet(line.TaxAmounts, regimeDef)
 
+	if line.Period != nil {
+		invLine.Period = &cal.Period{
+			Start: *newDateFromTS(line.Period.Start),
+			End:   *newDateFromTS(line.Period.End),
+		}
+	}
+
 	return invLine
 }
 
@@ -244,6 +251,7 @@ func resolveCreditNoteLinePrice(line *stripe.CreditNoteLineItem, curr currency.C
 		unitAmount := line.Amount / line.Quantity
 		return CurrencyAmount(unitAmount, curr)
 	}
+
 	return CurrencyAmount(line.UnitAmount, curr)
 }
 
