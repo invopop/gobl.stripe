@@ -97,7 +97,7 @@ func FromInvoice(doc *stripe.Invoice, account *stripe.Account) (*bill.Invoice, e
 	inv.Ordering = newOrdering(doc, inv.Lines)
 	inv.Delivery = newDelivery(doc)
 	inv.Payment = newPayment(doc)
-	inv.Notes = newNotes(doc.Footer)
+	inv.Notes = newInvoiceNotes(doc.Description, doc.Footer)
 
 	//Remaining fields
 	//Discounts: for the moment not considered in general (only in lines)
@@ -151,7 +151,7 @@ func FromCreditNote(doc *stripe.CreditNote, account *stripe.Account) (*bill.Invo
 	inv.Lines = FromCreditNoteLines(doc.Lines.Data, inv.Currency, regimeDef)
 	inv.Tax = taxFromCreditNoteTaxAmounts(doc.TaxAmounts)
 	inv.Preceding = []*org.DocumentRef{newPrecedingFromInvoice(doc.Invoice, string(doc.Reason))}
-	inv.Notes = newNotes(doc.Memo)
+	inv.Notes = newCreditNoteNotes(doc.Memo)
 
 	return inv, nil
 }
@@ -293,18 +293,37 @@ func newOrdering(doc *stripe.Invoice, lines []*bill.Line) *bill.Ordering {
 	return ordering
 }
 
-// newNotes creates a notes object from the Stripe footer field.
-func newNotes(footer string) []*org.Note {
-	if footer == "" {
+// newInvoiceNotes creates notes from a Stripe invoice's description and footer fields.
+func newInvoiceNotes(description, footer string) []*org.Note {
+	var notes []*org.Note
+	if n := newNote(description, org.NoteKeyGeneral); n != nil {
+		notes = append(notes, n)
+	}
+	if n := newNote(footer, ""); n != nil {
+		notes = append(notes, n)
+	}
+	return notes
+}
+
+// newCreditNoteNotes creates notes from a Stripe credit note's memo field.
+func newCreditNoteNotes(memo string) []*org.Note {
+	if n := newNote(memo, org.NoteKeyGeneral); n != nil {
+		return []*org.Note{n}
+	}
+	return nil
+}
+
+// newNote creates a single note with src "stripe" and optional key.
+func newNote(text string, key cbc.Key) *org.Note {
+	if text == "" {
 		return nil
 	}
-	// We need to replace /n by <br> to be displayed correctly in the GOBL invoice.
-	footer = strings.ReplaceAll(footer, "\n", "<br>")
-	return []*org.Note{
-		{
-			Src:  "stripe",
-			Text: footer,
-		},
+	// Replace newlines with <br> to be displayed correctly.
+	text = strings.ReplaceAll(text, "\n", "<br>")
+	return &org.Note{
+		Key:  key,
+		Src:  "stripe",
+		Text: text,
 	}
 }
 

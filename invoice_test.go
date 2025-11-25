@@ -13,6 +13,7 @@ import (
 	"github.com/invopop/gobl/currency"
 	"github.com/invopop/gobl/l10n"
 	"github.com/invopop/gobl/num"
+	"github.com/invopop/gobl/org"
 	"github.com/invopop/gobl/tax"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -1168,7 +1169,21 @@ func TestCreditNoteBothReverseChargeAndSimplified(t *testing.T) {
 }
 
 func TestNotesInInvoiceConversion(t *testing.T) {
-	t.Run("invoice with footer", func(t *testing.T) {
+	t.Run("invoice with description only", func(t *testing.T) {
+		s := minimalStripeInvoice()
+		s.Description = "Monthly subscription invoice"
+
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
+		require.NoError(t, err)
+
+		require.NotNil(t, gi.Notes)
+		require.Len(t, gi.Notes, 1)
+		assert.Equal(t, org.NoteKeyGeneral, gi.Notes[0].Key)
+		assert.Equal(t, cbc.Key("stripe"), gi.Notes[0].Src)
+		assert.Equal(t, "Monthly subscription invoice", gi.Notes[0].Text)
+	})
+
+	t.Run("invoice with footer only", func(t *testing.T) {
 		s := minimalStripeInvoice()
 		s.Footer = "Thank you for your business\nPlease pay within 30 days"
 
@@ -1177,12 +1192,36 @@ func TestNotesInInvoiceConversion(t *testing.T) {
 
 		require.NotNil(t, gi.Notes)
 		require.Len(t, gi.Notes, 1)
+		assert.Empty(t, gi.Notes[0].Key)
 		assert.Equal(t, cbc.Key("stripe"), gi.Notes[0].Src)
 		assert.Equal(t, "Thank you for your business<br>Please pay within 30 days", gi.Notes[0].Text)
 	})
 
-	t.Run("invoice without footer", func(t *testing.T) {
+	t.Run("invoice with both description and footer", func(t *testing.T) {
 		s := minimalStripeInvoice()
+		s.Description = "Monthly subscription invoice"
+		s.Footer = "Thank you for your business"
+
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
+		require.NoError(t, err)
+
+		require.NotNil(t, gi.Notes)
+		require.Len(t, gi.Notes, 2)
+
+		// First note: description with key "general"
+		assert.Equal(t, org.NoteKeyGeneral, gi.Notes[0].Key)
+		assert.Equal(t, cbc.Key("stripe"), gi.Notes[0].Src)
+		assert.Equal(t, "Monthly subscription invoice", gi.Notes[0].Text)
+
+		// Second note: footer without key
+		assert.Empty(t, gi.Notes[1].Key)
+		assert.Equal(t, cbc.Key("stripe"), gi.Notes[1].Src)
+		assert.Equal(t, "Thank you for your business", gi.Notes[1].Text)
+	})
+
+	t.Run("invoice without description or footer", func(t *testing.T) {
+		s := minimalStripeInvoice()
+		s.Description = ""
 		s.Footer = ""
 
 		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
@@ -1200,7 +1239,48 @@ func TestNotesInInvoiceConversion(t *testing.T) {
 
 		require.NotNil(t, gi.Notes)
 		require.Len(t, gi.Notes, 1)
+		assert.Empty(t, gi.Notes[0].Key)
 		assert.Equal(t, cbc.Key("stripe"), gi.Notes[0].Src)
 		assert.Equal(t, "Terms:<br>1. Payment due in 30 days<br>2. Late fees apply<br><br>Thank you!", gi.Notes[0].Text)
+	})
+}
+
+func TestNotesInCreditNoteConversion(t *testing.T) {
+	t.Run("credit note with memo", func(t *testing.T) {
+		s := validCreditNote()
+		s.Memo = "Refund for cancelled subscription"
+
+		gi, err := goblstripe.FromCreditNote(s, validStripeAccount())
+		require.NoError(t, err)
+
+		require.NotNil(t, gi.Notes)
+		require.Len(t, gi.Notes, 1)
+		assert.Equal(t, org.NoteKeyGeneral, gi.Notes[0].Key)
+		assert.Equal(t, cbc.Key("stripe"), gi.Notes[0].Src)
+		assert.Equal(t, "Refund for cancelled subscription", gi.Notes[0].Text)
+	})
+
+	t.Run("credit note without memo", func(t *testing.T) {
+		s := validCreditNote()
+		s.Memo = ""
+
+		gi, err := goblstripe.FromCreditNote(s, validStripeAccount())
+		require.NoError(t, err)
+
+		assert.Nil(t, gi.Notes)
+	})
+
+	t.Run("credit note with multiline memo", func(t *testing.T) {
+		s := validCreditNote()
+		s.Memo = "Refund reason:\n- Product defect\n- Customer request"
+
+		gi, err := goblstripe.FromCreditNote(s, validStripeAccount())
+		require.NoError(t, err)
+
+		require.NotNil(t, gi.Notes)
+		require.Len(t, gi.Notes, 1)
+		assert.Equal(t, org.NoteKeyGeneral, gi.Notes[0].Key)
+		assert.Equal(t, cbc.Key("stripe"), gi.Notes[0].Src)
+		assert.Equal(t, "Refund reason:<br>- Product defect<br>- Customer request", gi.Notes[0].Text)
 	})
 }

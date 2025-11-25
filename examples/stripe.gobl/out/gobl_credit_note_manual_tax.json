@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "97577611ca9517be21efd8c865a1a6c20d5c232dadfb709f17b939f58e9b3694"
+			"val": "7d8425da581ce7823890fe21916abdb3acbdad1a4816f2a121b88504a1a2eaab"
 		}
 	},
 	"doc": {
@@ -121,6 +121,7 @@
 		},
 		"notes": [
 			{
+				"key": "general",
 				"src": "stripe",
 				"text": "This is a credit note for a product that was unsatisfactory."
 			}

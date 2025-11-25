@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "4cccbd68f6c8109b3038427639ff50e99e53402f2790296d2f594f446997744f"
+			"val": "e66894f5d06010a59dcad70e2105332267e04c66fcb2d17ef0a4a3ebf40ba02f"
 		}
 	},
 	"doc": {
@@ -89,6 +89,13 @@
 			"total_with_tax": "20.00",
 			"payable": "20.00"
 		},
+		"notes": [
+			{
+				"key": "general",
+				"src": "stripe",
+				"text": "(created by Stripe CLI)"
+			}
+		],
 		"meta": {
 			"stripe-document-id": "in_1QkqKVQhcl5B85YlT32LIsNm",
 			"stripe-document-type": "invoice"
