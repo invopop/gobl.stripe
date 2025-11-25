@@ -13,6 +13,7 @@ import (
 	"github.com/invopop/gobl/currency"
 	"github.com/invopop/gobl/l10n"
 	"github.com/invopop/gobl/num"
+	"github.com/invopop/gobl/org"
 	"github.com/invopop/gobl/tax"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -629,6 +630,112 @@ func TestReverseCharge(t *testing.T) {
 	assert.Equal(t, num.MakeAmount(10000, 2), gi.Totals.TotalWithTax)
 }
 
+func TestSimplifiedInvoiceWhenNoCustomerTaxID(t *testing.T) {
+	// Test with no customer tax IDs
+	s := minimalStripeInvoice()
+	s.CustomerTaxIDs = nil
+
+	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
+	require.NoError(t, err)
+
+	assert.Len(t, gi.Tags.List, 1)
+	assert.Equal(t, tax.TagSimplified, gi.Tags.List[0])
+}
+
+func TestSimplifiedInvoiceWhenEmptyCustomerTaxID(t *testing.T) {
+	// Test with empty customer tax IDs slice
+	s := minimalStripeInvoice()
+	s.CustomerTaxIDs = []*stripe.InvoiceCustomerTaxID{}
+
+	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
+	require.NoError(t, err)
+
+	assert.Len(t, gi.Tags.List, 1)
+	assert.Equal(t, tax.TagSimplified, gi.Tags.List[0])
+}
+
+func TestNoSimplifiedTagWhenCustomerHasTaxID(t *testing.T) {
+	// Test that simplified tag is NOT added when customer has a tax ID
+	s := minimalStripeInvoice()
+	taxIDType := stripe.TaxIDTypeEUVAT
+	s.CustomerTaxIDs = []*stripe.InvoiceCustomerTaxID{
+		{
+			Type:  &taxIDType,
+			Value: "DE123456789",
+		},
+	}
+
+	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
+	require.NoError(t, err)
+
+	// Should not have the simplified tag
+	assert.Len(t, gi.Tags.List, 0)
+}
+
+func TestBothReverseChargeAndSimplifiedTags(t *testing.T) {
+	// Test that both reverse-charge and simplified tags are added when:
+	// - Customer has reverse charge status
+	// - Customer has no tax ID
+	s := minimalStripeInvoice()
+	customerReverse := stripe.CustomerTaxExemptReverse
+	s.CustomerTaxExempt = &customerReverse
+	s.CustomerTaxIDs = nil // No tax ID
+
+	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
+	require.NoError(t, err)
+
+	// Should have both tags
+	assert.Len(t, gi.Tags.List, 2)
+	assert.Contains(t, gi.Tags.List, tax.TagReverseCharge)
+	assert.Contains(t, gi.Tags.List, tax.TagSimplified)
+}
+
+func TestReverseChargeFromTaxAmountWithoutCustomerTaxID(t *testing.T) {
+	// Test that both tags are added when reverse charge comes from tax amount
+	// and customer has no tax ID
+	s := minimalStripeInvoice()
+	s.CustomerTaxIDs = nil // No tax ID
+	s.TotalTaxAmounts = []*stripe.InvoiceTotalTaxAmount{
+		{
+			TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonReverseCharge,
+			TaxRate: &stripe.TaxRate{
+				TaxType:    stripe.TaxRateTaxTypeVAT,
+				Country:    "DE",
+				Percentage: 19.0,
+			},
+		},
+	}
+
+	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
+	require.NoError(t, err)
+
+	// Should have both tags
+	assert.Len(t, gi.Tags.List, 2)
+	assert.Contains(t, gi.Tags.List, tax.TagReverseCharge)
+	assert.Contains(t, gi.Tags.List, tax.TagSimplified)
+}
+
+func TestReverseChargeOnlyWhenCustomerHasTaxID(t *testing.T) {
+	// Test that only reverse-charge tag is added when customer has tax ID
+	s := minimalStripeInvoice()
+	customerReverse := stripe.CustomerTaxExemptReverse
+	s.CustomerTaxExempt = &customerReverse
+	taxIDType := stripe.TaxIDTypeEUVAT
+	s.CustomerTaxIDs = []*stripe.InvoiceCustomerTaxID{
+		{
+			Type:  &taxIDType,
+			Value: "DE123456789",
+		},
+	}
+
+	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
+	require.NoError(t, err)
+
+	// Should only have reverse-charge tag
+	assert.Len(t, gi.Tags.List, 1)
+	assert.Equal(t, tax.TagReverseCharge, gi.Tags.List[0])
+}
+
 func TestOrderingPeriod(t *testing.T) {
 	s := minimalStripeInvoice()
 	s.PeriodStart = 1737738363
@@ -968,8 +1075,115 @@ func TestFromCreditNote(t *testing.T) {
 	assert.Nil(t, gi.Tax)
 }
 
+func TestCreditNoteSimplifiedWhenNoCustomer(t *testing.T) {
+	s := validCreditNote()
+	s.Customer = nil // No customer
+
+	gi, err := goblstripe.FromCreditNote(s, validStripeAccount())
+	require.NoError(t, err)
+
+	assert.Len(t, gi.Tags.List, 1)
+	assert.Equal(t, tax.TagSimplified, gi.Tags.List[0])
+}
+
+func TestCreditNoteSimplifiedWhenCustomerHasNoTaxID(t *testing.T) {
+	s := validCreditNote()
+	s.Customer = &stripe.Customer{
+		Name:  "Customer Without Tax ID",
+		Email: "notax@example.com",
+	}
+
+	gi, err := goblstripe.FromCreditNote(s, validStripeAccount())
+	require.NoError(t, err)
+
+	assert.Len(t, gi.Tags.List, 1)
+	assert.Equal(t, tax.TagSimplified, gi.Tags.List[0])
+}
+
+func TestCreditNoteNoSimplifiedWhenCustomerHasTaxID(t *testing.T) {
+	s := validCreditNote()
+	// validCreditNote already has validStripeCustomer() which has TaxIDs
+
+	gi, err := goblstripe.FromCreditNote(s, validStripeAccount())
+	require.NoError(t, err)
+
+	// Should not have the simplified tag
+	assert.Len(t, gi.Tags.List, 0)
+}
+
+func TestCreditNoteReverseChargeFromCustomer(t *testing.T) {
+	s := validCreditNote()
+	s.Customer.TaxExempt = stripe.CustomerTaxExemptReverse
+
+	gi, err := goblstripe.FromCreditNote(s, validStripeAccount())
+	require.NoError(t, err)
+
+	// Should have only reverse-charge tag (customer has tax ID)
+	assert.Len(t, gi.Tags.List, 1)
+	assert.Equal(t, tax.TagReverseCharge, gi.Tags.List[0])
+}
+
+func TestCreditNoteReverseChargeFromTaxAmounts(t *testing.T) {
+	s := validCreditNote()
+	s.TaxAmounts = []*stripe.CreditNoteTaxAmount{
+		{
+			TaxabilityReason: stripe.CreditNoteTaxAmountTaxabilityReasonReverseCharge,
+			TaxRate: &stripe.TaxRate{
+				TaxType:    stripe.TaxRateTaxTypeVAT,
+				Country:    "DE",
+				Percentage: 19.0,
+			},
+		},
+	}
+
+	gi, err := goblstripe.FromCreditNote(s, validStripeAccount())
+	require.NoError(t, err)
+
+	// Should have only reverse-charge tag (customer has tax ID)
+	assert.Len(t, gi.Tags.List, 1)
+	assert.Equal(t, tax.TagReverseCharge, gi.Tags.List[0])
+}
+
+func TestCreditNoteBothReverseChargeAndSimplified(t *testing.T) {
+	s := validCreditNote()
+	// Use TaxAmounts for reverse charge since Customer will be nil
+	s.TaxAmounts = []*stripe.CreditNoteTaxAmount{
+		{
+			TaxabilityReason: stripe.CreditNoteTaxAmountTaxabilityReasonReverseCharge,
+			TaxRate: &stripe.TaxRate{
+				TaxType:    stripe.TaxRateTaxTypeVAT,
+				Country:    "DE",
+				Percentage: 19.0,
+			},
+		},
+	}
+	s.Customer = nil // No customer (no tax ID)
+
+	gi, err := goblstripe.FromCreditNote(s, validStripeAccount())
+	require.NoError(t, err)
+
+	// Should have both tags
+	assert.Len(t, gi.Tags.List, 2)
+	assert.Contains(t, gi.Tags.List, tax.TagReverseCharge)
+	assert.Contains(t, gi.Tags.List, tax.TagSimplified)
+}
+
 func TestNotesInInvoiceConversion(t *testing.T) {
-	t.Run("invoice with footer", func(t *testing.T) {
+	t.Run("invoice with description only", func(t *testing.T) {
+		s := minimalStripeInvoice()
+		s.Description = "Monthly subscription invoice"
+
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
+		require.NoError(t, err)
+
+		require.NotNil(t, gi.Notes)
+		require.Len(t, gi.Notes, 1)
+		assert.Equal(t, org.NoteKeyGeneral, gi.Notes[0].Key)
+		assert.Equal(t, cbc.Key("stripe"), gi.Notes[0].Src)
+		assert.Equal(t, "Monthly subscription invoice", gi.Notes[0].Text)
+	})
+
+	t.Run("invoice with footer only", func(t *testing.T) {
 		s := minimalStripeInvoice()
 		s.Footer = "Thank you for your business\nPlease pay within 30 days"
 
@@ -978,12 +1192,36 @@ func TestNotesInInvoiceConversion(t *testing.T) {
 
 		require.NotNil(t, gi.Notes)
 		require.Len(t, gi.Notes, 1)
+		assert.Empty(t, gi.Notes[0].Key)
 		assert.Equal(t, cbc.Key("stripe"), gi.Notes[0].Src)
 		assert.Equal(t, "Thank you for your business<br>Please pay within 30 days", gi.Notes[0].Text)
 	})
 
-	t.Run("invoice without footer", func(t *testing.T) {
+	t.Run("invoice with both description and footer", func(t *testing.T) {
 		s := minimalStripeInvoice()
+		s.Description = "Monthly subscription invoice"
+		s.Footer = "Thank you for your business"
+
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
+		require.NoError(t, err)
+
+		require.NotNil(t, gi.Notes)
+		require.Len(t, gi.Notes, 2)
+
+		// First note: description with key "general"
+		assert.Equal(t, org.NoteKeyGeneral, gi.Notes[0].Key)
+		assert.Equal(t, cbc.Key("stripe"), gi.Notes[0].Src)
+		assert.Equal(t, "Monthly subscription invoice", gi.Notes[0].Text)
+
+		// Second note: footer without key
+		assert.Empty(t, gi.Notes[1].Key)
+		assert.Equal(t, cbc.Key("stripe"), gi.Notes[1].Src)
+		assert.Equal(t, "Thank you for your business", gi.Notes[1].Text)
+	})
+
+	t.Run("invoice without description or footer", func(t *testing.T) {
+		s := minimalStripeInvoice()
+		s.Description = ""
 		s.Footer = ""
 
 		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
@@ -1001,7 +1239,48 @@ func TestNotesInInvoiceConversion(t *testing.T) {
 
 		require.NotNil(t, gi.Notes)
 		require.Len(t, gi.Notes, 1)
+		assert.Empty(t, gi.Notes[0].Key)
 		assert.Equal(t, cbc.Key("stripe"), gi.Notes[0].Src)
 		assert.Equal(t, "Terms:<br>1. Payment due in 30 days<br>2. Late fees apply<br><br>Thank you!", gi.Notes[0].Text)
+	})
+}
+
+func TestNotesInCreditNoteConversion(t *testing.T) {
+	t.Run("credit note with memo", func(t *testing.T) {
+		s := validCreditNote()
+		s.Memo = "Refund for cancelled subscription"
+
+		gi, err := goblstripe.FromCreditNote(s, validStripeAccount())
+		require.NoError(t, err)
+
+		require.NotNil(t, gi.Notes)
+		require.Len(t, gi.Notes, 1)
+		assert.Equal(t, org.NoteKeyGeneral, gi.Notes[0].Key)
+		assert.Equal(t, cbc.Key("stripe"), gi.Notes[0].Src)
+		assert.Equal(t, "Refund for cancelled subscription", gi.Notes[0].Text)
+	})
+
+	t.Run("credit note without memo", func(t *testing.T) {
+		s := validCreditNote()
+		s.Memo = ""
+
+		gi, err := goblstripe.FromCreditNote(s, validStripeAccount())
+		require.NoError(t, err)
+
+		assert.Nil(t, gi.Notes)
+	})
+
+	t.Run("credit note with multiline memo", func(t *testing.T) {
+		s := validCreditNote()
+		s.Memo = "Refund reason:\n- Product defect\n- Customer request"
+
+		gi, err := goblstripe.FromCreditNote(s, validStripeAccount())
+		require.NoError(t, err)
+
+		require.NotNil(t, gi.Notes)
+		require.Len(t, gi.Notes, 1)
+		assert.Equal(t, org.NoteKeyGeneral, gi.Notes[0].Key)
+		assert.Equal(t, cbc.Key("stripe"), gi.Notes[0].Src)
+		assert.Equal(t, "Refund reason:<br>- Product defect<br>- Customer request", gi.Notes[0].Text)
 	})
 }

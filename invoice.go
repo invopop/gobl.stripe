@@ -90,17 +90,16 @@ func FromInvoice(doc *stripe.Invoice, account *stripe.Account) (*bill.Invoice, e
 		inv.Customer = newCustomerFromInvoice(doc)
 	}
 
-	inv.Tags = newTags(doc)
+	inv.Tags = newTags(isInvoiceReverseCharge(doc), inv.Customer)
 
 	inv.Lines = FromInvoiceLines(doc.Lines.Data, regimeDef)
 	inv.Tax = taxFromInvoiceTaxAmounts(doc.TotalTaxAmounts)
 	inv.Ordering = newOrdering(doc, inv.Lines)
 	inv.Delivery = newDelivery(doc)
 	inv.Payment = newPayment(doc)
-	inv.Notes = newNotes(doc.Footer)
+	inv.Notes = newInvoiceNotes(doc.Description, doc.Footer)
 
 	//Remaining fields
-	//Addons: TODO
 	//Discounts: for the moment not considered in general (only in lines)
 
 	return inv, nil
@@ -147,10 +146,12 @@ func FromCreditNote(doc *stripe.CreditNote, account *stripe.Account) (*bill.Invo
 		inv.Customer = FromCustomer(doc.Customer)
 	}
 
+	inv.Tags = newTags(isCreditNoteReverseCharge(doc), inv.Customer)
+
 	inv.Lines = FromCreditNoteLines(doc.Lines.Data, inv.Currency, regimeDef)
 	inv.Tax = taxFromCreditNoteTaxAmounts(doc.TaxAmounts)
 	inv.Preceding = []*org.DocumentRef{newPrecedingFromInvoice(doc.Invoice, string(doc.Reason))}
-	inv.Notes = newNotes(doc.Memo)
+	inv.Notes = newCreditNoteNotes(doc.Memo)
 
 	return inv, nil
 }
@@ -197,21 +198,57 @@ func newPrecedingFromInvoice(doc *stripe.Invoice, reason string) *org.DocumentRe
 	return docRef
 }
 
-// newTags creates a tax tags object from a customer tax exempt status.
-func newTags(doc *stripe.Invoice) tax.Tags {
+// newTags creates a tax tags object based on reverse charge status and customer data.
+func newTags(reverseCharge bool, customer *org.Party) tax.Tags {
+	var tags []cbc.Key
+
+	if reverseCharge {
+		tags = append(tags, tax.TagReverseCharge)
+	}
+
+	// Check for simplified (no customer tax ID)
+	if customer == nil || customer.TaxID == nil {
+		tags = append(tags, tax.TagSimplified)
+	}
+
+	if len(tags) == 0 {
+		return tax.Tags{}
+	}
+	return tax.WithTags(tags...)
+}
+
+// isInvoiceReverseCharge checks if the invoice has reverse charge applied.
+func isInvoiceReverseCharge(doc *stripe.Invoice) bool {
 	if doc.CustomerTaxExempt != nil {
 		if *doc.CustomerTaxExempt == stripe.CustomerTaxExemptReverse {
-			return tax.WithTags(tax.TagReverseCharge)
+			return true
 		}
 	}
 
 	for _, taxAmount := range doc.TotalTaxAmounts {
 		if taxAmount.TaxabilityReason == stripe.InvoiceTotalTaxAmountTaxabilityReasonReverseCharge {
-			return tax.WithTags(tax.TagReverseCharge)
+			return true
 		}
 	}
 
-	return tax.Tags{}
+	return false
+}
+
+// isCreditNoteReverseCharge checks if the credit note has reverse charge applied.
+func isCreditNoteReverseCharge(doc *stripe.CreditNote) bool {
+	if doc.Customer != nil {
+		if doc.Customer.TaxExempt == stripe.CustomerTaxExemptReverse {
+			return true
+		}
+	}
+
+	for _, taxAmount := range doc.TaxAmounts {
+		if taxAmount.TaxabilityReason == stripe.CreditNoteTaxAmountTaxabilityReasonReverseCharge {
+			return true
+		}
+	}
+
+	return false
 }
 
 // newOrdering creates an ordering object from an invoice.
@@ -256,18 +293,37 @@ func newOrdering(doc *stripe.Invoice, lines []*bill.Line) *bill.Ordering {
 	return ordering
 }
 
-// newNotes creates a notes object from the Stripe footer field.
-func newNotes(footer string) []*org.Note {
-	if footer == "" {
+// newInvoiceNotes creates notes from a Stripe invoice's description and footer fields.
+func newInvoiceNotes(description, footer string) []*org.Note {
+	var notes []*org.Note
+	if n := newNote(description, org.NoteKeyGeneral); n != nil {
+		notes = append(notes, n)
+	}
+	if n := newNote(footer, ""); n != nil {
+		notes = append(notes, n)
+	}
+	return notes
+}
+
+// newCreditNoteNotes creates notes from a Stripe credit note's memo field.
+func newCreditNoteNotes(memo string) []*org.Note {
+	if n := newNote(memo, org.NoteKeyGeneral); n != nil {
+		return []*org.Note{n}
+	}
+	return nil
+}
+
+// newNote creates a single note with src "stripe" and optional key.
+func newNote(text string, key cbc.Key) *org.Note {
+	if text == "" {
 		return nil
 	}
-	// We need to replace /n by <br> to be displayed correctly in the GOBL invoice.
-	footer = strings.ReplaceAll(footer, "\n", "<br>")
-	return []*org.Note{
-		{
-			Src:  "stripe",
-			Text: footer,
-		},
+	// Replace newlines with <br> to be displayed correctly.
+	text = strings.ReplaceAll(text, "\n", "<br>")
+	return &org.Note{
+		Key:  key,
+		Src:  "stripe",
+		Text: text,
 	}
 }
 

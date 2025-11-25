@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "1ce4402104916e033745425d992f216bc177d41e8c8dc04243f772f63c7d37c9"
+			"val": "7d8425da581ce7823890fe21916abdb3acbdad1a4816f2a121b88504a1a2eaab"
 		}
 	},
 	"doc": {
@@ -13,7 +13,7 @@
 		"uuid": "019860fc-7d4c-7922-a371-e848ca5141d3",
 		"type": "credit-note",
 		"code": "EXAMPLE-12345-CN-01",
-		"issue_date": "2025-11-13",
+		"issue_date": "2025-11-25",
 		"op_date": "2025-10-24",
 		"currency": "EUR",
 		"preceding": [
@@ -121,6 +121,7 @@
 		},
 		"notes": [
 			{
+				"key": "general",
 				"src": "stripe",
 				"text": "This is a credit note for a product that was unsatisfactory."
 			}

@@ -4,17 +4,20 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "091b9de9be9c3b0085543c1b858bcefec016f638a1693cad35caa6524b107ba2"
+			"val": "976fd7f46858832d5fa067a34cc0254b73d98574fe82e1efa1501992dd1ffc38"
 		}
 	},
 	"doc": {
 		"$schema": "https://gobl.org/draft-0/bill/invoice",
 		"$regime": "DE",
+		"$tags": [
+			"simplified"
+		],
 		"uuid": "019860fc-7d4c-7922-a371-e848ca5141d3",
 		"type": "standard",
 		"series": "E486556A",
 		"code": "0039",
-		"issue_date": "2025-11-13",
+		"issue_date": "2025-11-25",
 		"op_date": "2025-06-20",
 		"currency": "EUR",
 		"supplier": {
@@ -45,9 +48,6 @@
 		},
 		"customer": {
 			"name": "Pablo",
-			"tax_id": {
-				"country": "ES"
-			},
 			"addresses": [
 				{
 					"street": "Calle de la Princesa 1",
