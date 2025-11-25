@@ -90,7 +90,7 @@ func FromInvoice(doc *stripe.Invoice, account *stripe.Account) (*bill.Invoice, e
 		inv.Customer = newCustomerFromInvoice(doc)
 	}
 
-	inv.Tags = newTags(doc, inv.Customer)
+	inv.Tags = newTags(isInvoiceReverseCharge(doc), inv.Customer)
 
 	inv.Lines = FromInvoiceLines(doc.Lines.Data, regimeDef)
 	inv.Tax = taxFromInvoiceTaxAmounts(doc.TotalTaxAmounts)
@@ -146,6 +146,8 @@ func FromCreditNote(doc *stripe.CreditNote, account *stripe.Account) (*bill.Invo
 		inv.Customer = FromCustomer(doc.Customer)
 	}
 
+	inv.Tags = newTags(isCreditNoteReverseCharge(doc), inv.Customer)
+
 	inv.Lines = FromCreditNoteLines(doc.Lines.Data, inv.Currency, regimeDef)
 	inv.Tax = taxFromCreditNoteTaxAmounts(doc.TaxAmounts)
 	inv.Preceding = []*org.DocumentRef{newPrecedingFromInvoice(doc.Invoice, string(doc.Reason))}
@@ -196,12 +198,11 @@ func newPrecedingFromInvoice(doc *stripe.Invoice, reason string) *org.DocumentRe
 	return docRef
 }
 
-// newTags creates a tax tags object from invoice and customer data.
-func newTags(doc *stripe.Invoice, customer *org.Party) tax.Tags {
+// newTags creates a tax tags object based on reverse charge status and customer data.
+func newTags(reverseCharge bool, customer *org.Party) tax.Tags {
 	var tags []cbc.Key
 
-	// Check for reverse charge
-	if isReverseCharge(doc) {
+	if reverseCharge {
 		tags = append(tags, tax.TagReverseCharge)
 	}
 
@@ -216,8 +217,8 @@ func newTags(doc *stripe.Invoice, customer *org.Party) tax.Tags {
 	return tax.WithTags(tags...)
 }
 
-// isReverseCharge checks if the invoice has reverse charge applied.
-func isReverseCharge(doc *stripe.Invoice) bool {
+// isInvoiceReverseCharge checks if the invoice has reverse charge applied.
+func isInvoiceReverseCharge(doc *stripe.Invoice) bool {
 	if doc.CustomerTaxExempt != nil {
 		if *doc.CustomerTaxExempt == stripe.CustomerTaxExemptReverse {
 			return true
@@ -226,6 +227,23 @@ func isReverseCharge(doc *stripe.Invoice) bool {
 
 	for _, taxAmount := range doc.TotalTaxAmounts {
 		if taxAmount.TaxabilityReason == stripe.InvoiceTotalTaxAmountTaxabilityReasonReverseCharge {
+			return true
+		}
+	}
+
+	return false
+}
+
+// isCreditNoteReverseCharge checks if the credit note has reverse charge applied.
+func isCreditNoteReverseCharge(doc *stripe.CreditNote) bool {
+	if doc.Customer != nil {
+		if doc.Customer.TaxExempt == stripe.CustomerTaxExemptReverse {
+			return true
+		}
+	}
+
+	for _, taxAmount := range doc.TaxAmounts {
+		if taxAmount.TaxabilityReason == stripe.CreditNoteTaxAmountTaxabilityReasonReverseCharge {
 			return true
 		}
 	}
