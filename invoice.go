@@ -90,7 +90,7 @@ func FromInvoice(doc *stripe.Invoice, account *stripe.Account) (*bill.Invoice, e
 		inv.Customer = newCustomerFromInvoice(doc)
 	}
 
-	inv.Tags = newTags(doc)
+	inv.Tags = newTags(doc, inv.Customer)
 
 	inv.Lines = FromInvoiceLines(doc.Lines.Data, regimeDef)
 	inv.Tax = taxFromInvoiceTaxAmounts(doc.TotalTaxAmounts)
@@ -100,7 +100,6 @@ func FromInvoice(doc *stripe.Invoice, account *stripe.Account) (*bill.Invoice, e
 	inv.Notes = newNotes(doc.Footer)
 
 	//Remaining fields
-	//Addons: TODO
 	//Discounts: for the moment not considered in general (only in lines)
 
 	return inv, nil
@@ -197,21 +196,41 @@ func newPrecedingFromInvoice(doc *stripe.Invoice, reason string) *org.DocumentRe
 	return docRef
 }
 
-// newTags creates a tax tags object from a customer tax exempt status.
-func newTags(doc *stripe.Invoice) tax.Tags {
+// newTags creates a tax tags object from invoice and customer data.
+func newTags(doc *stripe.Invoice, customer *org.Party) tax.Tags {
+	var tags []cbc.Key
+
+	// Check for reverse charge
+	if isReverseCharge(doc) {
+		tags = append(tags, tax.TagReverseCharge)
+	}
+
+	// Check for simplified (no customer tax ID)
+	if customer == nil || customer.TaxID == nil {
+		tags = append(tags, tax.TagSimplified)
+	}
+
+	if len(tags) == 0 {
+		return tax.Tags{}
+	}
+	return tax.WithTags(tags...)
+}
+
+// isReverseCharge checks if the invoice has reverse charge applied.
+func isReverseCharge(doc *stripe.Invoice) bool {
 	if doc.CustomerTaxExempt != nil {
 		if *doc.CustomerTaxExempt == stripe.CustomerTaxExemptReverse {
-			return tax.WithTags(tax.TagReverseCharge)
+			return true
 		}
 	}
 
 	for _, taxAmount := range doc.TotalTaxAmounts {
 		if taxAmount.TaxabilityReason == stripe.InvoiceTotalTaxAmountTaxabilityReasonReverseCharge {
-			return tax.WithTags(tax.TagReverseCharge)
+			return true
 		}
 	}
 
-	return tax.Tags{}
+	return false
 }
 
 // newOrdering creates an ordering object from an invoice.

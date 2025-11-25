@@ -481,9 +481,6 @@ func TestFromCustomerItalyTaxIDLogic(t *testing.T) {
 						Locality: "Berlin",
 					},
 				},
-				TaxID: &tax.Identity{
-					Country: l10n.DE.Tax(),
-				},
 			},
 		},
 		{
@@ -503,9 +500,6 @@ func TestFromCustomerItalyTaxIDLogic(t *testing.T) {
 						Locality: "Rome",
 					},
 				},
-				TaxID: &tax.Identity{
-					Country: l10n.IT.Tax(),
-				},
 			},
 		},
 		{
@@ -524,9 +518,6 @@ func TestFromCustomerItalyTaxIDLogic(t *testing.T) {
 						Country:  "DE",
 						Locality: "Berlin",
 					},
-				},
-				TaxID: &tax.Identity{
-					Country: l10n.DE.Tax(),
 				},
 			},
 		},

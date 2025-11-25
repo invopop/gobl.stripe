@@ -629,6 +629,112 @@ func TestReverseCharge(t *testing.T) {
 	assert.Equal(t, num.MakeAmount(10000, 2), gi.Totals.TotalWithTax)
 }
 
+func TestSimplifiedInvoiceWhenNoCustomerTaxID(t *testing.T) {
+	// Test with no customer tax IDs
+	s := minimalStripeInvoice()
+	s.CustomerTaxIDs = nil
+
+	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
+	require.NoError(t, err)
+
+	assert.Len(t, gi.Tags.List, 1)
+	assert.Equal(t, tax.TagSimplified, gi.Tags.List[0])
+}
+
+func TestSimplifiedInvoiceWhenEmptyCustomerTaxID(t *testing.T) {
+	// Test with empty customer tax IDs slice
+	s := minimalStripeInvoice()
+	s.CustomerTaxIDs = []*stripe.InvoiceCustomerTaxID{}
+
+	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
+	require.NoError(t, err)
+
+	assert.Len(t, gi.Tags.List, 1)
+	assert.Equal(t, tax.TagSimplified, gi.Tags.List[0])
+}
+
+func TestNoSimplifiedTagWhenCustomerHasTaxID(t *testing.T) {
+	// Test that simplified tag is NOT added when customer has a tax ID
+	s := minimalStripeInvoice()
+	taxIDType := stripe.TaxIDTypeEUVAT
+	s.CustomerTaxIDs = []*stripe.InvoiceCustomerTaxID{
+		{
+			Type:  &taxIDType,
+			Value: "DE123456789",
+		},
+	}
+
+	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
+	require.NoError(t, err)
+
+	// Should not have the simplified tag
+	assert.Len(t, gi.Tags.List, 0)
+}
+
+func TestBothReverseChargeAndSimplifiedTags(t *testing.T) {
+	// Test that both reverse-charge and simplified tags are added when:
+	// - Customer has reverse charge status
+	// - Customer has no tax ID
+	s := minimalStripeInvoice()
+	customerReverse := stripe.CustomerTaxExemptReverse
+	s.CustomerTaxExempt = &customerReverse
+	s.CustomerTaxIDs = nil // No tax ID
+
+	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
+	require.NoError(t, err)
+
+	// Should have both tags
+	assert.Len(t, gi.Tags.List, 2)
+	assert.Contains(t, gi.Tags.List, tax.TagReverseCharge)
+	assert.Contains(t, gi.Tags.List, tax.TagSimplified)
+}
+
+func TestReverseChargeFromTaxAmountWithoutCustomerTaxID(t *testing.T) {
+	// Test that both tags are added when reverse charge comes from tax amount
+	// and customer has no tax ID
+	s := minimalStripeInvoice()
+	s.CustomerTaxIDs = nil // No tax ID
+	s.TotalTaxAmounts = []*stripe.InvoiceTotalTaxAmount{
+		{
+			TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonReverseCharge,
+			TaxRate: &stripe.TaxRate{
+				TaxType:    stripe.TaxRateTaxTypeVAT,
+				Country:    "DE",
+				Percentage: 19.0,
+			},
+		},
+	}
+
+	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
+	require.NoError(t, err)
+
+	// Should have both tags
+	assert.Len(t, gi.Tags.List, 2)
+	assert.Contains(t, gi.Tags.List, tax.TagReverseCharge)
+	assert.Contains(t, gi.Tags.List, tax.TagSimplified)
+}
+
+func TestReverseChargeOnlyWhenCustomerHasTaxID(t *testing.T) {
+	// Test that only reverse-charge tag is added when customer has tax ID
+	s := minimalStripeInvoice()
+	customerReverse := stripe.CustomerTaxExemptReverse
+	s.CustomerTaxExempt = &customerReverse
+	taxIDType := stripe.TaxIDTypeEUVAT
+	s.CustomerTaxIDs = []*stripe.InvoiceCustomerTaxID{
+		{
+			Type:  &taxIDType,
+			Value: "DE123456789",
+		},
+	}
+
+	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
+	require.NoError(t, err)
+
+	// Should only have reverse-charge tag
+	assert.Len(t, gi.Tags.List, 1)
+	assert.Equal(t, tax.TagReverseCharge, gi.Tags.List[0])
+}
+
 func TestOrderingPeriod(t *testing.T) {
 	s := minimalStripeInvoice()
 	s.PeriodStart = 1737738363

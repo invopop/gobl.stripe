@@ -4,17 +4,20 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "cd2560b0272ff9f759801941c4203a5eeb96e1687cd679ba52d427c20c6f7499"
+			"val": "4cccbd68f6c8109b3038427639ff50e99e53402f2790296d2f594f446997744f"
 		}
 	},
 	"doc": {
 		"$schema": "https://gobl.org/draft-0/bill/invoice",
 		"$regime": "DE",
+		"$tags": [
+			"simplified"
+		],
 		"uuid": "019860fc-7d4c-7922-a371-e848ca5141d3",
 		"type": "standard",
 		"series": "FPOP",
 		"code": "10027",
-		"issue_date": "2025-11-13",
+		"issue_date": "2025-11-25",
 		"op_date": "2025-01-24",
 		"currency": "USD",
 		"exchange_rates": [
