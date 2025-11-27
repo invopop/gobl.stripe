@@ -7,7 +7,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
-	github.com/stripe/stripe-go/v81 v81.4.0
+	github.com/stripe/stripe-go/v84 v84.0.0
 )
 
 require (

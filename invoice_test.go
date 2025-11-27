@@ -17,7 +17,7 @@ import (
 	"github.com/invopop/gobl/tax"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/stripe/stripe-go/v81"
+	"github.com/stripe/stripe-go/v84"
 )
 
 func validStripeAccount() *stripe.Account {
@@ -72,19 +72,19 @@ func minimalStripeInvoice() *stripe.Invoice {
 						Start: 1704067200, // 2024-01-01 00:00:00 UTC
 						End:   1706745599, // 2024-01-31 23:59:59 UTC
 					},
-					Price: &stripe.Price{
-						BillingScheme: stripe.PriceBillingSchemePerUnit,
-						Currency:      stripe.CurrencyEUR,
-						TaxBehavior:   stripe.PriceTaxBehaviorUnspecified,
-						UnitAmount:    2000,
+					// In v84, Price is replaced with Pricing
+					Pricing: &stripe.InvoiceLineItemPricing{
+						UnitAmountDecimal: 2000,
 					},
-					TaxAmounts: []*stripe.InvoiceTotalTaxAmount{},
+					// In v84, TaxAmounts is replaced with Taxes
+					Taxes: []*stripe.InvoiceLineItemTax{},
 				},
 			},
 		},
-		CustomerTaxIDs:  []*stripe.InvoiceCustomerTaxID{},
-		Total:           2000,
-		TotalTaxAmounts: []*stripe.InvoiceTotalTaxAmount{},
+		CustomerTaxIDs: []*stripe.InvoiceCustomerTaxID{},
+		Total:          2000,
+		// In v84, TotalTaxAmounts is replaced with TotalTaxes
+		TotalTaxes: []*stripe.InvoiceTotalTax{},
 	}
 }
 
@@ -145,41 +145,36 @@ func completeStripeInvoice() *stripe.Invoice {
 		Lines: &stripe.InvoiceLineItemList{
 			Data: []*stripe.InvoiceLineItem{
 				{
-					ID:                 "il_1Qf1WLQhcl5B85YleQz6ZuEfd",
-					Amount:             -11000,
-					AmountExcludingTax: -11000,
-					Currency:           stripe.CurrencyEUR,
-					Quantity:           2000,
-					Price: &stripe.Price{
-						BillingScheme: stripe.PriceBillingSchemeTiered,
-						Currency:      stripe.CurrencyEUR,
-						TaxBehavior:   stripe.PriceTaxBehaviorExclusive,
-						UnitAmount:    0,
+					ID:       "il_1Qf1WLQhcl5B85YleQz6ZuEfd",
+					Amount:   -11000,
+					Currency: stripe.CurrencyEUR,
+					Quantity: 2000,
+					// In v84, Price is replaced with Pricing
+					Pricing: &stripe.InvoiceLineItemPricing{
+						UnitAmountDecimal: -6,
 					},
 					Period: &stripe.Period{
 						Start: 1736351413,
 						End:   1739029692,
 					},
 					Description: "Unused time on 2000 × Pro Plan after 08 Jan 2025",
-					TaxAmounts: []*stripe.InvoiceTotalTaxAmount{
+					// In v84, TaxAmounts is replaced with Taxes
+					Taxes: []*stripe.InvoiceLineItemTax{
 						{
-							Inclusive: false,
-							TaxRate: &stripe.TaxRate{
-								TaxType:             stripe.TaxRateTaxTypeVAT,
-								Country:             "DE",
-								EffectivePercentage: 19.0,
-								Percentage:          19.0,
+							TaxBehavior: stripe.InvoiceLineItemTaxTaxBehaviorExclusive,
+							// In v84, TaxRate details are in TaxRateDetails
+							TaxRateDetails: &stripe.InvoiceLineItemTaxTaxRateDetails{
+								TaxRate: "txr_test", // This is now an ID
 							},
-							TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonStandardRated,
+							TaxabilityReason: stripe.InvoiceLineItemTaxTaxabilityReasonStandardRated,
 							TaxableAmount:    -11000,
+							Type:             stripe.InvoiceLineItemTaxTypeTaxRateDetails,
 						},
 					},
-					UnitAmountExcludingTax: -6,
 				},
 				{
 					ID:                 "il_1Qf1WLQhcl5B85YleQz6ZuEw",
 					Amount:             19999,
-					AmountExcludingTax: 19999,
 					Currency:           stripe.CurrencyEUR,
 					Quantity:           10000,
 					Price: &stripe.Price{
@@ -206,12 +201,10 @@ func completeStripeInvoice() *stripe.Invoice {
 							TaxableAmount:    19999,
 						},
 					},
-					UnitAmountExcludingTax: 2,
 				},
 				{
 					ID:                 "il_1Qf1WLQhcl5B85YleQz6Zusc",
 					Amount:             10000,
-					AmountExcludingTax: 10000,
 					Currency:           stripe.CurrencyEUR,
 					Quantity:           1,
 					Price: &stripe.Price{
@@ -238,7 +231,6 @@ func completeStripeInvoice() *stripe.Invoice {
 							TaxableAmount:    10000,
 						},
 					},
-					UnitAmountExcludingTax: 10000,
 				},
 			},
 		},
@@ -448,7 +440,6 @@ func TestCalculate(t *testing.T) {
 			{
 				ID:                 "il_1Qf1WLQhcl5B85YleQz6ZuEfd",
 				Amount:             -11000,
-				AmountExcludingTax: -11000,
 				Currency:           stripe.CurrencyEUR,
 				Quantity:           2000,
 				Price: &stripe.Price{
@@ -475,12 +466,10 @@ func TestCalculate(t *testing.T) {
 						TaxableAmount:    -11000,
 					},
 				},
-				UnitAmountExcludingTax: -6,
 			},
 			{
 				ID:                 "il_1Qf1WLQhcl5B85YleQz6ZuEw",
 				Amount:             19999,
-				AmountExcludingTax: 19999,
 				Currency:           stripe.CurrencyEUR,
 				Quantity:           10000,
 				Price: &stripe.Price{
@@ -507,12 +496,10 @@ func TestCalculate(t *testing.T) {
 						TaxableAmount:    19999,
 					},
 				},
-				UnitAmountExcludingTax: 2,
 			},
 			{
 				ID:                 "il_1Qf1WLQhcl5B85YleQz6Zusc",
 				Amount:             10000,
-				AmountExcludingTax: 10000,
 				Currency:           stripe.CurrencyEUR,
 				Quantity:           1,
 				Price: &stripe.Price{
@@ -539,7 +526,6 @@ func TestCalculate(t *testing.T) {
 						TaxableAmount:    10000,
 					},
 				},
-				UnitAmountExcludingTax: 10000,
 			},
 		},
 	}
@@ -583,7 +569,6 @@ func TestReverseCharge(t *testing.T) {
 			{
 				ID:                 "il_1Qf1WLQhcl5B85YleQz6ZuEfd",
 				Amount:             10000,
-				AmountExcludingTax: 10000,
 				Currency:           stripe.CurrencyEUR,
 				Quantity:           2000,
 				Price: &stripe.Price{
@@ -610,7 +595,6 @@ func TestReverseCharge(t *testing.T) {
 						TaxableAmount:    10000,
 					},
 				},
-				UnitAmountExcludingTax: 5,
 			},
 		},
 	}

@@ -13,7 +13,7 @@ import (
 	"github.com/invopop/gobl/org"
 	"github.com/invopop/gobl/tax"
 	"github.com/invopop/gobl/uuid"
-	"github.com/stripe/stripe-go/v81"
+	"github.com/stripe/stripe-go/v84"
 )
 
 // Meta constants used in the Stripe to GOBL conversion
@@ -93,7 +93,7 @@ func FromInvoice(doc *stripe.Invoice, account *stripe.Account) (*bill.Invoice, e
 	inv.Tags = newTags(isInvoiceReverseCharge(doc), inv.Customer)
 
 	inv.Lines = FromInvoiceLines(doc.Lines.Data, regimeDef)
-	inv.Tax = taxFromInvoiceTaxAmounts(doc.TotalTaxAmounts)
+	inv.Tax = taxFromInvoiceTotalTaxes(doc.TotalTaxes)
 	inv.Ordering = newOrdering(doc, inv.Lines)
 	inv.Delivery = newDelivery(doc)
 	inv.Payment = newPayment(doc)
@@ -149,7 +149,7 @@ func FromCreditNote(doc *stripe.CreditNote, account *stripe.Account) (*bill.Invo
 	inv.Tags = newTags(isCreditNoteReverseCharge(doc), inv.Customer)
 
 	inv.Lines = FromCreditNoteLines(doc.Lines.Data, inv.Currency, regimeDef)
-	inv.Tax = taxFromCreditNoteTaxAmounts(doc.TaxAmounts)
+	inv.Tax = taxFromCreditNoteTotalTaxes(doc.TotalTaxes)
 	inv.Preceding = []*org.DocumentRef{newPrecedingFromInvoice(doc.Invoice, string(doc.Reason))}
 	inv.Notes = newCreditNoteNotes(doc.Memo)
 
@@ -225,8 +225,8 @@ func isInvoiceReverseCharge(doc *stripe.Invoice) bool {
 		}
 	}
 
-	for _, taxAmount := range doc.TotalTaxAmounts {
-		if taxAmount.TaxabilityReason == stripe.InvoiceTotalTaxAmountTaxabilityReasonReverseCharge {
+	for _, taxAmount := range doc.TotalTaxes {
+		if taxAmount.TaxabilityReason == stripe.InvoiceTotalTaxTaxabilityReasonReverseCharge {
 			return true
 		}
 	}
@@ -242,8 +242,8 @@ func isCreditNoteReverseCharge(doc *stripe.CreditNote) bool {
 		}
 	}
 
-	for _, taxAmount := range doc.TaxAmounts {
-		if taxAmount.TaxabilityReason == stripe.CreditNoteTaxAmountTaxabilityReasonReverseCharge {
+	for _, taxAmount := range doc.TotalTaxes {
+		if taxAmount.TaxabilityReason == stripe.CreditNoteTotalTaxTaxabilityReasonReverseCharge {
 			return true
 		}
 	}

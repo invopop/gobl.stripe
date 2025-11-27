@@ -7,7 +7,7 @@ import (
 	"github.com/invopop/gobl/currency"
 	"github.com/invopop/gobl/num"
 	"github.com/invopop/gobl/tax"
-	"github.com/stripe/stripe-go/v81"
+	"github.com/stripe/stripe-go/v84"
 )
 
 // https://docs.stripe.com/currencies#zero-decimal

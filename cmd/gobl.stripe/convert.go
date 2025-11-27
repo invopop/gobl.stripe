@@ -8,7 +8,7 @@ import (
 	goblstripe "github.com/invopop/gobl.stripe"
 	"github.com/invopop/gobl/bill"
 	"github.com/spf13/cobra"
-	"github.com/stripe/stripe-go/v81"
+	"github.com/stripe/stripe-go/v84"
 )
 
 type convertOpts struct {

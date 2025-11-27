@@ -13,7 +13,7 @@ import (
 
 	"github.com/invopop/gobl/bill"
 	"github.com/joho/godotenv"
-	"github.com/stripe/stripe-go/v81"
+	"github.com/stripe/stripe-go/v84"
 )
 
 // build data provided by goreleaser and mage setup
