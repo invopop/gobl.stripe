@@ -15,8 +15,11 @@ type Error struct {
 	code    string
 }
 
+// Errors
 var (
-	ErrRounding   = NewError("rounding")
+	// ErrTotalsMismatch is returned when the totals mismatch.
+	ErrTotalsMismatch = NewError("totals mismatch")
+	// ErrValidation is returned when there is a missing or invalid field.
 	ErrValidation = NewError("validation")
 )
 

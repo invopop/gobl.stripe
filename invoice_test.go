@@ -1036,7 +1036,7 @@ func TestAdjustRounding(t *testing.T) {
 		require.Error(t, err)
 
 		// Verify error is of ErrRounding type
-		assert.ErrorIs(t, err, goblstripe.ErrRounding)
+		assert.ErrorIs(t, err, goblstripe.ErrTotalsMismatch)
 		assert.Contains(t, err.Error(), "rounding error in totals too high")
 	})
 
@@ -1047,7 +1047,7 @@ func TestAdjustRounding(t *testing.T) {
 		_, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.Error(t, err)
 
-		assert.ErrorIs(t, err, goblstripe.ErrRounding)
+		assert.ErrorIs(t, err, goblstripe.ErrTotalsMismatch)
 		assert.Contains(t, err.Error(), "rounding error in totals too high")
 	})
 }
@@ -1074,7 +1074,7 @@ func TestAdjustRoundingCreditNote(t *testing.T) {
 		_, err := goblstripe.FromCreditNote(s, validStripeAccount())
 		require.Error(t, err)
 
-		assert.ErrorIs(t, err, goblstripe.ErrRounding)
+		assert.ErrorIs(t, err, goblstripe.ErrTotalsMismatch)
 		assert.Contains(t, err.Error(), "rounding error in totals too high")
 	})
 
@@ -1085,7 +1085,7 @@ func TestAdjustRoundingCreditNote(t *testing.T) {
 		_, err := goblstripe.FromCreditNote(s, validStripeAccount())
 		require.Error(t, err)
 
-		assert.ErrorIs(t, err, goblstripe.ErrRounding)
+		assert.ErrorIs(t, err, goblstripe.ErrTotalsMismatch)
 		assert.Contains(t, err.Error(), "rounding error in totals too high")
 	})
 

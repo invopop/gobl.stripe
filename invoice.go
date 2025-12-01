@@ -356,7 +356,7 @@ func AdjustRounding(gi *bill.Invoice, total int64, curr stripe.Currency) error {
 	maxErr := MaxRoundingError(gi)
 	if diff.Abs().Compare(maxErr) == 1 {
 		// Too much difference. Report the error
-		return ErrRounding.WithMsg("rounding error in totals too high: %s", diff.String())
+		return ErrTotalsMismatch.WithMsg("rounding error in totals too high: %s", diff.String())
 	}
 
 	gi.Totals.Rounding = &diff
