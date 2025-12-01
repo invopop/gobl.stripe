@@ -14,7 +14,7 @@ func TestTaxInclusive(t *testing.T) {
 
 	s := completeStripeInvoice()
 
-	// Check that tax are exclusive (default)
+	// Check that taxes are exclusive (default)
 	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 	require.NoError(t, err)
 	assert.Nil(t, gi.Tax)
