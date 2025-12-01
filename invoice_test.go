@@ -105,6 +105,7 @@ func completeStripeInvoice() *stripe.Invoice {
 		AmountDue:       22989,
 		AmountPaid:      22989,
 		AmountRemaining: 0,
+		Total:           22609, // Sum of lines (18999) + tax (3610)
 		Created:         time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
 		Currency:        "eur",
 		CustomerAddress: &stripe.Address{
@@ -443,6 +444,7 @@ func TestCustomerMetadataCondition(t *testing.T) {
 
 func TestCalculate(t *testing.T) {
 	s := minimalStripeInvoice()
+	s.Total = 22609 // Sum of lines (18999) + tax (3610)
 	s.Lines = &stripe.InvoiceLineItemList{
 		Data: []*stripe.InvoiceLineItem{
 			{
@@ -569,6 +571,7 @@ func TestValidate(t *testing.T) {
 
 func TestReverseCharge(t *testing.T) {
 	s := minimalStripeInvoice()
+	s.Total = 10000 // Line amount with reverse charge (0% tax)
 	customerReverse := stripe.CustomerTaxExemptReverse
 	s.CustomerTaxExempt = &customerReverse
 	taxIDType := stripe.TaxIDTypeEUVAT
@@ -895,97 +898,295 @@ func TestStripeCoupon(t *testing.T) {
 }
 
 func TestAdjustRounding(t *testing.T) {
-	// Test case 1: No rounding adjustment needed
-	gi1 := &bill.Invoice{
-		Currency: currency.EUR,
-		Lines: []*bill.Line{
-			{
-				Quantity: num.AmountZero,
-			},
-			{
-				Quantity: num.AmountZero,
-			},
-			{
-				Quantity: num.AmountZero,
-			},
-			{
-				Quantity: num.AmountZero,
-			},
-			{
-				Quantity: num.AmountZero,
-			},
-		},
-		Totals: &bill.Totals{
-			Payable: num.MakeAmount(10000, 2),
-		},
-	}
-	total1 := int64(10000)
-	curr1 := stripe.Currency("USD")
-	err1 := goblstripe.AdjustRounding(gi1, total1, curr1)
-	assert.Nil(t, err1)
-	assert.Nil(t, gi1.Totals.Rounding)
+	t.Run("no rounding adjustment needed", func(t *testing.T) {
+		s := minimalStripeInvoice()
+		s.Total = 2000 // Matches the line total exactly
 
-	// Test case 2: Rounding adjustment needed
-	gi2 := &bill.Invoice{
-		Currency: currency.EUR,
-		Lines: []*bill.Line{
-			{
-				Quantity: num.AmountZero,
-			},
-			{
-				Quantity: num.AmountZero,
-			},
-			{
-				Quantity: num.AmountZero,
-			},
-			{
-				Quantity: num.AmountZero,
-			},
-			{
-				Quantity: num.AmountZero,
-			},
-		},
-		Totals: &bill.Totals{
-			Payable: num.MakeAmount(10000, 2),
-		},
-	}
-	total2 := int64(9999)
-	curr2 := stripe.Currency("USD")
-	err2 := goblstripe.AdjustRounding(gi2, total2, curr2)
-	assert.Nil(t, err2)
-	expectedRounding2 := num.NewAmount(-1, 2)
-	assert.Equal(t, expectedRounding2, gi2.Totals.Rounding)
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
+		require.NoError(t, err)
 
-	// Test case 3: Rounding error too high
-	gi3 := &bill.Invoice{
-		Currency: currency.EUR,
-		Lines: []*bill.Line{
-			{
-				Quantity: num.AmountZero,
+		// No rounding should be set when totals match
+		assert.Nil(t, gi.Totals.Rounding)
+		assert.Equal(t, num.MakeAmount(2000, 2), gi.Totals.TotalWithTax)
+	})
+
+	t.Run("rounding adjustment needed with multiple lines", func(t *testing.T) {
+		s := minimalStripeInvoice()
+		// Add 3 lines to increase tolerance (3 * 0.005 = 0.015, allowing 1 cent difference)
+		s.Lines = &stripe.InvoiceLineItemList{
+			Data: []*stripe.InvoiceLineItem{
+				{
+					Description: "Item 1",
+					Amount:      1000,
+					Currency:    stripe.CurrencyEUR,
+					Quantity:    1,
+					Period:      &stripe.Period{Start: 1704067200, End: 1706745599},
+					Price: &stripe.Price{
+						BillingScheme: stripe.PriceBillingSchemePerUnit,
+						Currency:      stripe.CurrencyEUR,
+						TaxBehavior:   stripe.PriceTaxBehaviorUnspecified,
+						UnitAmount:    1000,
+					},
+					TaxAmounts: []*stripe.InvoiceTotalTaxAmount{},
+				},
+				{
+					Description: "Item 2",
+					Amount:      500,
+					Currency:    stripe.CurrencyEUR,
+					Quantity:    1,
+					Period:      &stripe.Period{Start: 1704067200, End: 1706745599},
+					Price: &stripe.Price{
+						BillingScheme: stripe.PriceBillingSchemePerUnit,
+						Currency:      stripe.CurrencyEUR,
+						TaxBehavior:   stripe.PriceTaxBehaviorUnspecified,
+						UnitAmount:    500,
+					},
+					TaxAmounts: []*stripe.InvoiceTotalTaxAmount{},
+				},
+				{
+					Description: "Item 3",
+					Amount:      500,
+					Currency:    stripe.CurrencyEUR,
+					Quantity:    1,
+					Period:      &stripe.Period{Start: 1704067200, End: 1706745599},
+					Price: &stripe.Price{
+						BillingScheme: stripe.PriceBillingSchemePerUnit,
+						Currency:      stripe.CurrencyEUR,
+						TaxBehavior:   stripe.PriceTaxBehaviorUnspecified,
+						UnitAmount:    500,
+					},
+					TaxAmounts: []*stripe.InvoiceTotalTaxAmount{},
+				},
 			},
-			{
-				Quantity: num.AmountZero,
+		}
+		s.Total = 1999 // 1 cent less than calculated total (20.00)
+
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
+		require.NoError(t, err)
+
+		// Rounding should be set to account for the difference
+		require.NotNil(t, gi.Totals.Rounding)
+		assert.Equal(t, num.MakeAmount(-1, 2), *gi.Totals.Rounding)
+	})
+
+	t.Run("rounding adjustment positive difference", func(t *testing.T) {
+		s := minimalStripeInvoice()
+		// Add 3 lines to increase tolerance
+		s.Lines = &stripe.InvoiceLineItemList{
+			Data: []*stripe.InvoiceLineItem{
+				{
+					Description: "Item 1",
+					Amount:      1000,
+					Currency:    stripe.CurrencyEUR,
+					Quantity:    1,
+					Period:      &stripe.Period{Start: 1704067200, End: 1706745599},
+					Price: &stripe.Price{
+						BillingScheme: stripe.PriceBillingSchemePerUnit,
+						Currency:      stripe.CurrencyEUR,
+						TaxBehavior:   stripe.PriceTaxBehaviorUnspecified,
+						UnitAmount:    1000,
+					},
+					TaxAmounts: []*stripe.InvoiceTotalTaxAmount{},
+				},
+				{
+					Description: "Item 2",
+					Amount:      500,
+					Currency:    stripe.CurrencyEUR,
+					Quantity:    1,
+					Period:      &stripe.Period{Start: 1704067200, End: 1706745599},
+					Price: &stripe.Price{
+						BillingScheme: stripe.PriceBillingSchemePerUnit,
+						Currency:      stripe.CurrencyEUR,
+						TaxBehavior:   stripe.PriceTaxBehaviorUnspecified,
+						UnitAmount:    500,
+					},
+					TaxAmounts: []*stripe.InvoiceTotalTaxAmount{},
+				},
+				{
+					Description: "Item 3",
+					Amount:      500,
+					Currency:    stripe.CurrencyEUR,
+					Quantity:    1,
+					Period:      &stripe.Period{Start: 1704067200, End: 1706745599},
+					Price: &stripe.Price{
+						BillingScheme: stripe.PriceBillingSchemePerUnit,
+						Currency:      stripe.CurrencyEUR,
+						TaxBehavior:   stripe.PriceTaxBehaviorUnspecified,
+						UnitAmount:    500,
+					},
+					TaxAmounts: []*stripe.InvoiceTotalTaxAmount{},
+				},
 			},
-			{
-				Quantity: num.AmountZero,
+		}
+		s.Total = 2001 // 1 cent more than calculated total (20.00)
+
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
+		require.NoError(t, err)
+
+		// Rounding should be set to account for the difference
+		require.NotNil(t, gi.Totals.Rounding)
+		assert.Equal(t, num.MakeAmount(1, 2), *gi.Totals.Rounding)
+	})
+
+	t.Run("rounding error too high for single line", func(t *testing.T) {
+		s := minimalStripeInvoice()
+		s.Total = 1999 // 1 cent difference, but only 1 line (tolerance is 0.005)
+
+		_, err := goblstripe.FromInvoice(s, validStripeAccount())
+		require.Error(t, err)
+
+		// Verify error is of ErrRounding type
+		assert.ErrorIs(t, err, goblstripe.ErrRounding)
+		assert.Contains(t, err.Error(), "rounding error in totals too high")
+	})
+
+	t.Run("rounding error too high - large difference", func(t *testing.T) {
+		s := minimalStripeInvoice()
+		s.Total = 1900 // 1 EUR less - too much difference
+
+		_, err := goblstripe.FromInvoice(s, validStripeAccount())
+		require.Error(t, err)
+
+		assert.ErrorIs(t, err, goblstripe.ErrRounding)
+		assert.Contains(t, err.Error(), "rounding error in totals too high")
+	})
+}
+
+func TestAdjustRoundingCreditNote(t *testing.T) {
+	t.Run("no rounding adjustment needed", func(t *testing.T) {
+		s := validCreditNote()
+		// Credit note line: Amount=10294, Tax=2162 (21%)
+		// Total should be 10294 + 2162 = 12456
+		s.Total = 12456
+
+		gi, err := goblstripe.FromCreditNote(s, validStripeAccount())
+		require.NoError(t, err)
+
+		assert.Nil(t, gi.Totals.Rounding)
+		assert.Equal(t, num.MakeAmount(12456, 2), gi.Totals.TotalWithTax)
+	})
+
+	t.Run("rounding error too high - single line", func(t *testing.T) {
+		s := validCreditNote()
+		// 1 cent difference exceeds tolerance for single line (0.005)
+		s.Total = 12455
+
+		_, err := goblstripe.FromCreditNote(s, validStripeAccount())
+		require.Error(t, err)
+
+		assert.ErrorIs(t, err, goblstripe.ErrRounding)
+		assert.Contains(t, err.Error(), "rounding error in totals too high")
+	})
+
+	t.Run("rounding error too high - large difference", func(t *testing.T) {
+		s := validCreditNote()
+		s.Total = 12356 // 1 EUR less
+
+		_, err := goblstripe.FromCreditNote(s, validStripeAccount())
+		require.Error(t, err)
+
+		assert.ErrorIs(t, err, goblstripe.ErrRounding)
+		assert.Contains(t, err.Error(), "rounding error in totals too high")
+	})
+
+	t.Run("rounding adjustment with multiple lines", func(t *testing.T) {
+		s := validCreditNote()
+		// Add more lines to increase tolerance
+		s.Lines = &stripe.CreditNoteLineItemList{
+			Data: []*stripe.CreditNoteLineItem{
+				{
+					ID:          "cnli_1",
+					Amount:      5000,
+					Description: "Item 1",
+					TaxAmounts: []*stripe.CreditNoteTaxAmount{
+						{
+							Amount:        1050,
+							Inclusive:     false,
+							TaxRate:       &stripe.TaxRate{TaxType: stripe.TaxRateTaxTypeVAT, Country: "DE", EffectivePercentage: 21.0, Percentage: 21.0},
+							TaxableAmount: 5000,
+						},
+					},
+					Type: stripe.CreditNoteLineItemTypeInvoiceLineItem,
+				},
+				{
+					ID:          "cnli_2",
+					Amount:      3000,
+					Description: "Item 2",
+					TaxAmounts: []*stripe.CreditNoteTaxAmount{
+						{
+							Amount:        630,
+							Inclusive:     false,
+							TaxRate:       &stripe.TaxRate{TaxType: stripe.TaxRateTaxTypeVAT, Country: "DE", EffectivePercentage: 21.0, Percentage: 21.0},
+							TaxableAmount: 3000,
+						},
+					},
+					Type: stripe.CreditNoteLineItemTypeInvoiceLineItem,
+				},
+				{
+					ID:          "cnli_3",
+					Amount:      2294,
+					Description: "Item 3",
+					TaxAmounts: []*stripe.CreditNoteTaxAmount{
+						{
+							Amount:        482,
+							Inclusive:     false,
+							TaxRate:       &stripe.TaxRate{TaxType: stripe.TaxRateTaxTypeVAT, Country: "DE", EffectivePercentage: 21.0, Percentage: 21.0},
+							TaxableAmount: 2294,
+						},
+					},
+					Type: stripe.CreditNoteLineItemTypeInvoiceLineItem,
+				},
 			},
+		}
+		// Update tax amounts to match
+		s.TaxAmounts = []*stripe.CreditNoteTaxAmount{
 			{
-				Quantity: num.AmountZero,
+				Amount:        2162,
+				Inclusive:     false,
+				TaxRate:       &stripe.TaxRate{TaxType: stripe.TaxRateTaxTypeVAT, Country: "DE", EffectivePercentage: 21.0, Percentage: 21.0},
+				TaxableAmount: 10294,
 			},
-			{
-				Quantity: num.AmountZero,
+		}
+		// Total = 5000 + 3000 + 2294 + 1050 + 630 + 482 = 12456
+		// With 3 lines, tolerance is 0.015, so 1 cent is within range
+		s.Total = 12455
+
+		gi, err := goblstripe.FromCreditNote(s, validStripeAccount())
+		require.NoError(t, err)
+
+		require.NotNil(t, gi.Totals.Rounding)
+		assert.Equal(t, num.MakeAmount(-1, 2), *gi.Totals.Rounding)
+	})
+}
+
+func TestMaxRoundingError(t *testing.T) {
+	t.Run("single line invoice", func(t *testing.T) {
+		gi := &bill.Invoice{
+			Currency: currency.EUR,
+			Lines: []*bill.Line{
+				{Quantity: num.MakeAmount(1, 0)},
 			},
-		},
-		Totals: &bill.Totals{
-			Payable: num.MakeAmount(10000, 2),
-		},
-	}
-	total3 := int64(9980)
-	curr3 := stripe.Currency("USD")
-	err3 := goblstripe.AdjustRounding(gi3, total3, curr3)
-	expectedError3 := "rounding error in totals too high: -0.20"
-	assert.EqualError(t, err3, expectedError3)
-	assert.Nil(t, gi3.Totals.Rounding)
+		}
+		// Max error should be 0.005 (0.5 cents) for 1 line
+		maxErr := goblstripe.MaxRoundingError(gi)
+		assert.Equal(t, num.MakeAmount(5, 3), maxErr)
+	})
+
+	t.Run("multiple lines invoice", func(t *testing.T) {
+		gi := &bill.Invoice{
+			Currency: currency.EUR,
+			Lines: []*bill.Line{
+				{Quantity: num.MakeAmount(1, 0)},
+				{Quantity: num.MakeAmount(1, 0)},
+				{Quantity: num.MakeAmount(1, 0)},
+				{Quantity: num.MakeAmount(1, 0)},
+				{Quantity: num.MakeAmount(1, 0)},
+			},
+		}
+		// Max error should be 0.025 (0.5 cents * 5 lines)
+		maxErr := goblstripe.MaxRoundingError(gi)
+		assert.Equal(t, num.MakeAmount(25, 3), maxErr)
+	})
 }
 
 // Credit Notes
@@ -1011,6 +1212,7 @@ func validCreditNote() *stripe.CreditNote {
 		Created:     time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
 		EffectiveAt: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
 		Amount:      22989,
+		Total:       12456, // 10294 (line amount) + 2162 (tax) = 12456
 		Customer:    validStripeCustomer(),
 		Lines: &stripe.CreditNoteLineItemList{
 			Data: []*stripe.CreditNoteLineItem{
@@ -1026,9 +1228,10 @@ func validCreditNote() *stripe.CreditNote {
 							Amount:    2162,
 							Inclusive: false,
 							TaxRate: &stripe.TaxRate{
-								TaxType:    stripe.TaxRateTaxTypeVAT,
-								Country:    "ES",
-								Percentage: 21.0,
+								TaxType:             stripe.TaxRateTaxTypeVAT,
+								Country:             "ES",
+								EffectivePercentage: 21.0,
+								Percentage:          21.0,
 							},
 							TaxableAmount: 10294,
 						},
@@ -1043,9 +1246,10 @@ func validCreditNote() *stripe.CreditNote {
 				Amount:    2162,
 				Inclusive: false,
 				TaxRate: &stripe.TaxRate{
-					TaxType:    stripe.TaxRateTaxTypeVAT,
-					Country:    "ES",
-					Percentage: 21.0,
+					TaxType:             stripe.TaxRateTaxTypeVAT,
+					Country:             "ES",
+					EffectivePercentage: 21.0,
+					Percentage:          21.0,
 				},
 				TaxableAmount: 10294,
 			},

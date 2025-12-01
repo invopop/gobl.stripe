@@ -4,27 +4,19 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "b3aec653228959fb93bffc35af5f97b85c0331a0a22b10e1ed319ae97ac31e00"
+			"val": "8ed68ce5dca92ada97f8493c0b3896f14af92a11e22d897b5303214bd456218c"
 		}
 	},
 	"doc": {
 		"$schema": "https://gobl.org/draft-0/bill/invoice",
 		"$regime": "DE",
 		"uuid": "019860fc-7d4c-7922-a371-e848ca5141d3",
-		"type": "credit-note",
-		"code": "EXAMPLE-12345-CN-01",
+		"type": "standard",
+		"series": "TEST",
+		"code": "0001",
 		"issue_date": "2025-12-01",
-		"op_date": "2025-10-24",
+		"op_date": "2025-12-01",
 		"currency": "EUR",
-		"preceding": [
-			{
-				"type": "standard",
-				"issue_date": "2025-10-24",
-				"series": "EXAMPLE",
-				"code": "12345",
-				"reason": "product_unsatisfactory"
-			}
-		],
 		"supplier": {
 			"name": "Test Account",
 			"tax_id": {
@@ -52,14 +44,15 @@
 			]
 		},
 		"customer": {
-			"name": "John Doe",
+			"name": "Test Customer",
 			"tax_id": {
 				"country": "ES",
-				"code": "12345678Z"
+				"code": "A58818501"
 			},
 			"addresses": [
 				{
-					"street": "Calle Ejemplo 123",
+					"street": "Calle Example 123",
+					"street_extra": "Piso 2",
 					"locality": "Madrid",
 					"state": "MADRID",
 					"code": "28001",
@@ -68,7 +61,12 @@
 			],
 			"emails": [
 				{
-					"addr": "customer@example.com"
+					"addr": "test@example.com"
+				}
+			],
+			"telephones": [
+				{
+					"num": "+34600000000"
 				}
 			]
 		},
@@ -76,12 +74,16 @@
 			{
 				"i": 1,
 				"quantity": "1",
-				"item": {
-					"name": "1 × Pack Autónomos de Taxfix (at €39.90 / month)",
-					"currency": "EUR",
-					"price": "25.00"
+				"period": {
+					"start": "2025-12-01",
+					"end": "2026-01-01"
 				},
-				"sum": "25.00",
+				"item": {
+					"name": "1 × Monthly Subscription Plan A (at €2.95 / month)",
+					"currency": "EUR",
+					"price": "2.95"
+				},
+				"sum": "2.95",
 				"taxes": [
 					{
 						"cat": "VAT",
@@ -91,12 +93,42 @@
 						"percent": "21.0%"
 					}
 				],
-				"total": "25.00"
+				"total": "2.95"
+			},
+			{
+				"i": 2,
+				"quantity": "5",
+				"period": {
+					"start": "2025-12-01",
+					"end": "2026-01-01"
+				},
+				"item": {
+					"name": "5 × Monthly Subscription Plan B (at €1.50 / month)",
+					"currency": "EUR",
+					"price": "1.50"
+				},
+				"sum": "7.50",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"country": "ES",
+						"key": "standard",
+						"rate": "general",
+						"percent": "21.0%"
+					}
+				],
+				"total": "7.50"
 			}
 		],
+		"ordering": {
+			"period": {
+				"start": "2025-12-01",
+				"end": "2026-01-01"
+			}
+		},
 		"totals": {
-			"sum": "25.00",
-			"total": "25.00",
+			"sum": "10.45",
+			"total": "10.45",
 			"taxes": {
 				"categories": [
 					{
@@ -105,30 +137,24 @@
 							{
 								"country": "ES",
 								"key": "standard",
-								"base": "25.00",
+								"base": "10.45",
 								"percent": "21.0%",
-								"amount": "5.25"
+								"amount": "2.19"
 							}
 						],
-						"amount": "5.25"
+						"amount": "2.19"
 					}
 				],
-				"sum": "5.25"
+				"sum": "2.19"
 			},
-			"tax": "5.25",
-			"total_with_tax": "30.25",
-			"payable": "30.25"
+			"tax": "2.19",
+			"total_with_tax": "12.64",
+			"rounding": "0.01",
+			"payable": "12.65"
 		},
-		"notes": [
-			{
-				"key": "general",
-				"src": "stripe",
-				"text": "This is a credit note for a product that was unsatisfactory."
-			}
-		],
 		"meta": {
-			"stripe-document-id": "cn_1EXAMPLE67prVnmPFXTUp0AuL",
-			"stripe-document-type": "credit_note"
+			"stripe-document-id": "in_1EXAMPLE12345678901234567",
+			"stripe-document-type": "invoice"
 		}
 	}
 }
