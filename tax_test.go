@@ -14,12 +14,21 @@ func TestTaxInclusive(t *testing.T) {
 
 	s := completeStripeInvoice()
 
-	// Check that tax are inclusive
+	// Check that taxes are exclusive (default)
 	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 	require.NoError(t, err)
 	assert.Nil(t, gi.Tax)
 
+	// When tax is inclusive, the line amounts already include tax
+	// So the Total should be the sum of line amounts (18999) not sum + tax (22609)
 	s.TotalTaxAmounts[0].Inclusive = true
+	// Update line tax amounts to also be inclusive
+	for _, line := range s.Lines.Data {
+		for _, tax := range line.TaxAmounts {
+			tax.Inclusive = true
+		}
+	}
+	s.Total = 18999 // Lines total when tax is already included in prices
 	gi, err = goblstripe.FromInvoice(s, validStripeAccount())
 	require.NoError(t, err)
 	assert.Equal(t, tax.CategoryVAT, gi.Tax.PricesInclude)
@@ -215,6 +224,14 @@ func TestTaxFromCreditNoteTaxAmounts(t *testing.T) {
 				},
 			},
 		}
+		// Update line tax amounts to also be inclusive
+		for _, line := range s.Lines.Data {
+			for _, tax := range line.TaxAmounts {
+				tax.Inclusive = true
+			}
+		}
+		// When tax is inclusive, Total = line amount (10294) since tax is already in the price
+		s.Total = 10294
 
 		gi, err := goblstripe.FromCreditNote(s, validStripeAccount())
 		require.NoError(t, err)

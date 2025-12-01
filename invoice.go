@@ -1,7 +1,6 @@
 package goblstripe
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
@@ -102,6 +101,10 @@ func FromInvoice(doc *stripe.Invoice, account *stripe.Account) (*bill.Invoice, e
 	//Remaining fields
 	//Discounts: for the moment not considered in general (only in lines)
 
+	if err := AdjustRounding(inv, doc.Total, doc.Currency); err != nil {
+		return nil, err
+	}
+
 	return inv, nil
 }
 
@@ -153,6 +156,10 @@ func FromCreditNote(doc *stripe.CreditNote, account *stripe.Account) (*bill.Invo
 	inv.Preceding = []*org.DocumentRef{newPrecedingFromInvoice(doc.Invoice, string(doc.Reason))}
 	inv.Notes = newCreditNoteNotes(doc.Memo)
 
+	if err := AdjustRounding(inv, doc.Total, doc.Currency); err != nil {
+		return nil, err
+	}
+
 	return inv, nil
 }
 
@@ -165,11 +172,11 @@ func newDateFromTS(ts int64) *cal.Date {
 // regimeFromInvoice creates a tax regime definition from a Stripe invoice.
 func regimeFromInvoice(doc *stripe.Invoice) (*tax.RegimeDef, error) {
 	if doc.AccountCountry == "" {
-		return nil, fmt.Errorf("missing account country")
+		return nil, ErrValidation.WithMsg("missing account country")
 	}
 	regime := tax.WithRegime(l10n.TaxCountryCode(doc.AccountCountry)) //The country of the business associated with this invoice, most often the business creating the invoice.
 	if regime.RegimeDef() == nil {
-		return nil, fmt.Errorf("missing regime definition for %s", doc.AccountCountry)
+		return nil, ErrValidation.WithMsg("missing regime definition for %s", doc.AccountCountry)
 	}
 
 	return regime.RegimeDef(), nil
@@ -331,9 +338,15 @@ func newNote(text string, key cbc.Key) *org.Note {
 // Stripe payable total. Stripe calculates totals by rounding each line and then summing
 // which can lead to a mismatch with the total amount in GOBL.
 func AdjustRounding(gi *bill.Invoice, total int64, curr stripe.Currency) error {
+
+	err := gi.Calculate()
+	if err != nil {
+		return err
+	}
+
 	// Calculate the difference between the expected and the calculated totals
 	exp := CurrencyAmount(total, FromCurrency(curr))
-	diff := exp.Subtract(gi.Totals.Payable)
+	diff := exp.Subtract(gi.Totals.TotalWithTax)
 	if diff.IsZero() {
 		// No difference. No adjustment needed
 		return nil
@@ -343,7 +356,7 @@ func AdjustRounding(gi *bill.Invoice, total int64, curr stripe.Currency) error {
 	maxErr := MaxRoundingError(gi)
 	if diff.Abs().Compare(maxErr) == 1 {
 		// Too much difference. Report the error
-		return fmt.Errorf("rounding error in totals too high: %s", diff)
+		return ErrTotalsMismatch.WithMsg("rounding error in totals too high: %s", diff.String())
 	}
 
 	gi.Totals.Rounding = &diff

@@ -17,17 +17,32 @@ func TestExchangeRateConversionDefault(t *testing.T) {
 
 	assert.Nil(t, gi.ExchangeRates)
 
+	// When changing invoice currency to USD, update line currencies too
+	// to maintain consistency (otherwise Calculate() fails with exchange rate errors)
 	s.Currency = "usd"
+	for _, line := range s.Lines.Data {
+		line.Currency = "usd"
+	}
+	// Total stays the same since we're just relabeling the currency
 	gi, err = goblstripe.FromInvoice(s, validStripeAccount())
 	require.NoError(t, err)
 
+	// Exchange rate is created for the regime (DE) to convert USD to EUR
 	assert.Equal(t, num.MakeAmount(935, 3), gi.ExchangeRates[0].Amount)
 }
 
 func TestZeroDecimalCurrencies(t *testing.T) {
 	s := completeStripeInvoice()
 	s.Currency = "jpy"
-	s.Lines.Data[0].Currency = "jpy"
+	// Update all lines to JPY and set matching Total
+	for _, line := range s.Lines.Data {
+		line.Currency = "jpy"
+	}
+	// JPY is a zero-decimal currency, so Total is the face value
+	// Sum of lines: -11000 + 19999 + 10000 = 18999
+	// Tax at 19%: ~3610
+	// Total: ~22609 (but in JPY it's just the integer value)
+	s.Total = 22609
 	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 	require.NoError(t, err)
 
