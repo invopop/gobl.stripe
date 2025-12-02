@@ -10,7 +10,7 @@ import (
 	"github.com/invopop/gobl/regimes/de"
 	"github.com/invopop/gobl/tax"
 	"github.com/stretchr/testify/assert"
-	stripe "github.com/stripe/stripe-go/v81"
+	stripe "github.com/stripe/stripe-go/v84"
 )
 
 func TestToCustomerTaxIDDataParamsForTax(t *testing.T) {

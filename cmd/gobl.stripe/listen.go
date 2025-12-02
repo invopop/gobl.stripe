@@ -16,10 +16,10 @@ import (
 	goblstripe "github.com/invopop/gobl.stripe"
 	"github.com/invopop/gobl/bill"
 	"github.com/spf13/cobra"
-	"github.com/stripe/stripe-go/v81"
-	"github.com/stripe/stripe-go/v81/creditnote"
-	"github.com/stripe/stripe-go/v81/invoice"
-	"github.com/stripe/stripe-go/v81/webhook"
+	"github.com/stripe/stripe-go/v84"
+	"github.com/stripe/stripe-go/v84/creditnote"
+	"github.com/stripe/stripe-go/v84/invoice"
+	"github.com/stripe/stripe-go/v84/webhook"
 )
 
 type listenOpts struct {

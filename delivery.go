@@ -3,7 +3,7 @@ package goblstripe
 import (
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/org"
-	"github.com/stripe/stripe-go/v81"
+	"github.com/stripe/stripe-go/v84"
 )
 
 // newDelivery creates a delivery object from an invoice.

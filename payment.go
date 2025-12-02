@@ -5,7 +5,7 @@ import (
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/num"
 	"github.com/invopop/gobl/pay"
-	"github.com/stripe/stripe-go/v81"
+	"github.com/stripe/stripe-go/v84"
 )
 
 type paymentMethodDef struct {
@@ -78,7 +78,8 @@ func newPayment(doc *stripe.Invoice) *bill.PaymentDetails {
 
 // newPaymentTerms creates a payment terms object from a Stripe invoice.
 func newPaymentTerms(doc *stripe.Invoice) *pay.Terms {
-	if doc.Paid || doc.DueDate == 0 {
+	// In v84, check Status instead of Paid
+	if doc.Status == stripe.InvoiceStatusPaid || doc.DueDate == 0 {
 		return nil
 	}
 
@@ -94,21 +95,29 @@ func newPaymentTerms(doc *stripe.Invoice) *pay.Terms {
 
 // newPaymentInstructions creates a payment instructions object from a Stripe invoice.
 func newPaymentInstructions(doc *stripe.Invoice) *pay.Instructions {
-	if doc.Paid {
+	// In v84, check Status instead of Paid
+	if doc.Status == stripe.InvoiceStatusPaid {
 		return nil
 	}
 
-	if doc.PaymentIntent == nil {
+	// In v84, PaymentIntent is accessed through Payments list
+	if doc.Payments == nil || len(doc.Payments.Data) == 0 {
 		return nil
 	}
 
-	if doc.PaymentIntent.PaymentMethodTypes == nil {
+	// Get the first payment's PaymentIntent
+	payment := doc.Payments.Data[0]
+	if payment.Payment == nil || payment.Payment.PaymentIntent == nil {
+		return nil
+	}
+
+	if payment.Payment.PaymentIntent.PaymentMethodTypes == nil {
 		return nil
 	}
 
 	var instructions *pay.Instructions
 
-	for _, method := range doc.PaymentIntent.PaymentMethodTypes {
+	for _, method := range payment.Payment.PaymentIntent.PaymentMethodTypes {
 		for _, def := range paymentMethodDefinitions {
 			if method == def.Key {
 				if instructions == nil {
@@ -130,21 +139,28 @@ func newPaymentInstructions(doc *stripe.Invoice) *pay.Instructions {
 
 // newPaymentAdvances creates a payment advances object from a Stripe invoice.
 func newPaymentAdvances(doc *stripe.Invoice) []*pay.Advance {
-	if doc.Paid || doc.AmountPaid == 0 || doc.Charge == nil {
+	// In v84, check Status instead of Paid
+	if doc.Status == stripe.InvoiceStatusPaid || doc.AmountPaid == 0 {
 		return nil
 	}
 
-	//TODO: How can we get previous payments? I have not seen any examples on these cases
-	// I believe it would be better to wait for a use case to implement this
+	// In v84, Charge is accessed through Payments list
+	if doc.Payments == nil || len(doc.Payments.Data) == 0 {
+		return nil
+	}
 
-	// We could get all charges by doing a get to the following endpoint:
-	// https://api.stripe.com/v1/charges?invoice={invoice_id}
+	payment := doc.Payments.Data[0]
+	if payment.Payment == nil || payment.Payment.Charge == nil {
+		return nil
+	}
+
+	//TODO: How can we get previous payments? I believe it would be better to wait for a use case to implement this
 
 	// For the moment we can create an advance object with the amount paid
 	advance := &pay.Advance{
 		Amount:      CurrencyAmount(doc.AmountPaid, FromCurrency(doc.Currency)),
 		Description: "Advance payment",
-		Date:        newDateFromTS(doc.Charge.Created),
+		Date:        newDateFromTS(payment.Payment.Charge.Created),
 	}
 	return []*pay.Advance{advance}
 }

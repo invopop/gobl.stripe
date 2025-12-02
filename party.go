@@ -9,7 +9,7 @@ import (
 	"github.com/invopop/gobl/org"
 	"github.com/invopop/gobl/regimes/de"
 	"github.com/invopop/gobl/tax"
-	"github.com/stripe/stripe-go/v81"
+	"github.com/stripe/stripe-go/v84"
 )
 
 // For more details on Customer Tax IDs in Stripe, see: https://docs.stripe.com/billing/customer/tax-ids
