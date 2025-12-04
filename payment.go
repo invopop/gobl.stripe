@@ -98,6 +98,30 @@ func newPaymentInstructions(doc *stripe.Invoice) *pay.Instructions {
 		return nil
 	}
 
+	// First check for default payment method
+	if doc.DefaultPaymentMethod != nil {
+		for _, def := range paymentMethodDefinitions {
+			if string(doc.DefaultPaymentMethod.Type) == def.Key {
+				return &pay.Instructions{
+					Key:    def.MeansKey,
+					Detail: def.Description,
+				}
+			}
+		}
+	}
+
+	// Then check for the default payment method in customer settings
+	if doc.Customer != nil && doc.Customer.InvoiceSettings != nil && doc.Customer.InvoiceSettings.DefaultPaymentMethod != nil {
+		for _, def := range paymentMethodDefinitions {
+			if string(doc.Customer.InvoiceSettings.DefaultPaymentMethod.Type) == def.Key {
+				return &pay.Instructions{
+					Key:    def.MeansKey,
+					Detail: def.Description,
+				}
+			}
+		}
+	}
+
 	if doc.PaymentIntent == nil {
 		return nil
 	}
