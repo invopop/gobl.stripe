@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "72916e448a90daeb99a7bb7e5214652eaa986d0c7657b8850389f10ce7667dc9"
+			"val": "054b0c54afcbe96adc2eba64f29d1649486830f6943b65698a62a7445355df08"
 		}
 	},
 	"doc": {
@@ -15,10 +15,10 @@
 		],
 		"uuid": "019860fc-7d4c-7922-a371-e848ca5141d3",
 		"type": "standard",
-		"series": "FPOP",
-		"code": "10027",
+		"series": "12345678",
+		"code": "0069",
 		"issue_date": "2025-12-07",
-		"op_date": "2025-01-24",
+		"op_date": "2025-12-07",
 		"currency": "USD",
 		"exchange_rates": [
 			{
@@ -53,51 +53,52 @@
 				}
 			]
 		},
+		"customer": {
+			"emails": [
+				{
+					"addr": "customer@example.com"
+				}
+			]
+		},
 		"lines": [
 			{
 				"i": 1,
-				"quantity": "1",
+				"quantity": "0",
 				"period": {
-					"start": "2025-01-24",
-					"end": "2025-01-24"
+					"start": "2025-12-07",
+					"end": "2026-01-07"
 				},
 				"item": {
-					"name": "(created by Stripe CLI)",
+					"name": "0 × Growth Plan (at $39.00 / month)",
 					"currency": "USD",
-					"price": "20.00"
+					"price": "39.00"
 				},
-				"sum": "20.00",
-				"total": "20.00"
+				"sum": "0.00",
+				"total": "0.00"
 			}
 		],
 		"ordering": {
 			"period": {
-				"start": "2025-01-24",
-				"end": "2025-01-24"
-			}
-		},
-		"payment": {
-			"instructions": {
-				"key": "card",
-				"detail": "Card"
+				"start": "2025-12-07",
+				"end": "2026-01-07"
 			}
 		},
 		"totals": {
-			"sum": "20.00",
-			"total": "20.00",
+			"sum": "0.00",
+			"total": "0.00",
 			"tax": "0.00",
-			"total_with_tax": "20.00",
-			"payable": "20.00"
+			"total_with_tax": "0.00",
+			"payable": "0.00"
 		},
 		"notes": [
 			{
 				"key": "general",
 				"src": "stripe",
-				"text": "(created by Stripe CLI)"
+				"text": "Monthly subscription renewal\u003cbr\u003eVAT exempt (zero rate) applied for software, computer services and supplies over electronic networks - Council Directive 2002/38/EC"
 			}
 		],
 		"meta": {
-			"stripe-document-id": "in_1QkqKVQhcl5B85YlT32LIsNm",
+			"stripe-document-id": "in_1ExAmPlE2InVoIcE3AbCdEf",
 			"stripe-document-type": "invoice"
 		}
 	}

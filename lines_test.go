@@ -826,3 +826,252 @@ func TestFreeTrialLine(t *testing.T) {
 	assert.Equal(t, tax.CategoryVAT, result.Taxes[0].Category, "Tax category should match line tax")
 	assert.Equal(t, l10n.MX.Tax(), result.Taxes[0].Country, "Tax country should match line tax")
 }
+
+// Test resolveInvoiceLinePrice edge cases (lines 112-120)
+func TestResolveInvoiceLinePriceZeroQuantityWithPrice(t *testing.T) {
+	// When quantity is zero but Price is available, should use Price.UnitAmount
+	line := &stripe.InvoiceLineItem{
+		ID:          "il_zero_qty_with_price",
+		Amount:      0,
+		Currency:    stripe.CurrencyEUR,
+		Description: "Zero quantity item with price",
+		Price: &stripe.Price{
+			BillingScheme: stripe.PriceBillingSchemePerUnit,
+			Currency:      stripe.CurrencyEUR,
+			UnitAmount:    5000,
+		},
+		Period: &stripe.Period{
+			Start: 1736351413,
+			End:   1739029692,
+		},
+	}
+
+	result := goblstripe.FromInvoiceLine(line, tax.RegimeDefFor(l10n.DE))
+
+	assert.NotNil(t, result, "Line conversion should not return nil")
+	assert.Equal(t, num.AmountZero, result.Quantity, "Quantity should be zero")
+	assert.Equal(t, 50.0, result.Item.Price.Float64(), "Item price should use UnitAmount when quantity is zero")
+}
+
+func TestResolveInvoiceLinePriceZeroQuantityNilPrice(t *testing.T) {
+	// When quantity is zero and Price is nil, should return AmountZero
+	line := &stripe.InvoiceLineItem{
+		ID:          "il_zero_qty_nil_price",
+		Amount:      5000,
+		Currency:    stripe.CurrencyEUR,
+		Description: "Zero quantity item without price",
+		Price:       nil, // No price object
+		Period: &stripe.Period{
+			Start: 1736351413,
+			End:   1739029692,
+		},
+	}
+
+	result := goblstripe.FromInvoiceLine(line, tax.RegimeDefFor(l10n.DE))
+
+	assert.NotNil(t, result, "Line conversion should not return nil")
+	assert.Equal(t, num.AmountZero, result.Quantity, "Quantity should be zero")
+	assert.Equal(t, 0.0, result.Item.Price.Float64(), "Item price should be zero when quantity is zero and no price")
+}
+
+func TestResolveInvoiceLinePriceNonZeroQuantity(t *testing.T) {
+	// When quantity is not zero, should divide Amount by quantity
+	line := &stripe.InvoiceLineItem{
+		ID:       "il_nonzero_qty",
+		Amount:   10000,
+		Currency: stripe.CurrencyEUR,
+		Quantity: 4,
+		Price: &stripe.Price{
+			BillingScheme: stripe.PriceBillingSchemePerUnit,
+			Currency:      stripe.CurrencyEUR,
+			UnitAmount:    2500,
+		},
+		Description: "Item with quantity",
+		Period: &stripe.Period{
+			Start: 1736351413,
+			End:   1739029692,
+		},
+	}
+
+	result := goblstripe.FromInvoiceLine(line, tax.RegimeDefFor(l10n.DE))
+
+	assert.NotNil(t, result, "Line conversion should not return nil")
+	assert.Equal(t, num.MakeAmount(4, 0), result.Quantity, "Quantity should be 4")
+	assert.Equal(t, 25.0, result.Item.Price.Float64(), "Item price should be Amount/Quantity = 10000/4 = 2500 cents = 25.00")
+}
+
+// Test FromInvoiceLineDiscount with zero amount (lines 136-138)
+func TestFromInvoiceLineDiscountZeroAmount(t *testing.T) {
+	discount := &stripe.InvoiceLineItemDiscountAmount{
+		Amount: 0, // Zero amount discount
+		Discount: &stripe.Discount{
+			Coupon: &stripe.Coupon{
+				Name: "Zero Discount",
+			},
+		},
+	}
+
+	result := goblstripe.FromInvoiceLineDiscount(discount, stripe.CurrencyEUR)
+
+	assert.Nil(t, result, "Discount with zero amount should return nil")
+}
+
+// Test FromInvoiceLineDiscounts filtering zero-amount discounts
+func TestFromInvoiceLineDiscountsFiltersZeroAmount(t *testing.T) {
+	discounts := []*stripe.InvoiceLineItemDiscountAmount{
+		{
+			Amount: 1000,
+			Discount: &stripe.Discount{
+				Coupon: &stripe.Coupon{Name: "Valid Discount"},
+			},
+		},
+		{
+			Amount: 0, // Should be filtered out
+			Discount: &stripe.Discount{
+				Coupon: &stripe.Coupon{Name: "Zero Discount"},
+			},
+		},
+		{
+			Amount: 500,
+			Discount: &stripe.Discount{
+				Coupon: &stripe.Coupon{Name: "Another Valid Discount"},
+			},
+		},
+	}
+
+	result := goblstripe.FromInvoiceLineDiscounts(discounts, stripe.CurrencyEUR)
+
+	assert.Len(t, result, 2, "Should have 2 discounts after filtering zero-amount")
+	assert.Equal(t, "Valid Discount", result[0].Reason)
+	assert.Equal(t, "Another Valid Discount", result[1].Reason)
+}
+
+// Test FromInvoiceLines filtering (lines 23-28)
+func TestFromInvoiceLinesEmptyInput(t *testing.T) {
+	lines := []*stripe.InvoiceLineItem{}
+
+	result := goblstripe.FromInvoiceLines(lines, tax.RegimeDefFor(l10n.DE))
+
+	assert.NotNil(t, result, "Result should not be nil")
+	assert.Len(t, result, 0, "Result should be empty for empty input")
+}
+
+func TestFromInvoiceLinesAllValid(t *testing.T) {
+	lines := []*stripe.InvoiceLineItem{
+		{
+			ID:       "il_1",
+			Amount:   5000,
+			Currency: stripe.CurrencyEUR,
+			Quantity: 1,
+			Price: &stripe.Price{
+				BillingScheme: stripe.PriceBillingSchemePerUnit,
+				Currency:      stripe.CurrencyEUR,
+				UnitAmount:    5000,
+			},
+			Description: "First line",
+			Period: &stripe.Period{
+				Start: 1736351413,
+				End:   1739029692,
+			},
+		},
+		{
+			ID:       "il_2",
+			Amount:   3000,
+			Currency: stripe.CurrencyEUR,
+			Quantity: 1,
+			Price: &stripe.Price{
+				BillingScheme: stripe.PriceBillingSchemePerUnit,
+				Currency:      stripe.CurrencyEUR,
+				UnitAmount:    3000,
+			},
+			Description: "Second line",
+			Period: &stripe.Period{
+				Start: 1736351413,
+				End:   1739029692,
+			},
+		},
+	}
+
+	result := goblstripe.FromInvoiceLines(lines, tax.RegimeDefFor(l10n.DE))
+
+	assert.Len(t, result, 2, "Should have 2 converted lines")
+	assert.Equal(t, "First line", result[0].Item.Name)
+	assert.Equal(t, "Second line", result[1].Item.Name)
+}
+
+// Test FromCreditNoteLineDiscount with zero amount (lines 289-291)
+func TestFromCreditNoteLineDiscountZeroAmount(t *testing.T) {
+	discount := &stripe.CreditNoteLineItemDiscountAmount{
+		Amount: 0, // Zero amount discount
+		Discount: &stripe.Discount{
+			Coupon: &stripe.Coupon{
+				Name: "Zero Discount",
+			},
+		},
+	}
+
+	result := goblstripe.FromCreditNoteLineDiscount(discount, currency.EUR)
+
+	assert.Nil(t, result, "Credit note discount with zero amount should return nil")
+}
+
+// Test FromCreditNoteLineDiscounts filtering zero-amount discounts (lines 278-283)
+func TestFromCreditNoteLineDiscountsFiltersZeroAmount(t *testing.T) {
+	discounts := []*stripe.CreditNoteLineItemDiscountAmount{
+		{
+			Amount: 1500,
+			Discount: &stripe.Discount{
+				Coupon: &stripe.Coupon{Name: "CN Valid Discount"},
+			},
+		},
+		{
+			Amount: 0, // Should be filtered out
+			Discount: &stripe.Discount{
+				Coupon: &stripe.Coupon{Name: "CN Zero Discount"},
+			},
+		},
+		{
+			Amount: 750,
+			Discount: &stripe.Discount{
+				Coupon: &stripe.Coupon{Name: "CN Another Valid Discount"},
+			},
+		},
+	}
+
+	result := goblstripe.FromCreditNoteLineDiscounts(discounts, currency.EUR)
+
+	assert.Len(t, result, 2, "Should have 2 discounts after filtering zero-amount")
+	assert.Equal(t, "CN Valid Discount", result[0].Reason)
+	assert.Equal(t, "CN Another Valid Discount", result[1].Reason)
+}
+
+func TestFromCreditNoteLineDiscountsEmptyInput(t *testing.T) {
+	discounts := []*stripe.CreditNoteLineItemDiscountAmount{}
+
+	result := goblstripe.FromCreditNoteLineDiscounts(discounts, currency.EUR)
+
+	assert.NotNil(t, result, "Result should not be nil")
+	assert.Len(t, result, 0, "Result should be empty for empty input")
+}
+
+func TestFromCreditNoteLineDiscountsAllZeroAmount(t *testing.T) {
+	discounts := []*stripe.CreditNoteLineItemDiscountAmount{
+		{
+			Amount: 0,
+			Discount: &stripe.Discount{
+				Coupon: &stripe.Coupon{Name: "Zero 1"},
+			},
+		},
+		{
+			Amount: 0,
+			Discount: &stripe.Discount{
+				Coupon: &stripe.Coupon{Name: "Zero 2"},
+			},
+		},
+	}
+
+	result := goblstripe.FromCreditNoteLineDiscounts(discounts, currency.EUR)
+
+	assert.NotNil(t, result, "Result should not be nil")
+	assert.Len(t, result, 0, "Result should be empty when all discounts are zero")
+}

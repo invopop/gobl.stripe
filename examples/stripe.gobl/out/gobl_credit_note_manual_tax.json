@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "c802cf929f88bd51040475a8ac36bf199d67e8c3926121c7018bdcecfb8e2f58"
+			"val": "7c25a46c78f6f1e1014fdd709e252af0ef093c01d8141ef00b8d0cf5917743fd"
 		}
 	},
 	"doc": {
@@ -13,7 +13,7 @@
 		"uuid": "019860fc-7d4c-7922-a371-e848ca5141d3",
 		"type": "credit-note",
 		"code": "EXAMPLE-12345-CN-01",
-		"issue_date": "2025-12-04",
+		"issue_date": "2025-12-07",
 		"op_date": "2025-10-24",
 		"currency": "EUR",
 		"preceding": [

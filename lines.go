@@ -21,7 +21,10 @@ import (
 func FromInvoiceLines(lines []*stripe.InvoiceLineItem, regimeDef *tax.RegimeDef) []*bill.Line {
 	invLines := make([]*bill.Line, 0, len(lines))
 	for _, line := range lines {
-		invLines = append(invLines, FromInvoiceLine(line, regimeDef))
+		line := FromInvoiceLine(line, regimeDef)
+		if line != nil {
+			invLines = append(invLines, line)
+		}
 	}
 	return invLines
 }
@@ -33,7 +36,7 @@ func FromInvoiceLine(line *stripe.InvoiceLineItem, regimeDef *tax.RegimeDef) *bi
 		Item:     fromInvoiceLineToItem(line),
 	}
 
-	price := CurrencyAmount(line.Amount, FromCurrency(line.Currency)).Divide(invLine.Quantity)
+	price := resolveInvoiceLinePrice(line, invLine.Quantity)
 	invLine.Item.Price = &price
 
 	if len(line.DiscountAmounts) > 0 && line.Discountable {
@@ -106,6 +109,16 @@ func setItemName(line *stripe.InvoiceLineItem) string {
 	return ""
 }
 
+func resolveInvoiceLinePrice(line *stripe.InvoiceLineItem, quantity num.Amount) num.Amount {
+	if quantity == num.AmountZero {
+		if line.Price != nil {
+			return CurrencyAmount(line.Price.UnitAmount, FromCurrency(line.Price.Currency))
+		}
+		return num.AmountZero
+	}
+	return CurrencyAmount(line.Amount, FromCurrency(line.Currency)).Divide(quantity)
+}
+
 // FromInvoiceLineDiscounts creates a list of discounts for a GOBL invoice line item.
 func FromInvoiceLineDiscounts(discounts []*stripe.InvoiceLineItemDiscountAmount, curr stripe.Currency) []*bill.LineDiscount {
 	invDiscounts := make([]*bill.LineDiscount, 0)
@@ -120,6 +133,10 @@ func FromInvoiceLineDiscounts(discounts []*stripe.InvoiceLineItemDiscountAmount,
 
 // FromInvoiceLineDiscount creates a discount for a GOBL invoice line item.
 func FromInvoiceLineDiscount(discountAmount *stripe.InvoiceLineItemDiscountAmount, curr stripe.Currency) *bill.LineDiscount {
+	if discountAmount.Amount == 0 {
+		return nil
+	}
+
 	// We can set the amount directly from the one received in Stripe
 	if discountAmount.Discount == nil {
 		return &bill.LineDiscount{
@@ -259,13 +276,20 @@ func resolveCreditNoteLinePrice(line *stripe.CreditNoteLineItem, curr currency.C
 func FromCreditNoteLineDiscounts(discounts []*stripe.CreditNoteLineItemDiscountAmount, curr currency.Code) []*bill.LineDiscount {
 	invDiscounts := make([]*bill.LineDiscount, 0, len(discounts))
 	for _, discount := range discounts {
-		invDiscounts = append(invDiscounts, FromCreditNoteLineDiscount(discount, curr))
+		lineDiscount := FromCreditNoteLineDiscount(discount, curr)
+		if lineDiscount != nil {
+			invDiscounts = append(invDiscounts, lineDiscount)
+		}
 	}
 	return invDiscounts
 }
 
 // FromCreditNoteLineDiscount creates a discount for a GOBL credit note line item.
 func FromCreditNoteLineDiscount(discountAmount *stripe.CreditNoteLineItemDiscountAmount, curr currency.Code) *bill.LineDiscount {
+	if discountAmount.Amount == 0 {
+		return nil
+	}
+
 	if discountAmount.Discount == nil {
 		return &bill.LineDiscount{
 			Amount: CurrencyAmount(discountAmount.Amount, curr),
