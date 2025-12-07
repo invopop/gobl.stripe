@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "2f69c4112ca1bef0e617513d293bde0885a5f4da740be912ac6c1e21300e479d"
+			"val": "d6d3a5a7614a9d687cb37c7e2cea0478bc6c399ecb9af2c59f46a6d1f622c4a0"
 		}
 	},
 	"doc": {
@@ -17,7 +17,7 @@
 		"type": "standard",
 		"series": "V7REHZYJ",
 		"code": "0013",
-		"issue_date": "2025-12-04",
+		"issue_date": "2025-12-07",
 		"op_date": "2025-07-31",
 		"currency": "EUR",
 		"tax": {
@@ -99,6 +99,15 @@
 				"end": "2025-08-31"
 			}
 		},
+		"payment": {
+			"advances": [
+				{
+					"date": "1970-01-01",
+					"description": "Advance payment",
+					"amount": "100.00"
+				}
+			]
+		},
 		"delivery": {
 			"receiver": {
 				"addresses": [
@@ -134,7 +143,9 @@
 			},
 			"tax": "0.00",
 			"total_with_tax": "100.00",
-			"payable": "100.00"
+			"payable": "100.00",
+			"advance": "100.00",
+			"due": "0.00"
 		},
 		"notes": [
 			{

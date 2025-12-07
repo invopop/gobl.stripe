@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "bebc8b8ce210636a6ec9c5929c499c4cbc5d66d29c1fbc6274d81dde260f3439"
+			"val": "10be6ec857296292071aa567ffee2d4d5595d97c462db4aa973e3c5d93cec90b"
 		}
 	},
 	"doc": {
@@ -17,7 +17,7 @@
 		"type": "standard",
 		"series": "E486556A",
 		"code": "0039",
-		"issue_date": "2025-12-04",
+		"issue_date": "2025-12-07",
 		"op_date": "2025-06-20",
 		"currency": "EUR",
 		"supplier": {
@@ -50,10 +50,6 @@
 			"name": "Pablo",
 			"addresses": [
 				{
-					"street": "Calle de la Princesa 1",
-					"locality": "Madrid",
-					"state": "MADRID",
-					"code": "28001",
 					"country": "ES"
 				}
 			],
@@ -86,12 +82,23 @@
 				"end": "2025-06-20"
 			}
 		},
+		"payment": {
+			"advances": [
+				{
+					"date": "1970-01-01",
+					"description": "Advance payment",
+					"amount": "5.00"
+				}
+			]
+		},
 		"totals": {
 			"sum": "5.00",
 			"total": "5.00",
 			"tax": "0.00",
 			"total_with_tax": "5.00",
-			"payable": "5.00"
+			"payable": "5.00",
+			"advance": "5.00",
+			"due": "0.00"
 		},
 		"meta": {
 			"stripe-document-id": "in_1Rc0gQQa2zMHSH4WcldrJDB7",
