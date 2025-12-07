@@ -154,21 +154,31 @@ func newPaymentInstructions(doc *stripe.Invoice) *pay.Instructions {
 
 // newPaymentAdvances creates a payment advances object from a Stripe invoice.
 func newPaymentAdvances(doc *stripe.Invoice) []*pay.Advance {
-	if doc.Paid || doc.AmountPaid == 0 || doc.Charge == nil {
+	if doc.AmountPaid == 0 {
 		return nil
 	}
-
-	//TODO: How can we get previous payments? I have not seen any examples on these cases
-	// I believe it would be better to wait for a use case to implement this
-
-	// We could get all charges by doing a get to the following endpoint:
-	// https://api.stripe.com/v1/charges?invoice={invoice_id}
 
 	// For the moment we can create an advance object with the amount paid
 	advance := &pay.Advance{
 		Amount:      CurrencyAmount(doc.AmountPaid, FromCurrency(doc.Currency)),
 		Description: "Advance payment",
-		Date:        newDateFromTS(doc.Charge.Created),
 	}
+
+	if doc.Charge != nil {
+		advance.Date = newDateFromTS(doc.Charge.Created)
+		if doc.Charge.Description != "" {
+			advance.Description = doc.Charge.Description
+		}
+
+		if doc.Charge.PaymentMethodDetails != nil {
+			for _, def := range paymentMethodDefinitions {
+				if string(doc.Charge.PaymentMethodDetails.Type) == def.Key {
+					advance.Key = def.MeansKey
+					break
+				}
+			}
+		}
+	}
+
 	return []*pay.Advance{advance}
 }

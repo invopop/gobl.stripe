@@ -83,7 +83,7 @@ func FromInvoice(doc *stripe.Invoice, account *stripe.Account) (*bill.Invoice, e
 		inv.Supplier.Name = doc.AccountName
 	}
 
-	if doc.Customer != nil && len(doc.Customer.Metadata) != 0 {
+	if doc.Customer != nil && doc.Customer.Created != 0 {
 		inv.Customer = FromCustomer(doc.Customer)
 	} else {
 		inv.Customer = newCustomerFromInvoice(doc)

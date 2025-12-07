@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "472f754a1dab6298b6a87d7162c8abcdfd459533697e40d880c59df07e420b4b"
+			"val": "72a68ef17a3d8b5fd37aaecbc48f64af77be8c4669857fb314ef3cb0a2ef0660"
 		}
 	},
 	"doc": {
@@ -12,11 +12,14 @@
 		"$regime": "DE",
 		"uuid": "019860fc-7d4c-7922-a371-e848ca5141d3",
 		"type": "standard",
-		"series": "EXAMPLE",
-		"code": "12345",
+		"series": "XXXXXXXX",
+		"code": "0001",
 		"issue_date": "2025-12-07",
-		"op_date": "2025-10-24",
+		"op_date": "2023-11-14",
 		"currency": "EUR",
+		"tax": {
+			"prices_include": "VAT"
+		},
 		"supplier": {
 			"name": "Test Account",
 			"tax_id": {
@@ -46,21 +49,25 @@
 		"customer": {
 			"name": "John Doe",
 			"tax_id": {
-				"country": "ES",
-				"code": "12345678Z"
+				"country": "BE",
+				"code": "0413172884"
 			},
 			"addresses": [
 				{
-					"street": "Calle Ejemplo 123",
-					"locality": "Madrid",
-					"state": "MADRID",
-					"code": "28001",
-					"country": "ES"
+					"street": "Example Street, 123",
+					"locality": "Brussels",
+					"code": "1000",
+					"country": "BE"
 				}
 			],
 			"emails": [
 				{
 					"addr": "customer@example.com"
+				}
+			],
+			"telephones": [
+				{
+					"num": "+32400000000"
 				}
 			]
 		},
@@ -69,71 +76,91 @@
 				"i": 1,
 				"quantity": "1",
 				"period": {
-					"start": "2025-10-24",
-					"end": "2025-11-24"
+					"start": "2023-11-14",
+					"end": "2023-11-14"
 				},
 				"item": {
-					"name": "1 × Pack Autónomos de Taxfix (at €39.90 / month)",
+					"name": "PRO+",
 					"currency": "EUR",
-					"price": "39.90"
+					"price": "100.00"
 				},
-				"sum": "39.90",
+				"sum": "100.00",
 				"taxes": [
 					{
 						"cat": "VAT",
-						"country": "ES",
+						"country": "BE",
 						"key": "standard",
 						"rate": "general",
 						"percent": "21.0%"
 					}
 				],
-				"total": "39.90"
+				"total": "100.00"
 			}
 		],
 		"ordering": {
 			"period": {
-				"start": "2025-10-24",
-				"end": "2025-11-24"
+				"start": "2023-11-14",
+				"end": "2023-11-14"
 			}
 		},
 		"payment": {
 			"advances": [
 				{
-					"date": "1970-01-01",
-					"description": "Advance payment",
-					"amount": "48.28"
+					"date": "2023-11-14",
+					"key": "card",
+					"description": "Invoice XXXXXXXX-0001",
+					"amount": "100.00"
 				}
 			]
 		},
+		"delivery": {
+			"receiver": {
+				"name": "John Doe",
+				"addresses": [
+					{
+						"street": "Example Street, 123",
+						"locality": "Brussels",
+						"code": "1000",
+						"country": "BE"
+					}
+				],
+				"telephones": [
+					{
+						"num": "+32400000000"
+					}
+				]
+			}
+		},
 		"totals": {
-			"sum": "39.90",
-			"total": "39.90",
+			"sum": "100.00",
+			"tax_included": "17.36",
+			"total": "82.64",
 			"taxes": {
 				"categories": [
 					{
 						"code": "VAT",
 						"rates": [
 							{
-								"country": "ES",
+								"country": "BE",
 								"key": "standard",
-								"base": "39.90",
+								"base": "82.64",
 								"percent": "21.0%",
-								"amount": "8.38"
+								"amount": "17.36"
 							}
 						],
-						"amount": "8.38"
+						"amount": "17.36"
 					}
 				],
-				"sum": "8.38"
+				"sum": "17.36"
 			},
-			"tax": "8.38",
-			"total_with_tax": "48.28",
-			"payable": "48.28",
-			"advance": "48.28",
+			"tax": "17.36",
+			"total_with_tax": "100.00",
+			"payable": "100.00",
+			"advance": "100.00",
 			"due": "0.00"
 		},
 		"meta": {
-			"stripe-document-id": "in_1EXAMPLE67prVnmPFv47NdyqH",
+			"stripe-document-id": "in_XXXXXXXXXXXXXXXXXXXXXXXX",
 			"stripe-document-type": "invoice"
 		}
 	}

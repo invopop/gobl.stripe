@@ -379,53 +379,33 @@ func TestCustomerWithMetadata(t *testing.T) {
 	assert.False(t, ok)
 }
 
-func TestCustomerMetadataCondition(t *testing.T) {
-	t.Run("customer with empty metadata uses fallback", func(t *testing.T) {
+func TestCustomerExpansionCondition(t *testing.T) {
+	t.Run("unexpanded customer (Created=0) uses fallback", func(t *testing.T) {
 		s := completeStripeInvoice()
 		s.Customer = validStripeCustomer()
-		s.Customer.Metadata = map[string]string{} // Empty metadata
+		s.Customer.Created = 0 // Unexpanded customer stub
 
 		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 
-		// Should use newCustomerFromInvoice fallback
+		// Should use newCustomerFromInvoice fallback (gets name from invoice fields)
 		c := gi.Customer
 		require.NotNil(t, c)
 		assert.Equal(t, "Test Customer Invoice", c.Name)
 	})
 
-	t.Run("customer with nil metadata uses fallback", func(t *testing.T) {
-		s := completeStripeInvoice()
-		s.Customer = validStripeCustomer()
-		s.Customer.Metadata = nil // Nil metadata
-
-		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
-		require.NoError(t, err)
-
-		// Should use newCustomerFromInvoice fallback
-		c := gi.Customer
-		require.NotNil(t, c)
-		assert.Equal(t, "Test Customer Invoice", c.Name)
-	})
-
-	t.Run("customer with non-empty metadata uses FromCustomer", func(t *testing.T) {
+	t.Run("expanded customer (Created set) uses FromCustomer", func(t *testing.T) {
 		s := minimalStripeInvoice()
 		s.Customer = validStripeCustomer()
-		s.Customer.Metadata = map[string]string{
-			"gobl-customer-my-key": "my-value",
-		}
+		// validStripeCustomer() already has Created set
 
 		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 
-		// Should use FromCustomer
+		// Should use FromCustomer (gets name from customer object)
 		c := gi.Customer
 		require.NotNil(t, c)
 		assert.Equal(t, "Test Customer", c.Name)
-
-		// Check that metadata was processed
-		require.NotNil(t, c.Ext)
-		assert.Equal(t, cbc.Code("my-value"), c.Ext[cbc.Key("my-key")])
 	})
 
 	t.Run("nil customer uses fallback", func(t *testing.T) {
