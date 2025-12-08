@@ -556,6 +556,174 @@ func TestFromTaxAmountsExempt(t *testing.T) {
 	}
 }
 
+// TestFromInvoiceTaxAmountNoStripeTax tests the fallback to Percentage when
+// EffectivePercentage is 0 but there is a non-zero tax amount (Stripe tax not used).
+func TestFromInvoiceTaxAmountNoStripeTax(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    []*stripe.InvoiceTotalTaxAmount
+		expected tax.Set
+	}{
+		{
+			name: "effective percentage zero but amount non-zero uses percentage",
+			input: []*stripe.InvoiceTotalTaxAmount{
+				{
+					Amount: 1900, // Non-zero tax amount
+					TaxRate: &stripe.TaxRate{
+						Country:             "DE",
+						TaxType:             stripe.TaxRateTaxTypeVAT,
+						EffectivePercentage: 0.0, // Stripe tax not used
+						Percentage:          19.0,
+						Created:             time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
+					},
+				},
+			},
+			expected: tax.Set{
+				{
+					Category: tax.CategoryVAT,
+					Country:  "DE",
+					Rate:     tax.RateGeneral,
+				},
+			},
+		},
+		{
+			name: "effective percentage zero and amount zero uses effective percentage",
+			input: []*stripe.InvoiceTotalTaxAmount{
+				{
+					Amount: 0, // Zero tax amount (truly exempt)
+					TaxRate: &stripe.TaxRate{
+						Country:             "DE",
+						TaxType:             stripe.TaxRateTaxTypeVAT,
+						EffectivePercentage: 0.0,
+						Percentage:          19.0,
+						Created:             time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
+					},
+				},
+			},
+			expected: tax.Set{
+				{
+					Category: tax.CategoryVAT,
+					Country:  "DE",
+					Percent:  num.NewPercentage(0, 3),
+				},
+			},
+		},
+		{
+			name: "non-standard percentage fallback when effective is zero",
+			input: []*stripe.InvoiceTotalTaxAmount{
+				{
+					Amount: 500, // Non-zero tax amount
+					TaxRate: &stripe.TaxRate{
+						Country:             "ES",
+						TaxType:             stripe.TaxRateTaxTypeVAT,
+						EffectivePercentage: 0.0,  // Stripe tax not used
+						Percentage:          21.0, // Standard rate
+						Created:             time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
+					},
+				},
+			},
+			expected: tax.Set{
+				{
+					Category: tax.CategoryVAT,
+					Country:  "ES",
+					Rate:     tax.RateGeneral,
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := goblstripe.FromInvoiceTaxAmountsToTaxSet(tt.input, tax.RegimeDefFor(l10n.DE))
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+// TestFromCreditNoteTaxAmountNoStripeTax tests the fallback to Percentage when
+// EffectivePercentage is 0 but there is a non-zero tax amount (Stripe tax not used).
+func TestFromCreditNoteTaxAmountNoStripeTax(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    []*stripe.CreditNoteTaxAmount
+		expected tax.Set
+	}{
+		{
+			name: "effective percentage zero but amount non-zero uses percentage",
+			input: []*stripe.CreditNoteTaxAmount{
+				{
+					Amount: 1900, // Non-zero tax amount
+					TaxRate: &stripe.TaxRate{
+						Country:             "DE",
+						TaxType:             stripe.TaxRateTaxTypeVAT,
+						EffectivePercentage: 0.0, // Stripe tax not used
+						Percentage:          19.0,
+						Created:             time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
+					},
+				},
+			},
+			expected: tax.Set{
+				{
+					Category: tax.CategoryVAT,
+					Country:  "DE",
+					Rate:     tax.RateGeneral,
+				},
+			},
+		},
+		{
+			name: "effective percentage zero and amount zero uses effective percentage",
+			input: []*stripe.CreditNoteTaxAmount{
+				{
+					Amount: 0, // Zero tax amount (truly exempt)
+					TaxRate: &stripe.TaxRate{
+						Country:             "DE",
+						TaxType:             stripe.TaxRateTaxTypeVAT,
+						EffectivePercentage: 0.0,
+						Percentage:          19.0,
+						Created:             time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
+					},
+				},
+			},
+			expected: tax.Set{
+				{
+					Category: tax.CategoryVAT,
+					Country:  "DE",
+					Percent:  num.NewPercentage(0, 3),
+				},
+			},
+		},
+		{
+			name: "non-standard percentage fallback when effective is zero",
+			input: []*stripe.CreditNoteTaxAmount{
+				{
+					Amount: 500, // Non-zero tax amount
+					TaxRate: &stripe.TaxRate{
+						Country:             "ES",
+						TaxType:             stripe.TaxRateTaxTypeVAT,
+						EffectivePercentage: 0.0,  // Stripe tax not used
+						Percentage:          21.0, // Standard rate
+						Created:             time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
+					},
+				},
+			},
+			expected: tax.Set{
+				{
+					Category: tax.CategoryVAT,
+					Country:  "ES",
+					Rate:     tax.RateGeneral,
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := goblstripe.FromCreditNoteTaxAmountsToTaxSet(tt.input, tax.RegimeDefFor(l10n.DE))
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
 func TestFromInvoiceTaxAmountsReverseCharge(t *testing.T) {
 	tests := []struct {
 		name     string

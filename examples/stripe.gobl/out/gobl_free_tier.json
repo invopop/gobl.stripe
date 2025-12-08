@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "a9c1bba104d4ace112ea01b7dfc505b2b1659f7f66f22fe289b51d729fac5339"
+			"val": "4385dbcb17e02ad01f2508c8f883b559e9e3f886869346cebe14c0ee9ffad37f"
 		}
 	},
 	"doc": {
@@ -14,7 +14,7 @@
 		"type": "standard",
 		"series": "RANDOM",
 		"code": "0002",
-		"issue_date": "2025-12-07",
+		"issue_date": "2025-12-08",
 		"op_date": "2025-06-23",
 		"currency": "EUR",
 		"exchange_rates": [

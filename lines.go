@@ -192,11 +192,17 @@ func FromInvoiceTaxAmountToTaxCombo(taxAmount *stripe.InvoiceTotalTaxAmount, reg
 	} else {
 		tc.Country = l10n.TaxCountryCode(taxAmount.TaxRate.Country)
 	}
+	// When Stripe tax is not used, the the effective percentage is 0. We should use percentage
+	percent := taxAmount.TaxRate.EffectivePercentage
+	if percent == 0 && taxAmount.Amount != 0 {
+		percent = taxAmount.TaxRate.Percentage
+	}
+
 	// Based on the country and the percentage, we can determine the tax rate and value.
-	rate, val := lookupRateValue(taxAmount.TaxRate.EffectivePercentage, tc.Country.Code(), tc.Category, taxDate)
+	rate, val := lookupRateValue(percent, tc.Country.Code(), tc.Category, taxDate)
 	if val == nil {
 		// No matching rate found in the regime. Set the tax percent directly.
-		tc.Percent = percentFromFloat(taxAmount.TaxRate.EffectivePercentage)
+		tc.Percent = percentFromFloat(percent)
 		return tc
 	}
 
@@ -344,11 +350,17 @@ func FromCreditNoteTaxAmountToTaxCombo(taxAmount *stripe.CreditNoteTaxAmount, re
 	} else {
 		tc.Country = l10n.TaxCountryCode(taxAmount.TaxRate.Country)
 	}
+
+	// When Stripe tax is not used, the the effective percentage is 0. We should use percentage
+	percent := taxAmount.TaxRate.EffectivePercentage
+	if percent == 0 && taxAmount.Amount != 0 {
+		percent = taxAmount.TaxRate.Percentage
+	}
 	// Based on the country and the percentage, we can determine the tax rate and value.
-	rate, val := lookupRateValue(taxAmount.TaxRate.EffectivePercentage, tc.Country.Code(), tc.Category, taxDate)
+	rate, val := lookupRateValue(percent, tc.Country.Code(), tc.Category, taxDate)
 	if val == nil {
 		// No matching rate found in the regime. Set the tax percent directly.
-		tc.Percent = percentFromFloat(taxAmount.TaxRate.EffectivePercentage)
+		tc.Percent = percentFromFloat(percent)
 		return tc
 	}
 

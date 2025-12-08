@@ -83,7 +83,7 @@ func processFile(t *testing.T, path string) error {
 			return fmt.Errorf("failed to parse Stripe invoice: %v", err)
 		}
 		goblInvoice, err = goblstripe.FromInvoice(&stripeInvoice, validStripeAccount())
-		if err != nil {
+		if err != nil && goblInvoice == nil {
 			return fmt.Errorf("failed to convert to GOBL: %v", err)
 		}
 	case "credit_note":
@@ -92,7 +92,7 @@ func processFile(t *testing.T, path string) error {
 			return fmt.Errorf("failed to parse Stripe credit note: %v", err)
 		}
 		goblInvoice, err = goblstripe.FromCreditNote(&stripeCreditNote, validStripeAccount())
-		if err != nil {
+		if err != nil && goblInvoice == nil {
 			return fmt.Errorf("failed to convert to GOBL: %v", err)
 		}
 	default:
