@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "f1416e9554e58c911809d7eb6a2a17c21ec1e3956943e684ca17c5c01cc45f43"
+			"val": "6445eddc527b2bfa8a2a4adaae88620406f4e712610534d661fec5d9d23e9b73"
 		}
 	},
 	"doc": {
@@ -16,7 +16,7 @@
 		"uuid": "019860fc-7d4c-7922-a371-e848ca5141d3",
 		"type": "standard",
 		"code": "in_1QpCUMQhcl5B85YlfgMLxqMg",
-		"issue_date": "2025-12-07",
+		"issue_date": "2025-12-08",
 		"currency": "EUR",
 		"supplier": {
 			"name": "Test Account",
