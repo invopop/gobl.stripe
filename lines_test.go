@@ -616,8 +616,8 @@ func TestFromInvoiceTaxAmountNoStripeTax(t *testing.T) {
 					TaxRate: &stripe.TaxRate{
 						Country:             "ES",
 						TaxType:             stripe.TaxRateTaxTypeVAT,
-						EffectivePercentage: 0.0,   // Stripe tax not used
-						Percentage:          21.0,  // Standard rate
+						EffectivePercentage: 0.0,  // Stripe tax not used
+						Percentage:          21.0, // Standard rate
 						Created:             time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
 					},
 				},
@@ -700,8 +700,8 @@ func TestFromCreditNoteTaxAmountNoStripeTax(t *testing.T) {
 					TaxRate: &stripe.TaxRate{
 						Country:             "ES",
 						TaxType:             stripe.TaxRateTaxTypeVAT,
-						EffectivePercentage: 0.0,   // Stripe tax not used
-						Percentage:          21.0,  // Standard rate
+						EffectivePercentage: 0.0,  // Stripe tax not used
+						Percentage:          21.0, // Standard rate
 						Created:             time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
 					},
 				},

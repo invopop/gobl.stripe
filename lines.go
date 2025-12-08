@@ -192,7 +192,7 @@ func FromInvoiceTaxAmountToTaxCombo(taxAmount *stripe.InvoiceTotalTaxAmount, reg
 	} else {
 		tc.Country = l10n.TaxCountryCode(taxAmount.TaxRate.Country)
 	}
-	// When not used Stripe tax, the the effective percentage is 0. We should use percentage
+	// When Stripe tax is not used, the the effective percentage is 0. We should use percentage
 	percent := taxAmount.TaxRate.EffectivePercentage
 	if percent == 0 && taxAmount.Amount != 0 {
 		percent = taxAmount.TaxRate.Percentage
@@ -351,7 +351,7 @@ func FromCreditNoteTaxAmountToTaxCombo(taxAmount *stripe.CreditNoteTaxAmount, re
 		tc.Country = l10n.TaxCountryCode(taxAmount.TaxRate.Country)
 	}
 
-	// When not used Stripe tax, the the effective percentage is 0. We should use percentage
+	// When Stripe tax is not used, the the effective percentage is 0. We should use percentage
 	percent := taxAmount.TaxRate.EffectivePercentage
 	if percent == 0 && taxAmount.Amount != 0 {
 		percent = taxAmount.TaxRate.Percentage
