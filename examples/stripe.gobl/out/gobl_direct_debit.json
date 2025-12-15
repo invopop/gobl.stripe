@@ -1,0 +1,185 @@
+{
+	"$schema": "https://gobl.org/draft-0/envelope",
+	"head": {
+		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
+		"dig": {
+			"alg": "sha256",
+			"val": "ef595e49568906f151dec004fb36359614065e7897611e5014e3cc57939ee782"
+		}
+	},
+	"doc": {
+		"$schema": "https://gobl.org/draft-0/bill/invoice",
+		"$regime": "DE",
+		"uuid": "019860fc-7d4c-7922-a371-e848ca5141d3",
+		"type": "standard",
+		"series": "STRIPE",
+		"code": "000000000",
+		"issue_date": "2025-12-15",
+		"op_date": "2025-12-14",
+		"currency": "EUR",
+		"supplier": {
+			"name": "Test Account",
+			"tax_id": {
+				"country": "DE",
+				"code": "813495425"
+			},
+			"addresses": [
+				{
+					"street": "Test Street 123",
+					"locality": "Munich",
+					"state": "BY",
+					"code": "80331",
+					"country": "DE"
+				}
+			],
+			"emails": [
+				{
+					"addr": "support@testaccount.com"
+				}
+			],
+			"telephones": [
+				{
+					"num": "+4989123456"
+				}
+			]
+		},
+		"customer": {
+			"name": "Example Company Ltd",
+			"tax_id": {
+				"country": "BE",
+				"code": "0413172884"
+			},
+			"addresses": [
+				{
+					"street": "123 Example Street",
+					"locality": "Brussels",
+					"code": "1000",
+					"country": "BE"
+				}
+			],
+			"emails": [
+				{
+					"addr": "customer@example.com"
+				}
+			]
+		},
+		"lines": [
+			{
+				"i": 1,
+				"quantity": "2",
+				"period": {
+					"start": "2025-12-14",
+					"end": "2026-01-14"
+				},
+				"item": {
+					"name": "2 × Essential manager seat (at €50.00 / month)",
+					"currency": "EUR",
+					"price": "50.00"
+				},
+				"sum": "100.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"country": "BE",
+						"key": "standard",
+						"rate": "general",
+						"percent": "21.0%"
+					}
+				],
+				"total": "100.00"
+			},
+			{
+				"i": 2,
+				"quantity": "1",
+				"period": {
+					"start": "2025-11-14",
+					"end": "2025-12-14"
+				},
+				"item": {
+					"name": "358 hour × Pay-as-you-go hours (Tier 1 at €0.00 / month)",
+					"currency": "EUR",
+					"price": "0.00"
+				},
+				"sum": "0.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"country": "BE",
+						"key": "standard",
+						"rate": "general",
+						"percent": "21.0%"
+					}
+				],
+				"total": "0.00"
+			},
+			{
+				"i": 3,
+				"quantity": "1",
+				"period": {
+					"start": "2025-11-14",
+					"end": "2025-12-14"
+				},
+				"item": {
+					"name": "1 seat × Additional support manager (at €75.00 / month)",
+					"currency": "EUR",
+					"price": "75.00"
+				},
+				"sum": "75.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"country": "BE",
+						"key": "standard",
+						"rate": "general",
+						"percent": "21.0%"
+					}
+				],
+				"total": "75.00"
+			}
+		],
+		"ordering": {
+			"period": {
+				"start": "2025-11-14",
+				"end": "2026-01-14"
+			}
+		},
+		"payment": {
+			"instructions": {
+				"key": "direct-debit",
+				"detail": "SEPA Direct Debit",
+				"direct_debit": {
+					"ref": "mandate_1XxxX0XxxxXxXXxxXXXxXXXx"
+				}
+			}
+		},
+		"totals": {
+			"sum": "175.00",
+			"total": "175.00",
+			"taxes": {
+				"categories": [
+					{
+						"code": "VAT",
+						"rates": [
+							{
+								"country": "BE",
+								"key": "standard",
+								"base": "175.00",
+								"percent": "21.0%",
+								"amount": "36.75"
+							}
+						],
+						"amount": "36.75"
+					}
+				],
+				"sum": "36.75"
+			},
+			"tax": "36.75",
+			"total_with_tax": "211.75",
+			"payable": "211.75"
+		},
+		"meta": {
+			"stripe-document-id": "in_1XxXX0XxxxXxXXxx0xXxXXXx",
+			"stripe-document-type": "invoice"
+		}
+	}
+}

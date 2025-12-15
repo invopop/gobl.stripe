@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "5e4322db313bc6635c7121c0b25e800857b24d8adc5dd991925bf98f19f50a03"
+			"val": "e3ad6a5857a499adfe003689cf80e31d67e0803b92690d843b77dc9db5315a7f"
 		}
 	},
 	"doc": {
@@ -17,7 +17,7 @@
 		"type": "standard",
 		"series": "EXAMPLE",
 		"code": "0012",
-		"issue_date": "2025-12-08",
+		"issue_date": "2025-12-15",
 		"op_date": "2025-12-08",
 		"currency": "EUR",
 		"supplier": {
@@ -88,7 +88,10 @@
 		"payment": {
 			"instructions": {
 				"key": "direct-debit",
-				"detail": "SEPA Direct Debit"
+				"detail": "SEPA Direct Debit",
+				"direct_debit": {
+					"ref": "mandate_ExampleMandate123"
+				}
 			}
 		},
 		"totals": {

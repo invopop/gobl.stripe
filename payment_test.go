@@ -22,6 +22,142 @@ func TestNoTermsWhenPaid(t *testing.T) {
 	assert.NotNil(t, gi.Payment.Advances, "Paid invoice should have advances")
 }
 
+func TestPaymentInstructionsFromCharge(t *testing.T) {
+	t.Run("card payment method from charge", func(t *testing.T) {
+		s := minimalStripeInvoice()
+		s.Paid = false
+		s.DueDate = 1737738363
+		s.Charge = &stripe.Charge{
+			PaymentMethodDetails: &stripe.ChargePaymentMethodDetails{
+				Type: stripe.ChargePaymentMethodDetailsTypeCard,
+			},
+		}
+
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
+		require.NoError(t, err)
+
+		require.NotNil(t, gi.Payment)
+		require.NotNil(t, gi.Payment.Instructions)
+		assert.Equal(t, pay.MeansKeyCard, gi.Payment.Instructions.Key)
+		assert.Equal(t, "Card", gi.Payment.Instructions.Detail)
+		assert.Nil(t, gi.Payment.Instructions.DirectDebit)
+	})
+
+	t.Run("sepa debit from charge with mandate reference", func(t *testing.T) {
+		s := minimalStripeInvoice()
+		s.Paid = false
+		s.DueDate = 1737738363
+		s.Charge = &stripe.Charge{
+			PaymentMethodDetails: &stripe.ChargePaymentMethodDetails{
+				Type: stripe.ChargePaymentMethodDetailsTypeSEPADebit,
+				SEPADebit: &stripe.ChargePaymentMethodDetailsSEPADebit{
+					Mandate: "mandate_123456",
+				},
+			},
+		}
+
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
+		require.NoError(t, err)
+
+		require.NotNil(t, gi.Payment)
+		require.NotNil(t, gi.Payment.Instructions)
+		assert.Equal(t, pay.MeansKeyDirectDebit, gi.Payment.Instructions.Key)
+		assert.Equal(t, "SEPA Direct Debit", gi.Payment.Instructions.Detail)
+		require.NotNil(t, gi.Payment.Instructions.DirectDebit)
+		assert.Equal(t, "mandate_123456", gi.Payment.Instructions.DirectDebit.Ref)
+	})
+
+	t.Run("sepa debit from charge without SEPADebit details", func(t *testing.T) {
+		s := minimalStripeInvoice()
+		s.Paid = false
+		s.DueDate = 1737738363
+		s.Charge = &stripe.Charge{
+			PaymentMethodDetails: &stripe.ChargePaymentMethodDetails{
+				Type:      stripe.ChargePaymentMethodDetailsTypeSEPADebit,
+				SEPADebit: nil,
+			},
+		}
+
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
+		require.NoError(t, err)
+
+		require.NotNil(t, gi.Payment)
+		require.NotNil(t, gi.Payment.Instructions)
+		assert.Equal(t, pay.MeansKeyDirectDebit, gi.Payment.Instructions.Key)
+		assert.Equal(t, "SEPA Direct Debit", gi.Payment.Instructions.Detail)
+		assert.Nil(t, gi.Payment.Instructions.DirectDebit)
+	})
+
+	t.Run("ach debit from charge (no direct debit details)", func(t *testing.T) {
+		s := minimalStripeInvoice()
+		s.Paid = false
+		s.DueDate = 1737738363
+		s.Charge = &stripe.Charge{
+			PaymentMethodDetails: &stripe.ChargePaymentMethodDetails{
+				Type: stripe.ChargePaymentMethodDetailsTypeACHDebit,
+			},
+		}
+
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
+		require.NoError(t, err)
+
+		require.NotNil(t, gi.Payment)
+		require.NotNil(t, gi.Payment.Instructions)
+		assert.Equal(t, pay.MeansKeyDirectDebit, gi.Payment.Instructions.Key)
+		assert.Equal(t, "ACH", gi.Payment.Instructions.Detail)
+		assert.Nil(t, gi.Payment.Instructions.DirectDebit)
+	})
+
+	t.Run("charge takes priority over default payment method", func(t *testing.T) {
+		s := minimalStripeInvoice()
+		s.Paid = false
+		s.DueDate = 1737738363
+		// Charge with SEPA debit
+		s.Charge = &stripe.Charge{
+			PaymentMethodDetails: &stripe.ChargePaymentMethodDetails{
+				Type: stripe.ChargePaymentMethodDetailsTypeSEPADebit,
+				SEPADebit: &stripe.ChargePaymentMethodDetailsSEPADebit{
+					Mandate: "mandate_xyz",
+				},
+			},
+		}
+		// DefaultPaymentMethod with card (should be ignored)
+		s.DefaultPaymentMethod = &stripe.PaymentMethod{
+			Type: stripe.PaymentMethodTypeCard,
+		}
+
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
+		require.NoError(t, err)
+
+		require.NotNil(t, gi.Payment)
+		require.NotNil(t, gi.Payment.Instructions)
+		// Should use charge's SEPA debit, not default payment method's card
+		assert.Equal(t, pay.MeansKeyDirectDebit, gi.Payment.Instructions.Key)
+		assert.Equal(t, "SEPA Direct Debit", gi.Payment.Instructions.Detail)
+		require.NotNil(t, gi.Payment.Instructions.DirectDebit)
+		assert.Equal(t, "mandate_xyz", gi.Payment.Instructions.DirectDebit.Ref)
+	})
+
+	t.Run("bancontact from charge (online payment)", func(t *testing.T) {
+		s := minimalStripeInvoice()
+		s.Paid = false
+		s.DueDate = 1737738363
+		s.Charge = &stripe.Charge{
+			PaymentMethodDetails: &stripe.ChargePaymentMethodDetails{
+				Type: stripe.ChargePaymentMethodDetailsTypeBancontact,
+			},
+		}
+
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
+		require.NoError(t, err)
+
+		require.NotNil(t, gi.Payment)
+		require.NotNil(t, gi.Payment.Instructions)
+		assert.Equal(t, pay.MeansKeyOnline, gi.Payment.Instructions.Key)
+		assert.Equal(t, "Bancontact", gi.Payment.Instructions.Detail)
+	})
+}
+
 func TestPaymentInstructionsFromDefaultPaymentMethod(t *testing.T) {
 	t.Run("card payment method", func(t *testing.T) {
 		s := minimalStripeInvoice()

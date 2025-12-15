@@ -98,6 +98,26 @@ func newPaymentInstructions(doc *stripe.Invoice) *pay.Instructions {
 		return nil
 	}
 
+	// We first check the charge in case it is a direct debit (it is not paid but it has a charge)
+	if doc.Charge != nil && doc.Charge.PaymentMethodDetails != nil {
+		for _, def := range paymentMethodDefinitions {
+			if string(doc.Charge.PaymentMethodDetails.Type) == def.Key {
+				instructions := &pay.Instructions{
+					Key:    def.MeansKey,
+					Detail: def.Description,
+				}
+				if doc.Charge.PaymentMethodDetails.Type == stripe.ChargePaymentMethodDetailsTypeSEPADebit {
+					if doc.Charge.PaymentMethodDetails.SEPADebit != nil {
+						instructions.DirectDebit = &pay.DirectDebit{
+							Ref: doc.Charge.PaymentMethodDetails.SEPADebit.Mandate,
+						}
+					}
+				}
+				return instructions
+			}
+		}
+	}
+
 	// First check for default payment method
 	if doc.DefaultPaymentMethod != nil {
 		for _, def := range paymentMethodDefinitions {
