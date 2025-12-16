@@ -71,7 +71,7 @@ func FromInvoice(doc *stripe.Invoice, account *stripe.Account) (*bill.Invoice, e
 	}
 
 	if doc.EffectiveAt != 0 {
-		inv.OperationDate = newDateFromTS(doc.EffectiveAt) // Date when the operation defined by the invoice became effective
+		inv.OperationDate = newDateFromTS(doc.EffectiveAt, regimeDef.TimeZone) // Date when the operation defined by the invoice became effective
 	}
 
 	inv.Currency = FromCurrency(doc.Currency)
@@ -94,9 +94,9 @@ func FromInvoice(doc *stripe.Invoice, account *stripe.Account) (*bill.Invoice, e
 
 	inv.Lines = FromInvoiceLines(doc.Lines.Data, regimeDef)
 	inv.Tax = taxFromInvoiceTaxAmounts(doc.TotalTaxAmounts)
-	inv.Ordering = newOrdering(doc, inv.Lines)
+	inv.Ordering = newOrdering(doc, inv.Lines, regimeDef)
 	inv.Delivery = newDelivery(doc)
-	inv.Payment = newPayment(doc)
+	inv.Payment = newPayment(doc, regimeDef)
 	inv.Notes = newInvoiceNotes(doc.Description, doc.Footer)
 
 	//Remaining fields
@@ -133,7 +133,7 @@ func FromCreditNote(doc *stripe.CreditNote, account *stripe.Account) (*bill.Invo
 	}
 
 	if doc.EffectiveAt != 0 {
-		inv.OperationDate = newDateFromTS(doc.EffectiveAt) // Date when the operation defined by the credit note became effective
+		inv.OperationDate = newDateFromTS(doc.EffectiveAt, regimeDef.TimeZone) // Date when the operation defined by the credit note became effective
 	}
 
 	inv.Currency = FromCurrency(doc.Currency)
@@ -154,7 +154,7 @@ func FromCreditNote(doc *stripe.CreditNote, account *stripe.Account) (*bill.Invo
 
 	inv.Lines = FromCreditNoteLines(doc.Lines.Data, inv.Currency, regimeDef)
 	inv.Tax = taxFromCreditNoteTaxAmounts(doc.TaxAmounts)
-	inv.Preceding = []*org.DocumentRef{newPrecedingFromInvoice(doc.Invoice, string(doc.Reason))}
+	inv.Preceding = []*org.DocumentRef{newPrecedingFromInvoice(doc.Invoice, string(doc.Reason), regimeDef)}
 	inv.Notes = newCreditNoteNotes(doc.Memo)
 
 	if err := AdjustRounding(inv, doc.Total, doc.Currency); err != nil {
@@ -165,8 +165,17 @@ func FromCreditNote(doc *stripe.CreditNote, account *stripe.Account) (*bill.Invo
 }
 
 // newDateFromTS creates a cal date object from a Unix timestamp.
-func newDateFromTS(ts int64) *cal.Date {
-	d := cal.DateOf(time.Unix(ts, 0).UTC())
+// If a timezone is provided, the date will be converted to that timezone.
+// This is important because Stripe stores timestamps as midnight in the account's
+// local timezone, but we need to convert back to the correct local date.
+func newDateFromTS(ts int64, tz string) *cal.Date {
+	t := time.Unix(ts, 0)
+	if tz != "" {
+		if loc, err := time.LoadLocation(tz); err == nil {
+			t = t.In(loc)
+		}
+	}
+	d := cal.DateOf(t)
 	return &d
 }
 
@@ -184,7 +193,7 @@ func regimeFromInvoice(doc *stripe.Invoice) (*tax.RegimeDef, error) {
 }
 
 // newPrecedingFromInvoice creates a document reference from a Stripe invoice.
-func newPrecedingFromInvoice(doc *stripe.Invoice, reason string) *org.DocumentRef {
+func newPrecedingFromInvoice(doc *stripe.Invoice, reason string, regimeDef *tax.RegimeDef) *org.DocumentRef {
 	docRef := new(org.DocumentRef)
 
 	if doc.Number != "" {
@@ -199,7 +208,7 @@ func newPrecedingFromInvoice(doc *stripe.Invoice, reason string) *org.DocumentRe
 		docRef.Code = cbc.Code(doc.ID)
 	}
 
-	docRef.IssueDate = newDateFromTS(doc.Created)
+	docRef.IssueDate = newDateFromTS(doc.Created, regimeDef.TimeZone)
 	docRef.Type = bill.InvoiceTypeStandard
 	docRef.Reason = reason
 
@@ -260,7 +269,7 @@ func isCreditNoteReverseCharge(doc *stripe.CreditNote) bool {
 }
 
 // newOrdering creates an ordering object from an invoice.
-func newOrdering(doc *stripe.Invoice, lines []*bill.Line) *bill.Ordering {
+func newOrdering(doc *stripe.Invoice, lines []*bill.Line, regimeDef *tax.RegimeDef) *bill.Ordering {
 	ordering := &bill.Ordering{}
 
 	// Try to determine period from line items first
@@ -285,8 +294,8 @@ func newOrdering(doc *stripe.Invoice, lines []*bill.Line) *bill.Ordering {
 	} else {
 		// Otherwise, fall back to document period
 		ordering.Period = &cal.Period{
-			Start: *newDateFromTS(doc.PeriodStart),
-			End:   *newDateFromTS(doc.PeriodEnd),
+			Start: *newDateFromTS(doc.PeriodStart, regimeDef.TimeZone),
+			End:   *newDateFromTS(doc.PeriodEnd, regimeDef.TimeZone),
 		}
 	}
 

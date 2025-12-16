@@ -23,6 +23,7 @@ var skipExamplePaths = []string{
 	".out.",
 	"/out/",
 	"data/",
+	".git/",
 	".github",
 	".golangci.yaml",
 	"wasm/",

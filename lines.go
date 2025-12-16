@@ -47,8 +47,8 @@ func FromInvoiceLine(line *stripe.InvoiceLineItem, regimeDef *tax.RegimeDef) *bi
 
 	if line.Period != nil {
 		invLine.Period = &cal.Period{
-			Start: *newDateFromTS(line.Period.Start),
-			End:   *newDateFromTS(line.Period.End),
+			Start: *newDateFromTS(line.Period.Start, regimeDef.TimeZone),
+			End:   *newDateFromTS(line.Period.End, regimeDef.TimeZone),
 		}
 	}
 
@@ -186,7 +186,7 @@ func FromInvoiceTaxAmountToTaxCombo(taxAmount *stripe.InvoiceTotalTaxAmount, reg
 		return tc
 	}
 
-	taxDate := newDateFromTS(taxAmount.TaxRate.Created)
+	taxDate := newDateFromTS(taxAmount.TaxRate.Created, regimeDef.TimeZone)
 	if taxAmount.TaxRate.Country == "" {
 		tc.Country = regimeDef.Country
 	} else {
@@ -344,7 +344,7 @@ func FromCreditNoteTaxAmountToTaxCombo(taxAmount *stripe.CreditNoteTaxAmount, re
 		return tc
 	}
 
-	taxDate := newDateFromTS(taxAmount.TaxRate.Created)
+	taxDate := newDateFromTS(taxAmount.TaxRate.Created, regimeDef.TimeZone)
 	if taxAmount.TaxRate.Country == "" {
 		tc.Country = regimeDef.Country
 	} else {

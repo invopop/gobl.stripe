@@ -5,6 +5,7 @@ import (
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/num"
 	"github.com/invopop/gobl/pay"
+	"github.com/invopop/gobl/tax"
 	"github.com/stripe/stripe-go/v81"
 )
 
@@ -50,10 +51,10 @@ var paymentMethodDefinitions = []paymentMethodDef{
 }
 
 // newPayment creates a GOBL payment object from a Stripe invoice.
-func newPayment(doc *stripe.Invoice) *bill.PaymentDetails {
+func newPayment(doc *stripe.Invoice, regimeDef *tax.RegimeDef) *bill.PaymentDetails {
 	var p *bill.PaymentDetails
 
-	if terms := newPaymentTerms(doc); terms != nil {
+	if terms := newPaymentTerms(doc, regimeDef); terms != nil {
 		p = &bill.PaymentDetails{
 			Terms: terms,
 		}
@@ -66,7 +67,7 @@ func newPayment(doc *stripe.Invoice) *bill.PaymentDetails {
 		p.Instructions = instructions
 	}
 
-	if advances := newPaymentAdvances(doc); advances != nil {
+	if advances := newPaymentAdvances(doc, regimeDef); advances != nil {
 		if p == nil {
 			p = new(bill.PaymentDetails)
 		}
@@ -77,7 +78,7 @@ func newPayment(doc *stripe.Invoice) *bill.PaymentDetails {
 }
 
 // newPaymentTerms creates a payment terms object from a Stripe invoice.
-func newPaymentTerms(doc *stripe.Invoice) *pay.Terms {
+func newPaymentTerms(doc *stripe.Invoice, regimeDef *tax.RegimeDef) *pay.Terms {
 	if doc.Paid || doc.DueDate == 0 {
 		return nil
 	}
@@ -85,7 +86,7 @@ func newPaymentTerms(doc *stripe.Invoice) *pay.Terms {
 	return &pay.Terms{
 		DueDates: []*pay.DueDate{
 			{
-				Date:    newDateFromTS(doc.DueDate),
+				Date:    newDateFromTS(doc.DueDate, regimeDef.TimeZone),
 				Percent: num.NewPercentage(1, 0),
 			},
 		},
@@ -173,7 +174,7 @@ func newPaymentInstructions(doc *stripe.Invoice) *pay.Instructions {
 }
 
 // newPaymentAdvances creates a payment advances object from a Stripe invoice.
-func newPaymentAdvances(doc *stripe.Invoice) []*pay.Advance {
+func newPaymentAdvances(doc *stripe.Invoice, regimeDef *tax.RegimeDef) []*pay.Advance {
 	if doc.AmountPaid == 0 {
 		return nil
 	}
@@ -185,7 +186,7 @@ func newPaymentAdvances(doc *stripe.Invoice) []*pay.Advance {
 	}
 
 	if doc.Charge != nil {
-		advance.Date = newDateFromTS(doc.Charge.Created)
+		advance.Date = newDateFromTS(doc.Charge.Created, regimeDef.TimeZone)
 		if doc.Charge.Description != "" {
 			advance.Description = doc.Charge.Description
 		}

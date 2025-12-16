@@ -726,8 +726,9 @@ func TestOrderingPeriod(t *testing.T) {
 	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 	require.NoError(t, err)
 
+	// Dates are now converted using the regime's timezone (Europe/Berlin for DE)
 	assert.Equal(t, "2024-01-01", gi.Ordering.Period.Start.String())
-	assert.Equal(t, "2024-01-31", gi.Ordering.Period.End.String())
+	assert.Equal(t, "2024-02-01", gi.Ordering.Period.End.String())
 }
 
 func TestNewOrdering(t *testing.T) {
@@ -739,10 +740,12 @@ func TestNewOrdering(t *testing.T) {
 		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 
+		// Dates come from line periods, converted using regime's timezone (Europe/Berlin for DE)
+		// 1706745599 (2024-01-31 23:59:59 UTC) = 2024-02-01 00:59:59 in Berlin
 		require.NotNil(t, gi.Ordering)
 		require.NotNil(t, gi.Ordering.Period)
 		assert.Equal(t, "2024-01-01", gi.Ordering.Period.Start.String())
-		assert.Equal(t, "2024-01-31", gi.Ordering.Period.End.String())
+		assert.Equal(t, "2024-02-01", gi.Ordering.Period.End.String())
 		assert.Empty(t, gi.Ordering.Code)
 	})
 
@@ -760,10 +763,11 @@ func TestNewOrdering(t *testing.T) {
 		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 
+		// Dates come from line periods, converted using regime's timezone (Europe/Berlin for DE)
 		require.NotNil(t, gi.Ordering)
 		require.NotNil(t, gi.Ordering.Period)
 		assert.Equal(t, "2024-01-01", gi.Ordering.Period.Start.String())
-		assert.Equal(t, "2024-01-31", gi.Ordering.Period.End.String())
+		assert.Equal(t, "2024-02-01", gi.Ordering.Period.End.String())
 		assert.Equal(t, cbc.Code("PO-12345"), gi.Ordering.Code)
 	})
 
@@ -814,10 +818,11 @@ func TestNewOrdering(t *testing.T) {
 		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 
+		// Dates come from line periods, converted using regime's timezone (Europe/Berlin for DE)
 		require.NotNil(t, gi.Ordering)
 		require.NotNil(t, gi.Ordering.Period)
 		assert.Equal(t, "2024-01-01", gi.Ordering.Period.Start.String())
-		assert.Equal(t, "2024-01-31", gi.Ordering.Period.End.String())
+		assert.Equal(t, "2024-02-01", gi.Ordering.Period.End.String())
 		assert.Empty(t, gi.Ordering.Code)
 	})
 
@@ -830,10 +835,11 @@ func TestNewOrdering(t *testing.T) {
 		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 
+		// Dates come from line periods, converted using regime's timezone (Europe/Berlin for DE)
 		require.NotNil(t, gi.Ordering)
 		require.NotNil(t, gi.Ordering.Period)
 		assert.Equal(t, "2024-01-01", gi.Ordering.Period.Start.String())
-		assert.Equal(t, "2024-01-31", gi.Ordering.Period.End.String())
+		assert.Equal(t, "2024-02-01", gi.Ordering.Period.End.String())
 		assert.Empty(t, gi.Ordering.Code)
 	})
 }
