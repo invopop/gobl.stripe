@@ -166,8 +166,9 @@ func FromCreditNote(doc *stripe.CreditNote, account *stripe.Account) (*bill.Invo
 
 // newDateFromTS creates a cal date object from a Unix timestamp.
 // If a location is provided, the date will be converted to that timezone.
-// This is important because Stripe stores timestamps as midnight in the account's
-// local timezone, but we need to convert back to the correct local date.
+// Note: For certain date-only fields (such as `effective_at`), Stripe stores timestamps as midnight
+// in the account's local timezone. For other timestamp fields, Stripe may use UTC or represent actual event times.
+// Always consult Stripe's documentation for the semantics of each timestamp field to ensure correct timezone handling.
 func newDateFromTS(ts int64, loc *time.Location) *cal.Date {
 	t := time.Unix(ts, 0)
 	if loc != nil {
