@@ -86,7 +86,7 @@ func newPaymentTerms(doc *stripe.Invoice, regimeDef *tax.RegimeDef) *pay.Terms {
 	return &pay.Terms{
 		DueDates: []*pay.DueDate{
 			{
-				Date:    newDateFromTS(doc.DueDate, regimeDef.TimeZone),
+				Date:    newDateFromTS(doc.DueDate, regimeDef.TimeLocation()),
 				Percent: num.NewPercentage(1, 0),
 			},
 		},
@@ -186,7 +186,7 @@ func newPaymentAdvances(doc *stripe.Invoice, regimeDef *tax.RegimeDef) []*pay.Ad
 	}
 
 	if doc.Charge != nil {
-		advance.Date = newDateFromTS(doc.Charge.Created, regimeDef.TimeZone)
+		advance.Date = newDateFromTS(doc.Charge.Created, regimeDef.TimeLocation())
 		if doc.Charge.Description != "" {
 			advance.Description = doc.Charge.Description
 		}

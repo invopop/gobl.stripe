@@ -71,7 +71,7 @@ func FromInvoice(doc *stripe.Invoice, account *stripe.Account) (*bill.Invoice, e
 	}
 
 	if doc.EffectiveAt != 0 {
-		inv.OperationDate = newDateFromTS(doc.EffectiveAt, regimeDef.TimeZone) // Date when the operation defined by the invoice became effective
+		inv.OperationDate = newDateFromTS(doc.EffectiveAt, regimeDef.TimeLocation()) // Date when the operation defined by the invoice became effective
 	}
 
 	inv.Currency = FromCurrency(doc.Currency)
@@ -133,7 +133,7 @@ func FromCreditNote(doc *stripe.CreditNote, account *stripe.Account) (*bill.Invo
 	}
 
 	if doc.EffectiveAt != 0 {
-		inv.OperationDate = newDateFromTS(doc.EffectiveAt, regimeDef.TimeZone) // Date when the operation defined by the credit note became effective
+		inv.OperationDate = newDateFromTS(doc.EffectiveAt, regimeDef.TimeLocation()) // Date when the operation defined by the credit note became effective
 	}
 
 	inv.Currency = FromCurrency(doc.Currency)
@@ -165,15 +165,13 @@ func FromCreditNote(doc *stripe.CreditNote, account *stripe.Account) (*bill.Invo
 }
 
 // newDateFromTS creates a cal date object from a Unix timestamp.
-// If a timezone is provided, the date will be converted to that timezone.
+// If a location is provided, the date will be converted to that timezone.
 // This is important because Stripe stores timestamps as midnight in the account's
 // local timezone, but we need to convert back to the correct local date.
-func newDateFromTS(ts int64, tz string) *cal.Date {
+func newDateFromTS(ts int64, loc *time.Location) *cal.Date {
 	t := time.Unix(ts, 0)
-	if tz != "" {
-		if loc, err := time.LoadLocation(tz); err == nil {
-			t = t.In(loc)
-		}
+	if loc != nil {
+		t = t.In(loc)
 	}
 	d := cal.DateOf(t)
 	return &d
@@ -208,7 +206,7 @@ func newPrecedingFromInvoice(doc *stripe.Invoice, reason string, regimeDef *tax.
 		docRef.Code = cbc.Code(doc.ID)
 	}
 
-	docRef.IssueDate = newDateFromTS(doc.Created, regimeDef.TimeZone)
+	docRef.IssueDate = newDateFromTS(doc.Created, regimeDef.TimeLocation())
 	docRef.Type = bill.InvoiceTypeStandard
 	docRef.Reason = reason
 
@@ -294,8 +292,8 @@ func newOrdering(doc *stripe.Invoice, lines []*bill.Line, regimeDef *tax.RegimeD
 	} else {
 		// Otherwise, fall back to document period
 		ordering.Period = &cal.Period{
-			Start: *newDateFromTS(doc.PeriodStart, regimeDef.TimeZone),
-			End:   *newDateFromTS(doc.PeriodEnd, regimeDef.TimeZone),
+			Start: *newDateFromTS(doc.PeriodStart, regimeDef.TimeLocation()),
+			End:   *newDateFromTS(doc.PeriodEnd, regimeDef.TimeLocation()),
 		}
 	}
 
