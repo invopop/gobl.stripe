@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "234481ce877980d3512505c811e8aec731956c542e5aa95fd0ad293da18013ac"
+			"val": "555583844afc73e8298f276b2165d119f7f85fec85e4272fbfd83ffb8c715c57"
 		}
 	},
 	"doc": {
@@ -14,7 +14,7 @@
 		"type": "standard",
 		"series": "JV64HIWA",
 		"code": "0009",
-		"issue_date": "2025-12-15",
+		"issue_date": "2025-12-16",
 		"op_date": "2025-06-10",
 		"currency": "EUR",
 		"exchange_rates": [
