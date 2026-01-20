@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "1c190b2b6aaa037b145616d96c7eda1494145853be9305e13805a7a6a159782e"
+			"val": "b5dc2755f77822c69f95fb576ca1a84a74cfea2158fae40aee9ed1b22d8995a6"
 		}
 	},
 	"doc": {
@@ -17,7 +17,7 @@
 		"type": "standard",
 		"series": "E486556A",
 		"code": "0039",
-		"issue_date": "2025-12-16",
+		"issue_date": "2025-12-27",
 		"op_date": "2025-06-20",
 		"currency": "EUR",
 		"supplier": {

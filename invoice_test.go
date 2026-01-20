@@ -902,7 +902,7 @@ func TestAdjustRounding(t *testing.T) {
 
 	t.Run("rounding adjustment needed with multiple lines", func(t *testing.T) {
 		s := minimalStripeInvoice()
-		// Add 3 lines to increase tolerance (3 * 0.005 = 0.015, allowing 1 cent difference)
+		// Add 3 lines to increase tolerance (3 * 0.0075 = 0.0225, allowing up to 2 cent difference)
 		s.Lines = &stripe.InvoiceLineItemList{
 			Data: []*stripe.InvoiceLineItem{
 				{
@@ -1020,7 +1020,7 @@ func TestAdjustRounding(t *testing.T) {
 
 	t.Run("rounding error too high for single line", func(t *testing.T) {
 		s := minimalStripeInvoice()
-		s.Total = 1999 // 1 cent difference, but only 1 line (tolerance is 0.005)
+		s.Total = 1999 // 1 cent difference, but only 1 line (tolerance is 0.0075)
 
 		_, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.Error(t, err)
@@ -1058,7 +1058,7 @@ func TestAdjustRoundingCreditNote(t *testing.T) {
 
 	t.Run("rounding error too high - single line", func(t *testing.T) {
 		s := validCreditNote()
-		// 1 cent difference exceeds tolerance for single line (0.005)
+		// 1 cent difference exceeds tolerance for single line (0.0075)
 		s.Total = 12455
 
 		_, err := goblstripe.FromCreditNote(s, validStripeAccount())
@@ -1138,7 +1138,7 @@ func TestAdjustRoundingCreditNote(t *testing.T) {
 			},
 		}
 		// Total = 5000 + 3000 + 2294 + 1050 + 630 + 482 = 12456
-		// With 3 lines, tolerance is 0.015, so 1 cent is within range
+		// With 3 lines, tolerance is 0.0225, so 1 cent is within range
 		s.Total = 12455
 
 		gi, err := goblstripe.FromCreditNote(s, validStripeAccount())
@@ -1157,9 +1157,9 @@ func TestMaxRoundingError(t *testing.T) {
 				{Quantity: num.MakeAmount(1, 0)},
 			},
 		}
-		// Max error should be 0.005 (0.5 cents) for 1 line
+		// Max error should be 0.0075 (0.75 cents) for 1 line
 		maxErr := goblstripe.MaxRoundingError(gi)
-		assert.Equal(t, num.MakeAmount(5, 3), maxErr)
+		assert.Equal(t, num.MakeAmount(75, 4), maxErr)
 	})
 
 	t.Run("multiple lines invoice", func(t *testing.T) {
@@ -1173,9 +1173,9 @@ func TestMaxRoundingError(t *testing.T) {
 				{Quantity: num.MakeAmount(1, 0)},
 			},
 		}
-		// Max error should be 0.025 (0.5 cents * 5 lines)
+		// Max error should be 0.0375 (0.75 cents * 5 lines)
 		maxErr := goblstripe.MaxRoundingError(gi)
-		assert.Equal(t, num.MakeAmount(25, 3), maxErr)
+		assert.Equal(t, num.MakeAmount(375, 4), maxErr)
 	})
 }
 
