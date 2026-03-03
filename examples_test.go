@@ -12,6 +12,7 @@ import (
 	"github.com/invopop/gobl"
 	goblstripe "github.com/invopop/gobl.stripe"
 	"github.com/invopop/gobl/bill"
+	"github.com/invopop/gobl/cal"
 	"github.com/invopop/gobl/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -101,8 +102,9 @@ func processFile(t *testing.T, path string) error {
 		return fmt.Errorf("unsupported Stripe object type: %s", objType)
 	}
 
-	// override the document UUID for consistent test results
+	// override the document UUID and issue date for consistent test results
 	goblInvoice.UUID = uuid.MustParse("019860fc-7d4c-7922-a371-e848ca5141d3")
+	goblInvoice.IssueDate = cal.MakeDate(2026, 1, 1)
 
 	env, err := gobl.Envelop(goblInvoice)
 	if err != nil {

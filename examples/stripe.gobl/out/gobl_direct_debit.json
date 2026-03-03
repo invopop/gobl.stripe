@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "ad2d2b47cff32c74ece6e614a8fa99aefc84c3b9dbaa2a22083041e4b7fbdcbf"
+			"val": "3d922c371911b9d45ea579ce7bd789e77cd6ba028f1300c81f719bc2b5e5548f"
 		}
 	},
 	"doc": {
@@ -14,7 +14,7 @@
 		"type": "standard",
 		"series": "STRIPE",
 		"code": "000000000",
-		"issue_date": "2025-12-27",
+		"issue_date": "2026-01-01",
 		"op_date": "2025-12-14",
 		"currency": "EUR",
 		"supplier": {
