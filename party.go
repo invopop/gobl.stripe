@@ -211,8 +211,13 @@ func ToCustomerParams(party *org.Party) *stripe.CustomerParams {
 		return nil
 	}
 	cus := &stripe.CustomerParams{
-		Name:     stripe.String(party.Name),
-		Metadata: make(map[string]string),
+		Name: stripe.String(party.Name),
+	}
+	if len(party.Meta) > 0 {
+		cus.Metadata = make(map[string]string)
+		for key, value := range party.Meta {
+			cus.Metadata[string(key)] = value
+		}
 	}
 	if len(party.Emails) > 0 {
 		cus.Email = stripe.String(party.Emails[0].Address)
@@ -285,6 +290,12 @@ func FromCustomer(customer *stripe.Customer) *org.Party {
 	}
 
 	if len(customer.Metadata) != 0 {
+		if customerParty == nil {
+			customerParty = new(org.Party)
+		}
+		customerParty.Meta = newMeta(customer.Metadata)
+		// Deprecated: the extension approach with the "gobl-customer-" prefix will be removed
+		// in a future version. Use Meta instead and handle mappings on the client side.
 		customerParty.Ext = newExtensionsWithPrefix(customer.Metadata, customDataCustomerExt)
 	}
 
