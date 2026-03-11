@@ -612,7 +612,7 @@
   "lines": {
     "has_more": false,
     "url": "/v1/credit_notes/cn_1ExAmPlEAbCdEfGhIjKlMn01/lines",
-    "total_count": 0,
+    "total_count": 1,
     "data": [
       {
         "amount": 99,
