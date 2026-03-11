@@ -10,8 +10,8 @@ import (
 )
 
 // taxFromInvoiceTaxAmounts creates a tax object from the tax amounts in an invoice.
-// When the root-level tax rate data is sparse (empty TaxType and DisplayName),
-// it falls back to line-level tax amounts to determine the tax category.
+// When a tax category can't be determined from the root-level tax rate,
+// it falls back to line-level tax amounts to find a valid category.
 func taxFromInvoiceTaxAmounts(taxAmounts []*stripe.InvoiceTotalTaxAmount, lines []*stripe.InvoiceLineItem) *bill.Tax {
 	if len(taxAmounts) == 0 {
 		return nil
@@ -34,8 +34,8 @@ func taxFromInvoiceTaxAmounts(taxAmounts []*stripe.InvoiceTotalTaxAmount, lines 
 }
 
 // taxFromCreditNoteTaxAmounts creates a tax object from the tax amounts in a credit note.
-// When the root-level tax rate data is sparse (empty TaxType and DisplayName),
-// it falls back to line-level tax amounts to determine the tax category.
+// When a tax category can't be determined from the root-level tax rate,
+// it falls back to line-level tax amounts to find a valid category.
 func taxFromCreditNoteTaxAmounts(taxAmounts []*stripe.CreditNoteTaxAmount, lines []*stripe.CreditNoteLineItem) *bill.Tax {
 	if len(taxAmounts) == 0 {
 		return nil

@@ -53,7 +53,7 @@ func TestTaxFromInvoiceTaxAmounts(t *testing.T) {
 		assert.Nil(t, gi.Tax)
 	})
 
-	t.Run("tax without type and display name returns nil", func(t *testing.T) {
+	t.Run("exclusive tax without type and display name returns nil", func(t *testing.T) {
 		s := minimalStripeInvoice()
 		s.TotalTaxAmounts = []*stripe.InvoiceTotalTaxAmount{
 			{
@@ -67,8 +67,6 @@ func TestTaxFromInvoiceTaxAmounts(t *testing.T) {
 				},
 			},
 		}
-		// Ensure lines also lack tax info so fallback doesn't help
-		s.Lines.Data[0].TaxAmounts = []*stripe.InvoiceTotalTaxAmount{}
 
 		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
