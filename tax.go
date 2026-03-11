@@ -10,47 +10,75 @@ import (
 )
 
 // taxFromInvoiceTaxAmounts creates a tax object from the tax amounts in an invoice.
-func taxFromInvoiceTaxAmounts(taxAmounts []*stripe.InvoiceTotalTaxAmount) *bill.Tax {
-	var t *bill.Tax
-
+// When the root-level tax rate data is sparse (empty TaxType and DisplayName),
+// it falls back to line-level tax amounts to determine the tax category.
+func taxFromInvoiceTaxAmounts(taxAmounts []*stripe.InvoiceTotalTaxAmount, lines []*stripe.InvoiceLineItem) *bill.Tax {
 	if len(taxAmounts) == 0 {
 		return nil
 	}
 
-	if taxAmounts[0].TaxRate.TaxType == "" && taxAmounts[0].TaxRate.DisplayName == "" {
+	// We just check the first tax
+	if !taxAmounts[0].Inclusive {
 		return nil
 	}
 
-	// We just check the first tax
-	if taxAmounts[0].Inclusive {
-		t = new(bill.Tax)
-		t.PricesInclude = extractTaxCat(taxAmounts[0].TaxRate)
-		return t
+	cat := extractTaxCat(taxAmounts[0].TaxRate)
+	if cat == "" {
+		cat = taxCatFromInvoiceLines(lines)
+	}
+	if cat == "" {
+		return nil
 	}
 
-	return nil
+	return &bill.Tax{PricesInclude: cat}
 }
 
 // taxFromCreditNoteTaxAmounts creates a tax object from the tax amounts in a credit note.
-func taxFromCreditNoteTaxAmounts(taxAmounts []*stripe.CreditNoteTaxAmount) *bill.Tax {
-	var t *bill.Tax
-
+// When the root-level tax rate data is sparse (empty TaxType and DisplayName),
+// it falls back to line-level tax amounts to determine the tax category.
+func taxFromCreditNoteTaxAmounts(taxAmounts []*stripe.CreditNoteTaxAmount, lines []*stripe.CreditNoteLineItem) *bill.Tax {
 	if len(taxAmounts) == 0 {
 		return nil
 	}
 
-	if taxAmounts[0].TaxRate.TaxType == "" && taxAmounts[0].TaxRate.DisplayName == "" {
+	// We just check the first tax
+	if !taxAmounts[0].Inclusive {
 		return nil
 	}
 
-	// We just check the first tax
-	if taxAmounts[0].Inclusive {
-		t = new(bill.Tax)
-		t.PricesInclude = extractTaxCat(taxAmounts[0].TaxRate)
-		return t
+	cat := extractTaxCat(taxAmounts[0].TaxRate)
+	if cat == "" {
+		cat = taxCatFromCreditNoteLines(lines)
+	}
+	if cat == "" {
+		return nil
 	}
 
-	return nil
+	return &bill.Tax{PricesInclude: cat}
+}
+
+// taxCatFromInvoiceLines iterates over invoice line items to find a valid tax category.
+func taxCatFromInvoiceLines(lines []*stripe.InvoiceLineItem) cbc.Code {
+	for _, line := range lines {
+		for _, ta := range line.TaxAmounts {
+			if cat := extractTaxCat(ta.TaxRate); cat != "" {
+				return cat
+			}
+		}
+	}
+	return ""
+}
+
+// taxCatFromCreditNoteLines iterates over credit note line items to find a valid tax category.
+func taxCatFromCreditNoteLines(lines []*stripe.CreditNoteLineItem) cbc.Code {
+	for _, line := range lines {
+		for _, ta := range line.TaxAmounts {
+			if cat := extractTaxCat(ta.TaxRate); cat != "" {
+				return cat
+			}
+		}
+	}
+	return ""
 }
 
 // extractTaxCat extracts the tax category from a Stripe tax rate.
