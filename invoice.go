@@ -93,7 +93,7 @@ func FromInvoice(doc *stripe.Invoice, account *stripe.Account) (*bill.Invoice, e
 	inv.Tags = newTags(isInvoiceReverseCharge(doc), inv.Customer)
 
 	inv.Lines = FromInvoiceLines(doc.Lines.Data, regimeDef)
-	inv.Tax = taxFromInvoiceTaxAmounts(doc.TotalTaxAmounts)
+	inv.Tax = taxFromInvoiceTaxAmounts(doc.TotalTaxAmounts, doc.Lines.Data)
 	inv.Ordering = newOrdering(doc, inv.Lines, regimeDef)
 	inv.Delivery = newDelivery(doc)
 	inv.Payment = newPayment(doc, regimeDef)
@@ -153,7 +153,7 @@ func FromCreditNote(doc *stripe.CreditNote, account *stripe.Account) (*bill.Invo
 	inv.Tags = newTags(isCreditNoteReverseCharge(doc), inv.Customer)
 
 	inv.Lines = FromCreditNoteLines(doc.Lines.Data, inv.Currency, regimeDef)
-	inv.Tax = taxFromCreditNoteTaxAmounts(doc.TaxAmounts)
+	inv.Tax = taxFromCreditNoteTaxAmounts(doc.TaxAmounts, doc.Lines.Data)
 	inv.Preceding = []*org.DocumentRef{newPrecedingFromInvoice(doc.Invoice, string(doc.Reason), regimeDef)}
 	inv.Notes = newCreditNoteNotes(doc.Memo)
 

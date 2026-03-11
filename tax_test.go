@@ -53,7 +53,7 @@ func TestTaxFromInvoiceTaxAmounts(t *testing.T) {
 		assert.Nil(t, gi.Tax)
 	})
 
-	t.Run("tax without type and display name returns nil", func(t *testing.T) {
+	t.Run("exclusive tax without type and display name returns nil", func(t *testing.T) {
 		s := minimalStripeInvoice()
 		s.TotalTaxAmounts = []*stripe.InvoiceTotalTaxAmount{
 			{
@@ -150,6 +150,65 @@ func TestTaxFromInvoiceTaxAmounts(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, gi.Tax)
 		assert.Equal(t, tax.CategoryGST, gi.Tax.PricesInclude)
+	})
+
+	t.Run("inclusive tax with sparse root data falls back to line tax amounts", func(t *testing.T) {
+		s := minimalStripeInvoice()
+		s.TotalTaxAmounts = []*stripe.InvoiceTotalTaxAmount{
+			{
+				Amount:    100,
+				Inclusive: true,
+				TaxRate: &stripe.TaxRate{
+					TaxType:     "",
+					DisplayName: "",
+				},
+			},
+		}
+		s.Lines.Data[0].TaxAmounts = []*stripe.InvoiceTotalTaxAmount{
+			{
+				Amount:    100,
+				Inclusive: true,
+				TaxRate: &stripe.TaxRate{
+					TaxType:     stripe.TaxRateTaxTypeVAT,
+					DisplayName: "VAT",
+					Country:     "DE",
+					Percentage:  19.0,
+				},
+			},
+		}
+
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
+		require.NoError(t, err)
+		require.NotNil(t, gi.Tax)
+		assert.Equal(t, tax.CategoryVAT, gi.Tax.PricesInclude)
+	})
+
+	t.Run("inclusive tax with sparse root and line data returns nil", func(t *testing.T) {
+		s := minimalStripeInvoice()
+		s.TotalTaxAmounts = []*stripe.InvoiceTotalTaxAmount{
+			{
+				Amount:    100,
+				Inclusive: true,
+				TaxRate: &stripe.TaxRate{
+					TaxType:     "",
+					DisplayName: "",
+				},
+			},
+		}
+		s.Lines.Data[0].TaxAmounts = []*stripe.InvoiceTotalTaxAmount{
+			{
+				Amount:    100,
+				Inclusive: true,
+				TaxRate: &stripe.TaxRate{
+					TaxType:     "",
+					DisplayName: "",
+				},
+			},
+		}
+
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
+		require.NoError(t, err)
+		assert.Nil(t, gi.Tax)
 	})
 }
 
@@ -257,6 +316,74 @@ func TestTaxFromCreditNoteTaxAmounts(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, gi.Tax)
 		assert.Equal(t, tax.CategoryGST, gi.Tax.PricesInclude)
+	})
+
+	t.Run("inclusive tax with sparse root data falls back to line tax amounts", func(t *testing.T) {
+		s := validCreditNote()
+		s.TaxAmounts = []*stripe.CreditNoteTaxAmount{
+			{
+				Amount:    100,
+				Inclusive: true,
+				TaxRate: &stripe.TaxRate{
+					TaxType:     "",
+					DisplayName: "",
+				},
+			},
+		}
+		// Set line-level tax amounts with full tax rate info
+		s.Lines.Data[0].TaxAmounts = []*stripe.CreditNoteTaxAmount{
+			{
+				Amount:    2162,
+				Inclusive: true,
+				TaxRate: &stripe.TaxRate{
+					TaxType:     stripe.TaxRateTaxTypeVAT,
+					DisplayName: "VAT",
+					Country:     "ES",
+					Percentage:  21.0,
+				},
+				TaxableAmount: 10294,
+			},
+		}
+		// When tax is inclusive, Total = line amount since tax is already in the price
+		s.Total = 10294
+
+		gi, err := goblstripe.FromCreditNote(s, validStripeAccount())
+		require.NoError(t, err)
+		require.NotNil(t, gi.Tax)
+		assert.Equal(t, tax.CategoryVAT, gi.Tax.PricesInclude)
+	})
+
+	t.Run("inclusive tax with sparse root and line data returns nil", func(t *testing.T) {
+		s := validCreditNote()
+		s.TaxAmounts = []*stripe.CreditNoteTaxAmount{
+			{
+				Amount:    100,
+				Inclusive: true,
+				TaxRate: &stripe.TaxRate{
+					TaxType:     "",
+					DisplayName: "",
+				},
+			},
+		}
+		// Ensure lines also have sparse tax info
+		for _, line := range s.Lines.Data {
+			line.TaxAmounts = []*stripe.CreditNoteTaxAmount{
+				{
+					Amount:    100,
+					Inclusive: true,
+					TaxRate: &stripe.TaxRate{
+						TaxType:     "",
+						DisplayName: "",
+					},
+				},
+			}
+		}
+		// Sparse line tax data produces no tax combos, so total = line amounts only
+		s.Total = 10294
+
+		gi, err := goblstripe.FromCreditNote(s, validStripeAccount())
+		require.NoError(t, err)
+		assert.Nil(t, gi.Tax)
 	})
 }
 

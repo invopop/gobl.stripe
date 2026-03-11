@@ -1,0 +1,135 @@
+{
+	"$schema": "https://gobl.org/draft-0/envelope",
+	"head": {
+		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
+		"dig": {
+			"alg": "sha256",
+			"val": "3d434ef7b139d677a3212930e5e63b31a22286f2fa9d8ae34106b96d0c0a2509"
+		}
+	},
+	"doc": {
+		"$schema": "https://gobl.org/draft-0/bill/invoice",
+		"$regime": "DE",
+		"$tags": [
+			"simplified"
+		],
+		"uuid": "019860fc-7d4c-7922-a371-e848ca5141d3",
+		"type": "credit-note",
+		"code": "ABCD1234-0001-CN-01",
+		"issue_date": "2026-01-01",
+		"op_date": "2026-03-11",
+		"currency": "USD",
+		"exchange_rates": [
+			{
+				"from": "USD",
+				"to": "EUR",
+				"amount": "0.935"
+			}
+		],
+		"preceding": [
+			{
+				"type": "standard",
+				"issue_date": "2026-03-11",
+				"series": "ABCD1234",
+				"code": "0001"
+			}
+		],
+		"tax": {
+			"prices_include": "VAT"
+		},
+		"supplier": {
+			"name": "Test Account",
+			"tax_id": {
+				"country": "DE",
+				"code": "813495425"
+			},
+			"addresses": [
+				{
+					"street": "Test Street 123",
+					"locality": "Munich",
+					"state": "BY",
+					"code": "80331",
+					"country": "DE"
+				}
+			],
+			"emails": [
+				{
+					"addr": "support@testaccount.com"
+				}
+			],
+			"telephones": [
+				{
+					"num": "+4989123456"
+				}
+			]
+		},
+		"customer": {
+			"addresses": [
+				{
+					"street": "Calle Mayor 1",
+					"locality": "Madrid",
+					"state": "M",
+					"code": "28001",
+					"country": "ES"
+				}
+			],
+			"emails": [
+				{
+					"addr": "customer@example.com"
+				}
+			]
+		},
+		"lines": [
+			{
+				"i": 1,
+				"quantity": "1",
+				"item": {
+					"name": "1 × example.product.weekly.099 (at $0.99 / week)",
+					"currency": "USD",
+					"price": "0.99"
+				},
+				"sum": "0.99",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"country": "ES",
+						"key": "standard",
+						"rate": "general",
+						"percent": "21.0%"
+					}
+				],
+				"total": "0.99"
+			}
+		],
+		"totals": {
+			"sum": "0.99",
+			"tax_included": "0.17",
+			"total": "0.82",
+			"taxes": {
+				"categories": [
+					{
+						"code": "VAT",
+						"rates": [
+							{
+								"country": "ES",
+								"key": "standard",
+								"base": "0.82",
+								"percent": "21.0%",
+								"amount": "0.17"
+							}
+						],
+						"amount": "0.17"
+					}
+				],
+				"sum": "0.17"
+			},
+			"tax": "0.17",
+			"total_with_tax": "0.99",
+			"payable": "0.99"
+		},
+		"meta": {
+			"stripe-document-id": "cn_1ExAmPlEAbCdEfGhIjKlMn01",
+			"stripe-document-type": "credit_note"
+		}
+	}
+}
