@@ -1269,6 +1269,25 @@ func TestFromCreditNote(t *testing.T) {
 	assert.Nil(t, gi.Tax)
 }
 
+func TestFromCreditNoteWithPrecedingInvoice(t *testing.T) {
+	s := validCreditNote()
+	precedingInv := &bill.Invoice{
+		Series:    "CUSTOM",
+		Code:      "456",
+		IssueDate: cal.MakeDate(2024, 6, 15),
+	}
+
+	gi, err := goblstripe.FromCreditNote(s, validStripeAccount(), goblstripe.WithPrecedingInvoice(precedingInv))
+	require.NoError(t, err)
+
+	require.Len(t, gi.Preceding, 1)
+	assert.Equal(t, "CUSTOM", gi.Preceding[0].Series.String())
+	assert.Equal(t, "456", gi.Preceding[0].Code.String())
+	assert.Equal(t, cal.NewDate(2024, 6, 15), gi.Preceding[0].IssueDate)
+	assert.Equal(t, bill.InvoiceTypeStandard, gi.Preceding[0].Type)
+	assert.Equal(t, "order_change", gi.Preceding[0].Reason)
+}
+
 func TestCreditNoteSimplifiedWhenNoCustomer(t *testing.T) {
 	s := validCreditNote()
 	s.Customer = nil // No customer
