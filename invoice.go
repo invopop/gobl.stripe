@@ -109,8 +109,29 @@ func FromInvoice(doc *stripe.Invoice, account *stripe.Account) (*bill.Invoice, e
 	return inv, nil
 }
 
+// CreditNoteOption is a functional option for FromCreditNote.
+type CreditNoteOption func(*creditNoteOptions)
+
+type creditNoteOptions struct {
+	precedingInvoice *bill.Invoice
+}
+
+// WithPrecedingInvoice provides a GOBL invoice to use for the preceding
+// document reference instead of parsing from the Stripe invoice number.
+func WithPrecedingInvoice(inv *bill.Invoice) CreditNoteOption {
+	return func(o *creditNoteOptions) {
+		o.precedingInvoice = inv
+	}
+}
+
 // FromCreditNote converts a stripe credit note object into a GOBL bill.Invoice.
-func FromCreditNote(doc *stripe.CreditNote, account *stripe.Account) (*bill.Invoice, error) {
+func FromCreditNote(doc *stripe.CreditNote, account *stripe.Account, opts ...CreditNoteOption) (*bill.Invoice, error) {
+	var options creditNoteOptions
+	for _, o := range opts {
+		if o != nil {
+			o(&options)
+		}
+	}
 	inv := new(bill.Invoice)
 	inv.Type = bill.InvoiceTypeCreditNote
 
@@ -154,7 +175,11 @@ func FromCreditNote(doc *stripe.CreditNote, account *stripe.Account) (*bill.Invo
 
 	inv.Lines = FromCreditNoteLines(doc.Lines.Data, inv.Currency, regimeDef)
 	inv.Tax = taxFromCreditNoteTaxAmounts(doc.TaxAmounts, doc.Lines.Data)
-	inv.Preceding = []*org.DocumentRef{newPrecedingFromInvoice(doc.Invoice, string(doc.Reason), regimeDef)}
+	if options.precedingInvoice != nil {
+		inv.Preceding = []*org.DocumentRef{newPrecedingFromGOBLInvoice(options.precedingInvoice, string(doc.Reason))}
+	} else {
+		inv.Preceding = []*org.DocumentRef{newPrecedingFromInvoice(doc.Invoice, string(doc.Reason), regimeDef)}
+	}
 	inv.Notes = newCreditNoteNotes(doc.Memo)
 
 	if err := AdjustRounding(inv, doc.Total, doc.Currency); err != nil {
@@ -211,6 +236,21 @@ func newPrecedingFromInvoice(doc *stripe.Invoice, reason string, regimeDef *tax.
 	docRef.Type = bill.InvoiceTypeStandard
 	docRef.Reason = reason
 
+	return docRef
+}
+
+// newPrecedingFromGOBLInvoice creates a document reference from a GOBL invoice.
+func newPrecedingFromGOBLInvoice(inv *bill.Invoice, reason string) *org.DocumentRef {
+	docRef := &org.DocumentRef{
+		Series: inv.Series,
+		Code:   inv.Code,
+		Type:   bill.InvoiceTypeStandard,
+		Reason: reason,
+	}
+	if !inv.IssueDate.IsZero() {
+		issueDate := inv.IssueDate
+		docRef.IssueDate = &issueDate
+	}
 	return docRef
 }
 
