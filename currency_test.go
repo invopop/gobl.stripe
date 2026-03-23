@@ -47,7 +47,59 @@ func TestZeroDecimalCurrencies(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, currency.JPY, gi.Currency)
-	assert.Equal(t, num.NewAmount(-11000, 0), gi.Lines[0].Item.Price)
+	assert.Equal(t, num.NewAmount(11000, 0), gi.Lines[0].Item.Price)
+}
+
+func TestDefaultRate(t *testing.T) {
+	tests := []struct {
+		name     string
+		from     currency.Code
+		to       currency.Code
+		expected num.Amount
+	}{
+		{
+			name:     "USD to EUR",
+			from:     currency.USD,
+			to:       currency.EUR,
+			expected: num.MakeAmount(935, 3),
+		},
+		{
+			name:     "USD to PLN",
+			from:     currency.USD,
+			to:       currency.PLN,
+			expected: num.MakeAmount(4015, 3),
+		},
+		{
+			name:     "EUR to PLN",
+			from:     currency.EUR,
+			to:       currency.PLN,
+			expected: num.MakeAmount(4294, 3),
+		},
+		{
+			name:     "unknown from currency returns 0",
+			from:     currency.Code("XXX"),
+			to:       currency.EUR,
+			expected: num.AmountZero,
+		},
+		{
+			name:     "unknown to currency returns 0",
+			from:     currency.USD,
+			to:       currency.Code("XXX"),
+			expected: num.AmountZero,
+		},
+		{
+			name:     "both unknown returns 0",
+			from:     currency.Code("AAA"),
+			to:       currency.Code("BBB"),
+			expected: num.AmountZero,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := goblstripe.DefaultRate(test.from, test.to)
+			assert.Equal(t, test.expected, result)
+		})
+	}
 }
 
 func TestToStripeInt(t *testing.T) {

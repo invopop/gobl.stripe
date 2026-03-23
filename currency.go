@@ -22,6 +22,7 @@ var DefaultRates = map[currency.Code]num.Amount{
 	currency.BRL: num.MakeAmount(5379, 3),
 	currency.MXN: num.MakeAmount(18467, 3),
 	currency.COP: num.MakeAmount(4132934, 3),
+	currency.PLN: num.MakeAmount(4015, 3),
 }
 
 // FromCurrency converts a stripe currency into a GOBL currency code.
