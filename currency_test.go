@@ -76,6 +76,36 @@ func TestDefaultRate(t *testing.T) {
 			expected: num.MakeAmount(4294, 3),
 		},
 		{
+			name:     "USD to AUD",
+			from:     currency.USD,
+			to:       currency.AUD,
+			expected: num.MakeAmount(1577, 3),
+		},
+		{
+			name:     "USD to JPY",
+			from:     currency.USD,
+			to:       currency.JPY,
+			expected: num.MakeAmount(149, 0),
+		},
+		{
+			name:     "USD to CHF",
+			from:     currency.USD,
+			to:       currency.CHF,
+			expected: num.MakeAmount(883, 3),
+		},
+		{
+			name:     "USD to SEK",
+			from:     currency.USD,
+			to:       currency.SEK,
+			expected: num.MakeAmount(10512, 3),
+		},
+		{
+			name:     "USD to ZAR",
+			from:     currency.USD,
+			to:       currency.ZAR,
+			expected: num.MakeAmount(18234, 3),
+		},
+		{
 			name:     "unknown from currency returns 0",
 			from:     currency.Code("XXX"),
 			to:       currency.EUR,
