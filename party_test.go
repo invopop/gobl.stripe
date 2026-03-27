@@ -341,17 +341,38 @@ func TestFromCustomer(t *testing.T) {
 			},
 		},
 		{
-			name: "with extensions",
+			name: "with metadata",
 			input: &stripe.Customer{
 				Name: "Test Company",
 				Metadata: map[string]string{
-					"gobl-customer-foo": "bar",
+					"foo": "bar",
 				},
 			},
 			expected: &org.Party{
 				Name: "Test Company",
-				Ext: tax.Extensions{
+				Meta: cbc.Meta{
 					"foo": "bar",
+				},
+				Ext: tax.Extensions{},
+			},
+		},
+		{
+			name: "with metadata and extensions",
+			input: &stripe.Customer{
+				Name: "Test Company",
+				Metadata: map[string]string{
+					"gobl-customer-my-key": "my-value",
+					"other":                "data",
+				},
+			},
+			expected: &org.Party{
+				Name: "Test Company",
+				Meta: cbc.Meta{
+					"gobl-customer-my-key": "my-value",
+					"other":                "data",
+				},
+				Ext: tax.Extensions{
+					"my-key": "my-value",
 				},
 			},
 		},

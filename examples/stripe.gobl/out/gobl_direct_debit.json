@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "3d922c371911b9d45ea579ce7bd789e77cd6ba028f1300c81f719bc2b5e5548f"
+			"val": "c207e79700a89a6525edeaa1a3bf205cb865ef204a9883fd49458a59c8f03eda"
 		}
 	},
 	"doc": {
@@ -61,7 +61,12 @@
 				{
 					"addr": "customer@example.com"
 				}
-			]
+			],
+			"meta": {
+				"internal-id": "000",
+				"reference-code": "000",
+				"reference-guid": "00000000-0000-0000-0000-000000000000"
+			}
 		},
 		"lines": [
 			{

@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "417e033b92ef449f662920744f3be239552e74cf3dbad46faa00da29ca2ec703"
+			"val": "f08a42173b7f1d93edfdb74ff54454ec8b9d36bcd4f49f970203b5786ef71c9a"
 		}
 	},
 	"doc": {
@@ -73,6 +73,10 @@
 			"ext": {
 				"mx-cfdi-fiscal-regime": "626",
 				"mx-cfdi-use": "G03"
+			},
+			"meta": {
+				"gobl-customer-mx-cfdi-fiscal-regime": "626",
+				"gobl-customer-mx-cfdi-use": "G03"
 			}
 		},
 		"lines": [

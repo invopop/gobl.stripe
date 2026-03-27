@@ -352,7 +352,7 @@ func TestCustomerWithMetadata(t *testing.T) {
 	s.Customer = validStripeCustomer()
 	s.Customer.Metadata = map[string]string{
 		"gobl-customer-my-key": "my-value",
-		"another-key":          "another-value",
+		"another_key":          "another-value",
 	}
 
 	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
@@ -373,10 +373,14 @@ func TestCustomerWithMetadata(t *testing.T) {
 	assert.Equal(t, "me.unselfish@me.com", c.Emails[0].Address)
 	assert.Equal(t, "+4915155555555", c.Telephones[0].Number)
 
+	// Meta gets all metadata entries with normalized keys
+	require.NotNil(t, c.Meta)
+	assert.Equal(t, "my-value", c.Meta[cbc.Key("gobl-customer-my-key")])
+	assert.Equal(t, "another-value", c.Meta[cbc.Key("another-key")])
+
+	// Ext still gets entries with gobl-customer- prefix (stripped)
 	require.NotNil(t, c.Ext)
 	assert.Equal(t, cbc.Code("my-value"), c.Ext[cbc.Key("my-key")])
-	_, ok := c.Ext[cbc.Key("another-key")]
-	assert.False(t, ok)
 }
 
 func TestCustomerExpansionCondition(t *testing.T) {
