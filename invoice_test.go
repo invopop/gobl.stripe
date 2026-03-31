@@ -1426,7 +1426,7 @@ func TestNotesInInvoiceConversion(t *testing.T) {
 		assert.Equal(t, cbc.Key("stripe"), gi.Notes[0].Src)
 		assert.Equal(t, "Monthly subscription invoice", gi.Notes[0].Text)
 
-		// Second note: footer without key
+		// Second note: footer with key "general"
 		assert.Equal(t, org.NoteKeyGeneral, gi.Notes[1].Key)
 		assert.Equal(t, cbc.Key("stripe"), gi.Notes[1].Src)
 		assert.Equal(t, "Thank you for your business", gi.Notes[1].Text)
