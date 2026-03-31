@@ -355,7 +355,7 @@ func newInvoiceNotes(description, footer string) []*org.Note {
 	if n := newNote(description, org.NoteKeyGeneral); n != nil {
 		notes = append(notes, n)
 	}
-	if n := newNote(footer, ""); n != nil {
+	if n := newNote(footer, org.NoteKeyGeneral); n != nil {
 		notes = append(notes, n)
 	}
 	return notes

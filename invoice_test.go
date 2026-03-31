@@ -1405,7 +1405,7 @@ func TestNotesInInvoiceConversion(t *testing.T) {
 
 		require.NotNil(t, gi.Notes)
 		require.Len(t, gi.Notes, 1)
-		assert.Empty(t, gi.Notes[0].Key)
+		assert.Equal(t, org.NoteKeyGeneral, gi.Notes[0].Key)
 		assert.Equal(t, cbc.Key("stripe"), gi.Notes[0].Src)
 		assert.Equal(t, "Thank you for your business<br>Please pay within 30 days", gi.Notes[0].Text)
 	})
@@ -1426,8 +1426,8 @@ func TestNotesInInvoiceConversion(t *testing.T) {
 		assert.Equal(t, cbc.Key("stripe"), gi.Notes[0].Src)
 		assert.Equal(t, "Monthly subscription invoice", gi.Notes[0].Text)
 
-		// Second note: footer without key
-		assert.Empty(t, gi.Notes[1].Key)
+		// Second note: footer with key "general"
+		assert.Equal(t, org.NoteKeyGeneral, gi.Notes[1].Key)
 		assert.Equal(t, cbc.Key("stripe"), gi.Notes[1].Src)
 		assert.Equal(t, "Thank you for your business", gi.Notes[1].Text)
 	})
@@ -1452,7 +1452,7 @@ func TestNotesInInvoiceConversion(t *testing.T) {
 
 		require.NotNil(t, gi.Notes)
 		require.Len(t, gi.Notes, 1)
-		assert.Empty(t, gi.Notes[0].Key)
+		assert.Equal(t, org.NoteKeyGeneral, gi.Notes[0].Key)
 		assert.Equal(t, cbc.Key("stripe"), gi.Notes[0].Src)
 		assert.Equal(t, "Terms:<br>1. Payment due in 30 days<br>2. Late fees apply<br><br>Thank you!", gi.Notes[0].Text)
 	})

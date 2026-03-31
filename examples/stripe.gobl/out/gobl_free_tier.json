@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "417e033b92ef449f662920744f3be239552e74cf3dbad46faa00da29ca2ec703"
+			"val": "dc5b55eeaa3813d6f4726d7734ed8ab824913b88e60978812e54ea25f8f96a20"
 		}
 	},
 	"doc": {
@@ -138,6 +138,7 @@
 		},
 		"notes": [
 			{
+				"key": "general",
 				"src": "stripe",
 				"text": "This is a test footer\u003cbr\u003eThis is a test footer"
 			}
