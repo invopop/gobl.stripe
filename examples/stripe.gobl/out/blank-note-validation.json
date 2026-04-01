@@ -1,0 +1,146 @@
+{
+	"$schema": "https://gobl.org/draft-0/envelope",
+	"head": {
+		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
+		"dig": {
+			"alg": "sha256",
+			"val": "3b7abf930a3db1db226ce83f1848c7adce450c10cb279e892d598404599a41b2"
+		}
+	},
+	"doc": {
+		"$schema": "https://gobl.org/draft-0/bill/invoice",
+		"$regime": "DE",
+		"uuid": "019860fc-7d4c-7922-a371-e848ca5141d3",
+		"type": "standard",
+		"series": "SE",
+		"code": "1059",
+		"issue_date": "2026-01-01",
+		"op_date": "2026-03-03",
+		"currency": "EUR",
+		"supplier": {
+			"name": "Test Account",
+			"tax_id": {
+				"country": "DE",
+				"code": "813495425"
+			},
+			"addresses": [
+				{
+					"street": "Test Street 123",
+					"locality": "Munich",
+					"state": "BY",
+					"code": "80331",
+					"country": "DE"
+				}
+			],
+			"emails": [
+				{
+					"addr": "support@testaccount.com"
+				}
+			],
+			"telephones": [
+				{
+					"num": "+4989123456"
+				}
+			]
+		},
+		"customer": {
+			"name": "Sample Customer Corp S.A.",
+			"tax_id": {
+				"country": "ES",
+				"code": "B12345674"
+			},
+			"addresses": [
+				{
+					"street": "Calle Example, 10",
+					"locality": "Barcelona",
+					"state": "B",
+					"code": "08022",
+					"country": "ES"
+				}
+			],
+			"emails": [
+				{
+					"addr": "billing@example.com"
+				}
+			]
+		},
+		"lines": [
+			{
+				"i": 1,
+				"quantity": "22",
+				"period": {
+					"start": "2026-03-02",
+					"end": "2026-04-03"
+				},
+				"item": {
+					"name": "22 × Pro Plan License (monthly) (at €45.24 / month)",
+					"currency": "EUR",
+					"price": "45.24"
+				},
+				"sum": "995.28",
+				"discounts": [
+					{
+						"amount": "359.55"
+					}
+				],
+				"total": "635.73"
+			},
+			{
+				"i": 2,
+				"quantity": "6",
+				"period": {
+					"start": "2026-03-02",
+					"end": "2026-04-03"
+				},
+				"item": {
+					"name": "6 × Additional 50-User Pack (monthly) (at €58.00 / month)",
+					"currency": "EUR",
+					"price": "58.00"
+				},
+				"sum": "348.00",
+				"discounts": [
+					{
+						"amount": "125.73"
+					}
+				],
+				"total": "222.27"
+			}
+		],
+		"ordering": {
+			"code": "PO-2025-001",
+			"period": {
+				"start": "2026-03-02",
+				"end": "2026-04-03"
+			}
+		},
+		"payment": {
+			"terms": {
+				"due_dates": [
+					{
+						"date": "2026-04-02",
+						"amount": "858.00",
+						"percent": "100%"
+					}
+				]
+			}
+		},
+		"totals": {
+			"sum": "858.00",
+			"total": "858.00",
+			"tax": "0.00",
+			"total_with_tax": "858.00",
+			"payable": "858.00"
+		},
+		"notes": [
+			{
+				"key": "general",
+				"src": "stripe",
+				"text": "Thank you for your business!"
+			}
+		],
+		"meta": {
+			"stripe-document-id": "in_1ExAmPlE0000000000000001",
+			"stripe-document-type": "invoice"
+		}
+	}
+}
