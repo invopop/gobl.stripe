@@ -371,6 +371,7 @@ func newCreditNoteNotes(memo string) []*org.Note {
 
 // newNote creates a single note with src "stripe" and optional key.
 func newNote(text string, key cbc.Key) *org.Note {
+	text = strings.TrimSpace(text)
 	if text == "" {
 		return nil
 	}
