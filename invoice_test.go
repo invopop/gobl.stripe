@@ -1381,6 +1381,64 @@ func TestCreditNoteBothReverseChargeAndSimplified(t *testing.T) {
 	assert.Contains(t, gi.Tags.List, tax.TagSimplified)
 }
 
+func TestFromCreditNoteWithEmptyLines(t *testing.T) {
+	t.Run("creates synthetic line from totals", func(t *testing.T) {
+		s := validCreditNote()
+		s.Lines = &stripe.CreditNoteLineItemList{
+			Data: []*stripe.CreditNoteLineItem{},
+		}
+		s.SubtotalExcludingTax = 10294
+		s.Total = 12456
+		// Keep existing TaxAmounts from validCreditNote
+
+		gi, err := goblstripe.FromCreditNote(s, validStripeAccount())
+		require.NoError(t, err)
+
+		require.Len(t, gi.Lines, 1)
+		assert.Equal(t, num.MakeAmount(1, 0), gi.Lines[0].Quantity)
+		assert.Equal(t, "Credit", gi.Lines[0].Item.Name)
+		assert.Equal(t, currency.EUR, gi.Lines[0].Item.Currency)
+		assert.Equal(t, num.NewAmount(10294, 2), gi.Lines[0].Item.Price)
+	})
+
+	t.Run("creates synthetic line without tax", func(t *testing.T) {
+		s := validCreditNote()
+		s.Lines = &stripe.CreditNoteLineItemList{
+			Data: []*stripe.CreditNoteLineItem{},
+		}
+		s.TaxAmounts = []*stripe.CreditNoteTaxAmount{}
+		s.SubtotalExcludingTax = 6490
+		s.Total = 6490
+
+		gi, err := goblstripe.FromCreditNote(s, validStripeAccount())
+		require.NoError(t, err)
+
+		require.Len(t, gi.Lines, 1)
+		assert.Equal(t, num.MakeAmount(1, 0), gi.Lines[0].Quantity)
+		assert.Equal(t, "Credit", gi.Lines[0].Item.Name)
+		assert.Equal(t, num.NewAmount(6490, 2), gi.Lines[0].Item.Price)
+		assert.Empty(t, gi.Lines[0].Taxes)
+		assert.Equal(t, num.MakeAmount(6490, 2), gi.Totals.TotalWithTax)
+	})
+
+	t.Run("does not use synthetic line when lines exist", func(t *testing.T) {
+		s := validCreditNote() // has lines
+		gi, err := goblstripe.FromCreditNote(s, validStripeAccount())
+		require.NoError(t, err)
+
+		require.Len(t, gi.Lines, 1)
+		assert.Equal(t, "Unused time on 2000 × Pro Plan after 08 Jan 2025", gi.Lines[0].Item.Name)
+	})
+}
+
+func TestAdjustRoundingNilTotals(t *testing.T) {
+	gi := &bill.Invoice{
+		Currency: currency.EUR,
+	}
+	err := goblstripe.AdjustRounding(gi, 0, stripe.CurrencyEUR)
+	assert.NoError(t, err)
+}
+
 func TestNotesInInvoiceConversion(t *testing.T) {
 	t.Run("invoice with description only", func(t *testing.T) {
 		s := minimalStripeInvoice()

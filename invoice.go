@@ -174,6 +174,9 @@ func FromCreditNote(doc *stripe.CreditNote, account *stripe.Account, opts ...Cre
 	inv.Tags = newTags(isCreditNoteReverseCharge(doc), inv.Customer)
 
 	inv.Lines = FromCreditNoteLines(doc.Lines.Data, inv.Currency, regimeDef)
+	if len(inv.Lines) == 0 {
+		inv.Lines = []*bill.Line{creditNoteLineFromTotals(doc, inv.Currency, regimeDef)}
+	}
 	inv.Tax = taxFromCreditNoteTaxAmounts(doc.TaxAmounts, doc.Lines.Data)
 	if options.precedingInvoice != nil {
 		inv.Preceding = []*org.DocumentRef{newPrecedingFromGOBLInvoice(options.precedingInvoice, string(doc.Reason))}
@@ -392,6 +395,10 @@ func AdjustRounding(gi *bill.Invoice, total int64, curr stripe.Currency) error {
 	err := gi.Calculate()
 	if err != nil {
 		return err
+	}
+
+	if gi.Totals == nil {
+		return nil
 	}
 
 	// Calculate the difference between the expected and the calculated totals

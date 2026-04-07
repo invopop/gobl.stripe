@@ -214,6 +214,22 @@ func FromInvoiceTaxAmountToTaxCombo(taxAmount *stripe.InvoiceTotalTaxAmount, reg
 
 // Credit Notes Lines
 
+// creditNoteLineFromTotals creates a single GOBL bill line from the credit note's
+// top-level totals. This is used when the credit note has no individual line items.
+func creditNoteLineFromTotals(doc *stripe.CreditNote, curr currency.Code, regimeDef *tax.RegimeDef) *bill.Line {
+	price := CurrencyAmount(doc.SubtotalExcludingTax, curr)
+	line := &bill.Line{
+		Quantity: num.MakeAmount(1, 0),
+		Item: &org.Item{
+			Name:     "Credit",
+			Currency: curr,
+			Price:    &price,
+		},
+	}
+	line.Taxes = FromCreditNoteTaxAmountsToTaxSet(doc.TaxAmounts, regimeDef)
+	return line
+}
+
 // FromCreditNoteLines converts Stripe credit note line items into GOBL bill lines.
 func FromCreditNoteLines(lines []*stripe.CreditNoteLineItem, curr currency.Code, regimeDef *tax.RegimeDef) []*bill.Line {
 	invLines := make([]*bill.Line, 0, len(lines))

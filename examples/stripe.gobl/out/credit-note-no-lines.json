@@ -1,0 +1,98 @@
+{
+	"$schema": "https://gobl.org/draft-0/envelope",
+	"head": {
+		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
+		"dig": {
+			"alg": "sha256",
+			"val": "6223288bfa4a787bf687ee77992e11ee7dc0d7769f2a12dc98ab36e2c61d2db1"
+		}
+	},
+	"doc": {
+		"$schema": "https://gobl.org/draft-0/bill/invoice",
+		"$regime": "DE",
+		"$tags": [
+			"simplified"
+		],
+		"uuid": "019860fc-7d4c-7922-a371-e848ca5141d3",
+		"type": "credit-note",
+		"code": "1234567-0001-CN-01",
+		"issue_date": "2026-01-01",
+		"op_date": "2026-04-01",
+		"currency": "EUR",
+		"preceding": [
+			{
+				"type": "standard",
+				"issue_date": "2026-03-31",
+				"series": "1234567",
+				"code": "0001",
+				"reason": "order_change"
+			}
+		],
+		"supplier": {
+			"name": "Test Account",
+			"tax_id": {
+				"country": "DE",
+				"code": "813495425"
+			},
+			"addresses": [
+				{
+					"street": "Test Street 123",
+					"locality": "Munich",
+					"state": "BY",
+					"code": "80331",
+					"country": "DE"
+				}
+			],
+			"emails": [
+				{
+					"addr": "support@testaccount.com"
+				}
+			],
+			"telephones": [
+				{
+					"num": "+4989123456"
+				}
+			]
+		},
+		"customer": {
+			"name": "Jane Doe",
+			"addresses": [
+				{
+					"street": "Rue de la Loi 1",
+					"locality": "Brussels",
+					"code": "1000",
+					"country": "BE"
+				}
+			],
+			"emails": [
+				{
+					"addr": "jane.doe@example.com"
+				}
+			]
+		},
+		"lines": [
+			{
+				"i": 1,
+				"quantity": "1",
+				"item": {
+					"name": "Credit",
+					"currency": "EUR",
+					"price": "64.90"
+				},
+				"sum": "64.90",
+				"total": "64.90"
+			}
+		],
+		"totals": {
+			"sum": "64.90",
+			"total": "64.90",
+			"tax": "0.00",
+			"total_with_tax": "64.90",
+			"payable": "64.90"
+		},
+		"meta": {
+			"stripe-document-id": "cn_TestCreditNote123",
+			"stripe-document-type": "credit_note"
+		}
+	}
+}
