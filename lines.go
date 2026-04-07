@@ -216,8 +216,15 @@ func FromInvoiceTaxAmountToTaxCombo(taxAmount *stripe.InvoiceTotalTaxAmount, reg
 
 // creditNoteLineFromTotals creates a single GOBL bill line from the credit note's
 // top-level totals. This is used when the credit note has no individual line items.
+// When taxes are inclusive, GOBL interprets line prices as tax-inclusive, so we use
+// the subtotal (which includes tax). When taxes are exclusive, we use the
+// subtotal excluding tax.
 func creditNoteLineFromTotals(doc *stripe.CreditNote, curr currency.Code, regimeDef *tax.RegimeDef) *bill.Line {
-	price := CurrencyAmount(doc.SubtotalExcludingTax, curr)
+	subtotal := doc.SubtotalExcludingTax
+	if len(doc.TaxAmounts) > 0 && doc.TaxAmounts[0].Inclusive {
+		subtotal = doc.Subtotal
+	}
+	price := CurrencyAmount(subtotal, curr)
 	line := &bill.Line{
 		Quantity: num.MakeAmount(1, 0),
 		Item: &org.Item{

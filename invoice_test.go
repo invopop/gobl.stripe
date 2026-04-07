@@ -1027,7 +1027,7 @@ func TestAdjustRounding(t *testing.T) {
 
 		// Verify error is of ErrRounding type
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "rounding error in totals too high")
+		assert.Contains(t, err.Error(), "totals calculated in GOBL differ from Stripe by")
 	})
 
 	t.Run("rounding error too high - large difference", func(t *testing.T) {
@@ -1038,7 +1038,7 @@ func TestAdjustRounding(t *testing.T) {
 		require.Error(t, err)
 
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "rounding error in totals too high")
+		assert.Contains(t, err.Error(), "totals calculated in GOBL differ from Stripe by")
 	})
 }
 
@@ -1065,7 +1065,7 @@ func TestAdjustRoundingCreditNote(t *testing.T) {
 		require.Error(t, err)
 
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "rounding error in totals too high")
+		assert.Contains(t, err.Error(), "totals calculated in GOBL differ from Stripe by")
 	})
 
 	t.Run("rounding error too high - large difference", func(t *testing.T) {
@@ -1076,7 +1076,7 @@ func TestAdjustRoundingCreditNote(t *testing.T) {
 		require.Error(t, err)
 
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "rounding error in totals too high")
+		assert.Contains(t, err.Error(), "totals calculated in GOBL differ from Stripe by")
 	})
 
 	t.Run("rounding adjustment with multiple lines", func(t *testing.T) {
@@ -1382,14 +1382,15 @@ func TestCreditNoteBothReverseChargeAndSimplified(t *testing.T) {
 }
 
 func TestFromCreditNoteWithEmptyLines(t *testing.T) {
-	t.Run("creates synthetic line from totals", func(t *testing.T) {
+	t.Run("creates synthetic line with exclusive tax", func(t *testing.T) {
 		s := validCreditNote()
 		s.Lines = &stripe.CreditNoteLineItemList{
 			Data: []*stripe.CreditNoteLineItem{},
 		}
+		s.Subtotal = 10294
 		s.SubtotalExcludingTax = 10294
 		s.Total = 12456
-		// Keep existing TaxAmounts from validCreditNote
+		// Keep existing TaxAmounts from validCreditNote (Inclusive: false)
 
 		gi, err := goblstripe.FromCreditNote(s, validStripeAccount())
 		require.NoError(t, err)
@@ -1398,7 +1399,36 @@ func TestFromCreditNoteWithEmptyLines(t *testing.T) {
 		assert.Equal(t, num.MakeAmount(1, 0), gi.Lines[0].Quantity)
 		assert.Equal(t, "Credit", gi.Lines[0].Item.Name)
 		assert.Equal(t, currency.EUR, gi.Lines[0].Item.Currency)
+		// With exclusive taxes, price should be SubtotalExcludingTax
 		assert.Equal(t, num.NewAmount(10294, 2), gi.Lines[0].Item.Price)
+	})
+
+	t.Run("creates synthetic line with inclusive tax", func(t *testing.T) {
+		s := validCreditNote()
+		s.Lines = &stripe.CreditNoteLineItemList{
+			Data: []*stripe.CreditNoteLineItem{},
+		}
+		s.Subtotal = 12456
+		s.SubtotalExcludingTax = 10294
+		s.Total = 12456
+		s.TaxAmounts = []*stripe.CreditNoteTaxAmount{
+			{
+				Amount:        2162,
+				Inclusive:     true,
+				TaxRate:       &stripe.TaxRate{TaxType: stripe.TaxRateTaxTypeVAT, Country: "ES", EffectivePercentage: 21.0, Percentage: 21.0},
+				TaxableAmount: 10294,
+			},
+		}
+
+		gi, err := goblstripe.FromCreditNote(s, validStripeAccount())
+		require.NoError(t, err)
+
+		require.Len(t, gi.Lines, 1)
+		assert.Equal(t, num.MakeAmount(1, 0), gi.Lines[0].Quantity)
+		assert.Equal(t, "Credit", gi.Lines[0].Item.Name)
+		// With inclusive taxes, price should be Subtotal (tax-inclusive)
+		assert.Equal(t, num.NewAmount(12456, 2), gi.Lines[0].Item.Price)
+		assert.Equal(t, num.MakeAmount(12456, 2), gi.Totals.TotalWithTax)
 	})
 
 	t.Run("creates synthetic line without tax", func(t *testing.T) {
