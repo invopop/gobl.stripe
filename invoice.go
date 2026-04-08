@@ -174,6 +174,9 @@ func FromCreditNote(doc *stripe.CreditNote, account *stripe.Account, opts ...Cre
 	inv.Tags = newTags(isCreditNoteReverseCharge(doc), inv.Customer)
 
 	inv.Lines = FromCreditNoteLines(doc.Lines.Data, inv.Currency, regimeDef)
+	if len(inv.Lines) == 0 {
+		inv.Lines = []*bill.Line{creditNoteLineFromTotals(doc, inv.Currency, regimeDef)}
+	}
 	inv.Tax = taxFromCreditNoteTaxAmounts(doc.TaxAmounts, doc.Lines.Data)
 	if options.precedingInvoice != nil {
 		inv.Preceding = []*org.DocumentRef{newPrecedingFromGOBLInvoice(options.precedingInvoice, string(doc.Reason))}
@@ -394,6 +397,10 @@ func AdjustRounding(gi *bill.Invoice, total int64, curr stripe.Currency) error {
 		return err
 	}
 
+	if gi.Totals == nil {
+		return nil
+	}
+
 	// Calculate the difference between the expected and the calculated totals
 	exp := CurrencyAmount(total, FromCurrency(curr))
 	diff := exp.Subtract(gi.Totals.TotalWithTax)
@@ -406,7 +413,7 @@ func AdjustRounding(gi *bill.Invoice, total int64, curr stripe.Currency) error {
 	maxErr := MaxRoundingError(gi)
 	if diff.Abs().Compare(maxErr) == 1 {
 		// Too much difference. Report the error
-		return fmt.Errorf("rounding error in totals too high: %s", diff.String())
+		return fmt.Errorf("totals calculated in GOBL differ from Stripe by %s (expected %s, got %s); please contact support", diff.String(), exp.String(), gi.Totals.TotalWithTax.String())
 	}
 
 	gi.Totals.Rounding = &diff
