@@ -422,9 +422,14 @@ func AdjustRounding(gi *bill.Invoice, total int64, curr stripe.Currency) error {
 }
 
 // MaxRoundingError returns the maximum error that can be attributed to rounding in an invoice.
+// When a line's unit price is derived by dividing the line total by quantity, rounding can
+// introduce up to half a subunit of error per unit, so we scale by each line's quantity.
 func MaxRoundingError(gi *bill.Invoice) num.Amount {
-	// 1 of the smallest subunit of the currency per line
-	return num.MakeAmount(int64(len(gi.Lines)), gi.Currency.Def().Subunits)
+	var totalUnits int64
+	for _, line := range gi.Lines {
+		totalUnits += max(1, line.Quantity.Rescale(0).Value())
+	}
+	return num.MakeAmount(totalUnits, gi.Currency.Def().Subunits)
 }
 
 // ExpectedInvoiceTotal returns the expected total of an invoice.

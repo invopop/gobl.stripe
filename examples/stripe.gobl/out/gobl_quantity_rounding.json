@@ -1,0 +1,212 @@
+{
+	"$schema": "https://gobl.org/draft-0/envelope",
+	"head": {
+		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
+		"dig": {
+			"alg": "sha256",
+			"val": "13c551f5b77d28987117122f256de763ad27e1b0e57970e02a4fde1c3893952e"
+		}
+	},
+	"doc": {
+		"$schema": "https://gobl.org/draft-0/bill/invoice",
+		"$regime": "DE",
+		"$tags": [
+			"simplified"
+		],
+		"uuid": "019860fc-7d4c-7922-a371-e848ca5141d3",
+		"type": "standard",
+		"series": "741B0C98",
+		"code": "0040",
+		"issue_date": "2026-01-01",
+		"op_date": "2026-04-11",
+		"currency": "EUR",
+		"exchange_rates": [
+			{
+				"from": "EUR",
+				"to": "PLN",
+				"amount": "4.294"
+			}
+		],
+		"supplier": {
+			"name": "Test Account",
+			"tax_id": {
+				"country": "DE",
+				"code": "813495425"
+			},
+			"addresses": [
+				{
+					"street": "Test Street 123",
+					"locality": "Munich",
+					"state": "BY",
+					"code": "80331",
+					"country": "DE"
+				}
+			],
+			"emails": [
+				{
+					"addr": "support@testaccount.com"
+				}
+			],
+			"telephones": [
+				{
+					"num": "+4989123456"
+				}
+			]
+		},
+		"customer": {
+			"name": "Test Customer LLC",
+			"addresses": [
+				{
+					"street": "123 Test Street",
+					"street_extra": "Suite 100",
+					"locality": "New York",
+					"state": "NY",
+					"code": "10001",
+					"country": "US"
+				}
+			],
+			"emails": [
+				{
+					"addr": "customer@example.com"
+				}
+			],
+			"telephones": [
+				{
+					"num": "+12125550000"
+				}
+			]
+		},
+		"lines": [
+			{
+				"i": 1,
+				"quantity": "2",
+				"period": {
+					"start": "2026-04-11",
+					"end": "2026-05-11"
+				},
+				"item": {
+					"name": "Plan A (monthly)",
+					"currency": "EUR",
+					"price": "25.00"
+				},
+				"sum": "50.00",
+				"total": "50.00"
+			},
+			{
+				"i": 2,
+				"quantity": "1",
+				"period": {
+					"start": "2026-04-11",
+					"end": "2026-05-11"
+				},
+				"item": {
+					"name": "Plan B (monthly)",
+					"currency": "EUR",
+					"price": "99.00"
+				},
+				"sum": "99.00",
+				"total": "99.00"
+			},
+			{
+				"i": 3,
+				"quantity": "1",
+				"period": {
+					"start": "2026-04-11",
+					"end": "2026-05-11"
+				},
+				"item": {
+					"name": "Plan C (monthly)",
+					"currency": "EUR",
+					"price": "100.00"
+				},
+				"sum": "100.00",
+				"total": "100.00"
+			},
+			{
+				"i": 4,
+				"quantity": "1",
+				"period": {
+					"start": "2026-04-11",
+					"end": "2026-05-11"
+				},
+				"item": {
+					"name": "Plan D (monthly)",
+					"currency": "EUR",
+					"price": "75.00"
+				},
+				"sum": "75.00",
+				"total": "75.00"
+			},
+			{
+				"i": 5,
+				"quantity": "1",
+				"period": {
+					"start": "2026-04-11",
+					"end": "2026-05-11"
+				},
+				"item": {
+					"name": "Plan E (monthly)",
+					"currency": "EUR",
+					"price": "175.00"
+				},
+				"sum": "175.00",
+				"total": "175.00"
+			},
+			{
+				"i": 6,
+				"quantity": "204",
+				"period": {
+					"start": "2026-03-11",
+					"end": "2026-04-11"
+				},
+				"item": {
+					"name": "204 units × Metered Usage (at €60.00 per 50 units / month)",
+					"currency": "EUR",
+					"price": "1.47"
+				},
+				"sum": "299.88",
+				"total": "299.88"
+			},
+			{
+				"i": 7,
+				"quantity": "0",
+				"period": {
+					"start": "2026-03-11",
+					"end": "2026-04-11"
+				},
+				"item": {
+					"name": "0 × Additional Unit (at €2.50 / month)",
+					"currency": "EUR",
+					"price": "2.50"
+				},
+				"sum": "0.00",
+				"total": "0.00"
+			}
+		],
+		"ordering": {
+			"period": {
+				"start": "2026-03-11",
+				"end": "2026-05-11"
+			}
+		},
+		"totals": {
+			"sum": "798.88",
+			"total": "798.88",
+			"tax": "0.00",
+			"total_with_tax": "798.88",
+			"rounding": "0.12",
+			"payable": "799.00"
+		},
+		"notes": [
+			{
+				"key": "general",
+				"src": "stripe",
+				"text": "Download the usage report for the invoiced period: https://example.com/usage-report\u003cbr\u003e\u003cbr\u003eLearn how usage is calculated: https://example.com/docs/usage-explained"
+			}
+		],
+		"meta": {
+			"stripe-document-id": "in_1TKzYuExAmPl0000WDyAcG0Y",
+			"stripe-document-type": "invoice"
+		}
+	}
+}
