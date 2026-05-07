@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "13c551f5b77d28987117122f256de763ad27e1b0e57970e02a4fde1c3893952e"
+			"val": "c72a008c3c6cb81146d9e9db1a5327df47826f5a072a9de818edb5672440b37c"
 		}
 	},
 	"doc": {
@@ -154,7 +154,7 @@
 			},
 			{
 				"i": 6,
-				"quantity": "204",
+				"quantity": "1",
 				"period": {
 					"start": "2026-03-11",
 					"end": "2026-04-11"
@@ -162,10 +162,10 @@
 				"item": {
 					"name": "204 units × Metered Usage (at €60.00 per 50 units / month)",
 					"currency": "EUR",
-					"price": "1.47"
+					"price": "300.00"
 				},
-				"sum": "299.88",
-				"total": "299.88"
+				"sum": "300.00",
+				"total": "300.00"
 			},
 			{
 				"i": 7,
@@ -190,11 +190,10 @@
 			}
 		},
 		"totals": {
-			"sum": "798.88",
-			"total": "798.88",
+			"sum": "799.00",
+			"total": "799.00",
 			"tax": "0.00",
-			"total_with_tax": "798.88",
-			"rounding": "0.12",
+			"total_with_tax": "799.00",
 			"payable": "799.00"
 		},
 		"notes": [
