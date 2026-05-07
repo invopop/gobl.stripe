@@ -31,12 +31,11 @@ func FromInvoiceLines(lines []*stripe.InvoiceLineItem, regimeDef *tax.RegimeDef)
 
 // FromInvoiceLine converts a single Stripe invoice line item into a GOBL bill line.
 func FromInvoiceLine(line *stripe.InvoiceLineItem, regimeDef *tax.RegimeDef) *bill.Line {
+	qty, price := resolveInvoiceLineQuantityAndPrice(line)
 	invLine := &bill.Line{
-		Quantity: newQuantityFromInvoiceLine(line),
+		Quantity: qty,
 		Item:     fromInvoiceLineToItem(line),
 	}
-
-	price := resolveInvoiceLinePrice(line, invLine.Quantity)
 	invLine.Item.Price = &price
 
 	if len(line.DiscountAmounts) > 0 && line.Discountable {
@@ -55,22 +54,49 @@ func FromInvoiceLine(line *stripe.InvoiceLineItem, regimeDef *tax.RegimeDef) *bi
 	return invLine
 }
 
-// newQuantityFromInvoiceLine resolves the quantity for a GOBL invoice line item.
-// If it is a per unit scheme, the quantity is the line quantity.
-// If it is a tiered scheme, the quantity is 1.
-func newQuantityFromInvoiceLine(line *stripe.InvoiceLineItem) num.Amount {
+// resolveInvoiceLineQuantityAndPrice picks the (quantity, price) pair to use for
+// a GOBL invoice line. The default per-unit form is `quantity = line.Quantity`
+// and `price = line.Amount / quantity` (rounded to currency subunits). When that
+// rounded price doesn't multiply back to line.Amount — e.g. Stripe's
+// transform_quantity package pricing where amount is not a whole multiple of
+// quantity at 2 decimals — we collapse to a lump-sum representation
+// (`quantity = 1`, `price = line.Amount`) instead of fabricating a per-unit
+// price the data won't support. Tiered billing always takes the lump-sum path
+// because no honest single per-unit price exists across tier breakpoints.
+// Zero-quantity zero-amount lines (typically inactive add-ons) preserve the
+// per-unit display (qty=0, price=Price.UnitAmount) — the sum is 0 either way,
+// but the unit price keeps the line readable. The Stripe-supplied item
+// description carries the per-unit narrative in all paths.
+func resolveInvoiceLineQuantityAndPrice(line *stripe.InvoiceLineItem) (num.Amount, num.Amount) {
+	curr := FromCurrency(line.Currency)
+	amount := CurrencyAmount(line.Amount, curr)
+
 	if line.Price == nil {
-		return num.AmountZero
+		return num.MakeAmount(1, 0), amount
 	}
 
-	switch line.Price.BillingScheme {
-	case stripe.PriceBillingSchemePerUnit:
-		return num.MakeAmount(line.Quantity, 0)
-	case stripe.PriceBillingSchemeTiered:
-		return num.MakeAmount(1, 0)
-	default:
-		return num.AmountZero
+	if line.Price.BillingScheme == stripe.PriceBillingSchemeTiered {
+		return num.MakeAmount(1, 0), amount
 	}
+
+	if line.Quantity == 0 {
+		if line.Amount != 0 {
+			// Quantity 0 with non-zero amount is anomalous Stripe data; lump
+			// sum is the only representation that reconciles.
+			return num.MakeAmount(1, 0), amount
+		}
+		price := CurrencyAmount(line.Price.UnitAmount, curr)
+		return num.AmountZero, price
+	}
+
+	qty := num.MakeAmount(line.Quantity, 0)
+	price := amount.Divide(qty)
+	if !price.Multiply(qty).Equals(amount) {
+		// Rounded per-unit price doesn't round-trip to line.Amount; fall back
+		// to a lump-sum line so the tax base reconciles with Stripe.
+		return num.MakeAmount(1, 0), amount
+	}
+	return qty, price
 }
 
 // fromInvoiceLineToItem creates a new GOBL item from a Stripe invoice line item.
@@ -107,16 +133,6 @@ func setItemName(line *stripe.InvoiceLineItem) string {
 	}
 
 	return ""
-}
-
-func resolveInvoiceLinePrice(line *stripe.InvoiceLineItem, quantity num.Amount) num.Amount {
-	if quantity == num.AmountZero {
-		if line.Price != nil {
-			return CurrencyAmount(line.Price.UnitAmount, FromCurrency(line.Price.Currency))
-		}
-		return num.AmountZero
-	}
-	return CurrencyAmount(line.Amount, FromCurrency(line.Currency)).Divide(quantity)
 }
 
 // FromInvoiceLineDiscounts creates a list of discounts for a GOBL invoice line item.
@@ -248,9 +264,14 @@ func FromCreditNoteLines(lines []*stripe.CreditNoteLineItem, curr currency.Code,
 
 // FromCreditNoteLine converts a single Stripe credit note line item into a GOBL bill line.
 func FromCreditNoteLine(line *stripe.CreditNoteLineItem, curr currency.Code, regimeDef *tax.RegimeDef) *bill.Line {
+	qty, price := resolveCreditNoteLineQuantityAndPrice(line, curr)
 	invLine := &bill.Line{
-		Quantity: newQuantityFromCreditNote(line),
-		Item:     FromCreditNoteLineToItem(line, curr),
+		Quantity: qty,
+		Item: &org.Item{
+			Name:     line.Description,
+			Currency: curr,
+			Price:    &price,
+		},
 	}
 
 	if len(line.DiscountAmounts) > 0 {
@@ -262,43 +283,22 @@ func FromCreditNoteLine(line *stripe.CreditNoteLineItem, curr currency.Code, reg
 	return invLine
 }
 
-// newQuantityFromCreditNote resolves the quantity for a GOBL credit note line item.
-// If it is a per unit scheme, the quantity is the line quantity.
-// If it is a tiered scheme (line_quantity = 0), the quantity is 1.
-func newQuantityFromCreditNote(line *stripe.CreditNoteLineItem) num.Amount {
+// resolveCreditNoteLineQuantityAndPrice mirrors resolveInvoiceLineQuantityAndPrice
+// for credit notes. CreditNoteLineItem carries no Price object, so there is no
+// tiered branch here. Default per-unit form is `quantity = line.Quantity`,
+// `price = line.Amount / quantity`; if that doesn't round-trip back to
+// line.Amount at currency-subunit precision we fall back to lump-sum.
+func resolveCreditNoteLineQuantityAndPrice(line *stripe.CreditNoteLineItem, curr currency.Code) (num.Amount, num.Amount) {
+	amount := CurrencyAmount(line.Amount, curr)
 	if line.Quantity == 0 {
-		return num.MakeAmount(1, 0)
+		return num.MakeAmount(1, 0), amount
 	}
-
-	return num.MakeAmount(line.Quantity, 0)
-}
-
-// FromCreditNoteLineToItem creates a new GOBL item from a Stripe credit note line item.
-func FromCreditNoteLineToItem(line *stripe.CreditNoteLineItem, curr currency.Code) *org.Item {
-	price := resolveCreditNoteLinePrice(line, curr)
-	return &org.Item{
-		Name:     line.Description,
-		Currency: curr,
-		Price:    &price,
+	qty := num.MakeAmount(line.Quantity, 0)
+	price := amount.Divide(qty)
+	if !price.Multiply(qty).Equals(amount) {
+		return num.MakeAmount(1, 0), amount
 	}
-}
-
-// resolveCreditNoteLinePrice resolves the price for a GOBL credit note line item.
-// If it is a per unit scheme, the price is the unit amount.
-// If it is a tiered scheme (line_quantity = 0), the price is the complete amount.
-func resolveCreditNoteLinePrice(line *stripe.CreditNoteLineItem, curr currency.Code) num.Amount {
-	if line.Quantity == 0 {
-		return CurrencyAmount(line.Amount, curr)
-	}
-
-	// The unit amount can be 0 when discounts applied the line amount.
-	if line.UnitAmount == 0 {
-		// We could use unit amount excluding tax, but if the tax is included it will not match.
-		unitAmount := line.Amount / line.Quantity
-		return CurrencyAmount(unitAmount, curr)
-	}
-
-	return CurrencyAmount(line.UnitAmount, curr)
+	return qty, price
 }
 
 // FromCreditNoteLineDiscounts creates a list of discounts for a GOBL credit note line item.

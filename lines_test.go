@@ -995,9 +995,12 @@ func TestFreeTrialLine(t *testing.T) {
 	assert.Equal(t, l10n.MX.Tax(), result.Taxes[0].Country, "Tax country should match line tax")
 }
 
-// Test resolveInvoiceLinePrice edge cases (lines 112-120)
-func TestResolveInvoiceLinePriceZeroQuantityWithPrice(t *testing.T) {
-	// When quantity is zero but Price is available, should use Price.UnitAmount
+// Tests for resolveInvoiceLineQuantityAndPrice (lump-sum fallback when the
+// rounded per-unit price doesn't round-trip back to line.Amount).
+
+func TestInvoiceLineZeroQuantityZeroAmountPreservesUnitPrice(t *testing.T) {
+	// quantity=0, amount=0 (inactive add-on): preserve per-unit display
+	// (qty=0, price=Price.UnitAmount) so the line stays readable.
 	line := &stripe.InvoiceLineItem{
 		ID:          "il_zero_qty_with_price",
 		Amount:      0,
@@ -1016,19 +1019,19 @@ func TestResolveInvoiceLinePriceZeroQuantityWithPrice(t *testing.T) {
 
 	result := goblstripe.FromInvoiceLine(line, tax.RegimeDefFor(l10n.DE))
 
-	assert.NotNil(t, result, "Line conversion should not return nil")
-	assert.Equal(t, num.AmountZero, result.Quantity, "Quantity should be zero")
-	assert.Equal(t, 50.0, result.Item.Price.Float64(), "Item price should use UnitAmount when quantity is zero")
+	assert.NotNil(t, result)
+	assert.Equal(t, num.AmountZero, result.Quantity, "qty=0 preserved")
+	assert.Equal(t, 50.0, result.Item.Price.Float64(), "price kept at Price.UnitAmount")
 }
 
-func TestResolveInvoiceLinePriceZeroQuantityNilPrice(t *testing.T) {
-	// When quantity is zero and Price is nil, should return AmountZero
+func TestInvoiceLineZeroQuantityNilPriceFallsBackToLumpSum(t *testing.T) {
+	// quantity=0 and Price=nil → lump sum (qty=1, price=line.Amount).
 	line := &stripe.InvoiceLineItem{
 		ID:          "il_zero_qty_nil_price",
 		Amount:      5000,
 		Currency:    stripe.CurrencyEUR,
 		Description: "Zero quantity item without price",
-		Price:       nil, // No price object
+		Price:       nil,
 		Period: &stripe.Period{
 			Start: 1736351413,
 			End:   1739029692,
@@ -1037,13 +1040,13 @@ func TestResolveInvoiceLinePriceZeroQuantityNilPrice(t *testing.T) {
 
 	result := goblstripe.FromInvoiceLine(line, tax.RegimeDefFor(l10n.DE))
 
-	assert.NotNil(t, result, "Line conversion should not return nil")
-	assert.Equal(t, num.AmountZero, result.Quantity, "Quantity should be zero")
-	assert.Equal(t, 0.0, result.Item.Price.Float64(), "Item price should be zero when quantity is zero and no price")
+	assert.NotNil(t, result)
+	assert.Equal(t, num.MakeAmount(1, 0), result.Quantity, "lump-sum quantity")
+	assert.Equal(t, 50.0, result.Item.Price.Float64(), "lump-sum price equals line.Amount")
 }
 
-func TestResolveInvoiceLinePriceNonZeroQuantity(t *testing.T) {
-	// When quantity is not zero, should divide Amount by quantity
+func TestInvoiceLineCleanPerUnitDivision(t *testing.T) {
+	// Amount cleanly divisible by Quantity at 2 decimals → keep per-unit form.
 	line := &stripe.InvoiceLineItem{
 		ID:       "il_nonzero_qty",
 		Amount:   10000,
@@ -1063,9 +1066,88 @@ func TestResolveInvoiceLinePriceNonZeroQuantity(t *testing.T) {
 
 	result := goblstripe.FromInvoiceLine(line, tax.RegimeDefFor(l10n.DE))
 
-	assert.NotNil(t, result, "Line conversion should not return nil")
-	assert.Equal(t, num.MakeAmount(4, 0), result.Quantity, "Quantity should be 4")
-	assert.Equal(t, 25.0, result.Item.Price.Float64(), "Item price should be Amount/Quantity = 10000/4 = 2500 cents = 25.00")
+	assert.NotNil(t, result)
+	assert.Equal(t, num.MakeAmount(4, 0), result.Quantity)
+	assert.Equal(t, 25.0, result.Item.Price.Float64(), "Amount/Quantity = 100.00/4 = 25.00")
+}
+
+func TestInvoiceLineTransformQuantityFallsBackToLumpSum(t *testing.T) {
+	// transform_quantity (divide_by 50, round up): Stripe charges
+	// ceil(751/50) * 220.00 = 16 * 220.00 = 3520.00. Naive 3520/751 rounds
+	// to 4.69, but 751 * 4.69 = 3522.19 ≠ 3520.00, so we must fall back to
+	// lump sum (qty=1, price=3520.00). This is the regression scenario from
+	// test/invoice.json line 2.
+	divideBy := int64(50)
+	round := stripe.PriceTransformQuantityRoundUp
+	line := &stripe.InvoiceLineItem{
+		ID:          "il_transform_quantity",
+		Amount:      352000,
+		Currency:    stripe.CurrencyPLN,
+		Quantity:    751,
+		Description: "751 users × Additional Active Users (at 220.00 zł per 50 users / month)",
+		Price: &stripe.Price{
+			BillingScheme: stripe.PriceBillingSchemePerUnit,
+			Currency:      stripe.CurrencyPLN,
+			UnitAmount:    22000,
+			TransformQuantity: &stripe.PriceTransformQuantity{
+				DivideBy: divideBy,
+				Round:    round,
+			},
+		},
+	}
+
+	result := goblstripe.FromInvoiceLine(line, tax.RegimeDefFor(l10n.PL))
+
+	assert.NotNil(t, result)
+	assert.Equal(t, num.MakeAmount(1, 0), result.Quantity, "lump-sum quantity")
+	assert.Equal(t, 3520.0, result.Item.Price.Float64(), "lump-sum price equals line.Amount")
+	assert.Equal(t, line.Description, result.Item.Name, "Stripe item description preserved verbatim")
+}
+
+func TestInvoiceLineProrationFallsBackToLumpSum(t *testing.T) {
+	// Proration: amount not exactly divisible by quantity at 2 decimals.
+	// 100 / 3 = 33.33; 3 * 33.33 = 99.99 ≠ 100.00 → lump sum.
+	line := &stripe.InvoiceLineItem{
+		ID:       "il_proration",
+		Amount:   10000,
+		Currency: stripe.CurrencyEUR,
+		Quantity: 3,
+		Price: &stripe.Price{
+			BillingScheme: stripe.PriceBillingSchemePerUnit,
+			Currency:      stripe.CurrencyEUR,
+			UnitAmount:    3333,
+		},
+		Description: "Prorated charge",
+	}
+
+	result := goblstripe.FromInvoiceLine(line, tax.RegimeDefFor(l10n.DE))
+
+	assert.NotNil(t, result)
+	assert.Equal(t, num.MakeAmount(1, 0), result.Quantity, "lump-sum quantity")
+	assert.Equal(t, 100.0, result.Item.Price.Float64(), "lump-sum price equals line.Amount")
+}
+
+func TestInvoiceLineTieredAlwaysLumpSum(t *testing.T) {
+	// billing_scheme=tiered always collapses to lump sum regardless of
+	// whether the round-trip would succeed: there is no honest single
+	// per-unit price across tier breakpoints.
+	line := &stripe.InvoiceLineItem{
+		ID:       "il_tiered",
+		Amount:   10000,
+		Currency: stripe.CurrencyEUR,
+		Quantity: 4,
+		Price: &stripe.Price{
+			BillingScheme: stripe.PriceBillingSchemeTiered,
+			Currency:      stripe.CurrencyEUR,
+		},
+		Description: "Tiered plan",
+	}
+
+	result := goblstripe.FromInvoiceLine(line, tax.RegimeDefFor(l10n.DE))
+
+	assert.NotNil(t, result)
+	assert.Equal(t, num.MakeAmount(1, 0), result.Quantity, "tiered → lump-sum quantity")
+	assert.Equal(t, 100.0, result.Item.Price.Float64(), "tiered → lump-sum price equals line.Amount")
 }
 
 // Test FromInvoiceLineDiscount with zero amount (lines 136-138)
@@ -1165,6 +1247,57 @@ func TestFromInvoiceLinesAllValid(t *testing.T) {
 	assert.Len(t, result, 2, "Should have 2 converted lines")
 	assert.Equal(t, "First line", result[0].Item.Name)
 	assert.Equal(t, "Second line", result[1].Item.Name)
+}
+
+// Tests for resolveCreditNoteLineQuantityAndPrice (lump-sum fallback).
+
+func TestCreditNoteLineCleanPerUnitDivision(t *testing.T) {
+	// Amount cleanly divisible at 2 decimals → keep per-unit form.
+	line := &stripe.CreditNoteLineItem{
+		ID:          "cnli_clean",
+		Amount:      10000,
+		Quantity:    4,
+		UnitAmount:  2500,
+		Description: "Clean per-unit",
+	}
+
+	result := goblstripe.FromCreditNoteLine(line, currency.EUR, tax.RegimeDefFor(l10n.DE))
+
+	assert.NotNil(t, result)
+	assert.Equal(t, num.MakeAmount(4, 0), result.Quantity)
+	assert.Equal(t, 25.0, result.Item.Price.Float64())
+}
+
+func TestCreditNoteLineNonReconcilingFallsBackToLumpSum(t *testing.T) {
+	// 10000/3 = 33.33; 3*33.33 = 99.99 ≠ 100.00 → lump sum.
+	line := &stripe.CreditNoteLineItem{
+		ID:          "cnli_proration",
+		Amount:      10000,
+		Quantity:    3,
+		UnitAmount:  3333,
+		Description: "Prorated credit",
+	}
+
+	result := goblstripe.FromCreditNoteLine(line, currency.EUR, tax.RegimeDefFor(l10n.DE))
+
+	assert.NotNil(t, result)
+	assert.Equal(t, num.MakeAmount(1, 0), result.Quantity, "lump-sum quantity")
+	assert.Equal(t, 100.0, result.Item.Price.Float64(), "lump-sum price equals line.Amount")
+}
+
+func TestCreditNoteLineZeroQuantityFallsBackToLumpSum(t *testing.T) {
+	line := &stripe.CreditNoteLineItem{
+		ID:          "cnli_zero_qty",
+		Amount:      5000,
+		Quantity:    0,
+		Description: "Zero-quantity credit",
+	}
+
+	result := goblstripe.FromCreditNoteLine(line, currency.EUR, tax.RegimeDefFor(l10n.DE))
+
+	assert.NotNil(t, result)
+	assert.Equal(t, num.MakeAmount(1, 0), result.Quantity)
+	assert.Equal(t, 50.0, result.Item.Price.Float64())
 }
 
 // Test FromCreditNoteLineDiscount with zero amount (lines 289-291)
