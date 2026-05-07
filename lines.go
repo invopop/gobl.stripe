@@ -85,7 +85,7 @@ func resolveInvoiceLineQuantityAndPrice(line *stripe.InvoiceLineItem) (num.Amoun
 			// sum is the only representation that reconciles.
 			return num.MakeAmount(1, 0), amount
 		}
-		price := CurrencyAmount(line.Price.UnitAmount, FromCurrency(line.Price.Currency))
+		price := CurrencyAmount(line.Price.UnitAmount, curr)
 		return num.AmountZero, price
 	}
 
