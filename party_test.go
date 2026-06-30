@@ -8,6 +8,7 @@ import (
 	"github.com/invopop/gobl/l10n"
 	"github.com/invopop/gobl/org"
 	"github.com/invopop/gobl/regimes/de"
+	"github.com/invopop/gobl/regimes/us"
 	"github.com/invopop/gobl/tax"
 	"github.com/stretchr/testify/assert"
 	stripe "github.com/stripe/stripe-go/v81"
@@ -169,7 +170,12 @@ func TestFromTaxIDToOrg(t *testing.T) {
 		{
 			"valid DE STN",
 			&stripe.TaxID{Type: "de_stn", Value: "123456789"},
-			&org.Identity{Key: de.IdentityKeyTaxNumber, Code: cbc.Code("123456789")},
+			&org.Identity{Country: l10n.DE.ISO(), Key: de.IdentityKeyTaxNumber, Code: cbc.Code("123456789")},
+		},
+		{
+			"valid US EIN",
+			&stripe.TaxID{Type: "us_ein", Value: "41-4637166"},
+			&org.Identity{Country: l10n.US.ISO(), Type: us.IdentityTypeEIN, Code: cbc.Code("41-4637166")},
 		},
 		{
 			"invalid type",
@@ -294,8 +300,9 @@ func TestFromCustomer(t *testing.T) {
 				},
 				Identities: []*org.Identity{
 					{
-						Key:  de.IdentityKeyTaxNumber,
-						Code: "123456789",
+						Country: l10n.DE.ISO(),
+						Key:     de.IdentityKeyTaxNumber,
+						Code:    "123456789",
 					},
 				},
 			},
@@ -579,8 +586,9 @@ func TestFromCustomerItalyTaxIDLogic(t *testing.T) {
 				},
 				Identities: []*org.Identity{
 					{
-						Key:  de.IdentityKeyTaxNumber,
-						Code: "123456789",
+						Country: l10n.DE.ISO(),
+						Key:     de.IdentityKeyTaxNumber,
+						Code:    "123456789",
 					},
 				},
 			},
@@ -690,8 +698,9 @@ func TestNewSupplierFromAccount(t *testing.T) {
 				Name: "German Business",
 				Identities: []*org.Identity{
 					{
-						Key:  de.IdentityKeyTaxNumber,
-						Code: "123456789",
+						Country: l10n.DE.ISO(),
+						Key:     de.IdentityKeyTaxNumber,
+						Code:    "123456789",
 					},
 				},
 			},
