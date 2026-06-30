@@ -8,13 +8,18 @@ import (
 	"github.com/invopop/gobl/l10n"
 	"github.com/invopop/gobl/org"
 	"github.com/invopop/gobl/regimes/de"
+	"github.com/invopop/gobl/regimes/us"
 	"github.com/invopop/gobl/tax"
 	"github.com/stripe/stripe-go/v81"
 )
 
 // For more details on Customer Tax IDs in Stripe, see: https://docs.stripe.com/billing/customer/tax-ids
 
-var orgIDKeys = []stripe.TaxIDType{"de_stn"}
+// orgIDKeys lists the Stripe tax ID types that GOBL represents as party
+// identities (org.Identity) rather than tax identities (tax.Identity). These
+// are codes that don't belong to a VAT-like tax scheme, such as the German
+// Steuernummer (de_stn) or the US Employer Identification Number (us_ein).
+var orgIDKeys = []stripe.TaxIDType{stripe.TaxIDTypeDEStn, stripe.TaxIDTypeUSEIN}
 
 // Lookup map for country code to Stripe tax ID type
 var taxIDMapGOBLToStripe = map[l10n.Code]stripe.TaxIDType{
@@ -143,6 +148,13 @@ func ToTaxIDFromOrg(id *org.Identity) *stripe.TaxID {
 			Value: id.Code.String(),
 		}
 	}
+	switch id.Type {
+	case us.IdentityTypeEIN:
+		return &stripe.TaxID{
+			Type:  stripe.TaxIDTypeUSEIN,
+			Value: id.Code.String(),
+		}
+	}
 	return nil
 }
 
@@ -196,8 +208,15 @@ func FromTaxIDToOrg(taxID *stripe.TaxID) *org.Identity {
 	switch taxID.Type {
 	case stripe.TaxIDTypeDEStn:
 		oid = &org.Identity{
-			Key:  de.IdentityKeyTaxNumber,
-			Code: cbc.Code(taxID.Value),
+			Country: l10n.DE.ISO(),
+			Key:     de.IdentityKeyTaxNumber,
+			Code:    cbc.Code(taxID.Value),
+		}
+	case stripe.TaxIDTypeUSEIN:
+		oid = &org.Identity{
+			Country: l10n.US.ISO(),
+			Type:    us.IdentityTypeEIN,
+			Code:    cbc.Code(taxID.Value),
 		}
 	}
 	oid.Normalize()
