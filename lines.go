@@ -196,10 +196,22 @@ func FromInvoiceTaxAmountToTaxCombo(taxAmount *stripe.InvoiceTotalTaxAmount, reg
 	// Instead of the percentage we can also look at the taxability_reason field.
 	// There are different types defined and we could map them to the tax categories in GOBL.
 
+	// A reverse charge is issued from the supplier's side: the supplier charges no
+	// tax and the customer self-accounts. We therefore express it with the supplier
+	// regime's own category and country, not the customer's. Stripe reports the
+	// customer's tax category (e.g. Australian GST for an AU customer), which an EU
+	// supplier's regime (e.g. Poland) doesn't define, so in that case we fall back to
+	// the regime's VAT category. An actual customer-country rate is not a reverse
+	// charge and is handled as a foreign tax below.
 	if taxAmount.TaxabilityReason == stripe.InvoiceTotalTaxAmountTaxabilityReasonReverseCharge {
-		tc.Country = regimeDef.Country
-		tc.Key = tax.KeyReverseCharge
-		return tc
+		cat := reverseChargeCategory(tc.Category, regimeDef)
+		if cat != "" {
+			tc.Category = cat
+			tc.Country = regimeDef.Country
+			tc.Key = tax.KeyReverseCharge
+			return tc
+		}
+		// The regime defines neither the reported category nor VAT; record the tax as-is below.
 	}
 
 	taxDate := newDateFromTS(taxAmount.TaxRate.Created, regimeDef.TimeLocation())
@@ -361,10 +373,19 @@ func FromCreditNoteTaxAmountToTaxCombo(taxAmount *stripe.CreditNoteTaxAmount, re
 	// Instead of the percentage we can also look at the taxability_reason field.
 	// There are different types defined and we could map them to the tax categories in GOBL.
 
+	// A reverse charge is issued from the supplier's side (see the invoice version of
+	// this function for the full rationale): express it with the supplier regime's own
+	// category and country, falling back to VAT when Stripe reports a foreign category
+	// the regime doesn't define.
 	if taxAmount.TaxabilityReason == stripe.CreditNoteTaxAmountTaxabilityReasonReverseCharge {
-		tc.Country = regimeDef.Country
-		tc.Key = tax.KeyReverseCharge
-		return tc
+		cat := reverseChargeCategory(tc.Category, regimeDef)
+		if cat != "" {
+			tc.Category = cat
+			tc.Country = regimeDef.Country
+			tc.Key = tax.KeyReverseCharge
+			return tc
+		}
+		// The regime defines neither the reported category nor VAT; record the tax as-is below.
 	}
 
 	taxDate := newDateFromTS(taxAmount.TaxRate.Created, regimeDef.TimeLocation())
@@ -394,6 +415,24 @@ func FromCreditNoteTaxAmountToTaxCombo(taxAmount *stripe.CreditNoteTaxAmount, re
 }
 
 //Useful functions
+
+// reverseChargeCategory picks the category to use for a supplier-side reverse
+// charge. Stripe reports the category from the customer's perspective (e.g.
+// Australian GST for an AU customer), but a reverse charge is the supplier's
+// statement that it charges no tax, so it must sit in the supplier's regime. If
+// the regime already defines the reported category (e.g. VAT for an EU supplier)
+// we keep it; otherwise we fall back to the regime's VAT category. It returns an
+// empty code when the regime defines neither, signalling the caller to record the
+// tax as-is instead.
+func reverseChargeCategory(cat cbc.Code, regimeDef *tax.RegimeDef) cbc.Code {
+	if regimeDef.CategoryDef(cat) != nil {
+		return cat
+	}
+	if regimeDef.CategoryDef(tax.CategoryVAT) != nil {
+		return tax.CategoryVAT
+	}
+	return ""
+}
 
 // lookupRateValue looks up a tax rate and value from a regime definition.
 func lookupRateValue(sRate float64, country l10n.Code, cat cbc.Code, date *cal.Date) (rate *tax.RateDef, val *tax.RateValueDef) {

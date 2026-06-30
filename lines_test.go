@@ -754,6 +754,32 @@ func TestFromInvoiceTaxAmountsReverseCharge(t *testing.T) {
 				},
 			},
 		},
+		{
+			// Stripe reports the customer's category (AU GST), which the supplier's
+			// regime (PL) doesn't define. A reverse charge is issued from the supplier's
+			// side, so it must fall back to the supplier regime's VAT category and country.
+			name: "reverse charge with foreign category not in supplier regime",
+			input: []*stripe.InvoiceTotalTaxAmount{
+				{
+					TaxRate: &stripe.TaxRate{
+						Country:             "AU",
+						TaxType:             stripe.TaxRateTaxTypeGST,
+						EffectivePercentage: 0.0,
+						Percentage:          10.0,
+						Created:             time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
+					},
+					TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonReverseCharge,
+				},
+			},
+			regime: l10n.PL, // Polish supplier billing an Australian customer
+			expected: tax.Set{
+				{
+					Category: tax.CategoryVAT,
+					Country:  l10n.PL.Tax(),
+					Key:      tax.KeyReverseCharge,
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -790,6 +816,31 @@ func TestFromCreditNoteTaxAmountsReverseCharge(t *testing.T) {
 				{
 					Category: tax.CategoryVAT,
 					Country:  l10n.DE.Tax(),
+					Key:      tax.KeyReverseCharge,
+				},
+			},
+		},
+		{
+			// Foreign category (AU GST) not defined in the supplier regime (PL):
+			// falls back to the supplier regime's VAT category and country.
+			name: "credit note reverse charge with foreign category not in supplier regime",
+			input: []*stripe.CreditNoteTaxAmount{
+				{
+					TaxRate: &stripe.TaxRate{
+						Country:             "AU",
+						TaxType:             stripe.TaxRateTaxTypeGST,
+						EffectivePercentage: 0.0,
+						Percentage:          10.0,
+						Created:             time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
+					},
+					TaxabilityReason: stripe.CreditNoteTaxAmountTaxabilityReasonReverseCharge,
+				},
+			},
+			regime: l10n.PL, // Polish supplier billing an Australian customer
+			expected: tax.Set{
+				{
+					Category: tax.CategoryVAT,
+					Country:  l10n.PL.Tax(),
 					Key:      tax.KeyReverseCharge,
 				},
 			},
