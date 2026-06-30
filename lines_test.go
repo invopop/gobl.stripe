@@ -855,6 +855,30 @@ func TestFromCreditNoteTaxAmountsReverseCharge(t *testing.T) {
 	}
 }
 
+// TestReverseChargeFallbackWithoutVATRegime documents the fall-through: when the
+// supplier regime defines no reverse-charge-capable category (no VAT), the Stripe
+// tax is recorded as-is and the reverse-charge key is NOT forced onto the combo.
+// Forcing it would be invalid, as GOBL only accepts the reverse-charge key on VAT.
+func TestReverseChargeFallbackWithoutVATRegime(t *testing.T) {
+	input := []*stripe.InvoiceTotalTaxAmount{
+		{
+			TaxRate: &stripe.TaxRate{
+				Country:    "AU",
+				TaxType:    stripe.TaxRateTaxTypeGST,
+				Percentage: 10.0,
+				Created:    time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
+			},
+			TaxabilityReason: stripe.InvoiceTotalTaxAmountTaxabilityReasonReverseCharge,
+		},
+	}
+
+	// US has no VAT category, so the reverse charge cannot be placed in the regime.
+	result := goblstripe.FromInvoiceTaxAmountsToTaxSet(input, tax.RegimeDefFor(l10n.US))
+	assert.Len(t, result, 1)
+	assert.Equal(t, tax.CategoryGST, result[0].Category)
+	assert.Empty(t, result[0].Key, "reverse-charge key must not be forced onto a combo the regime can't validate")
+}
+
 // Credit Notes
 
 func validCreditNoteLine() *stripe.CreditNoteLineItem {

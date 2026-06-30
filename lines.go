@@ -211,7 +211,10 @@ func FromInvoiceTaxAmountToTaxCombo(taxAmount *stripe.InvoiceTotalTaxAmount, reg
 			tc.Key = tax.KeyReverseCharge
 			return tc
 		}
-		// The regime defines neither the reported category nor VAT; record the tax as-is below.
+		// The regime defines no reverse-charge-capable category (no VAT), so a valid
+		// reverse charge can't be expressed here: GOBL only accepts the reverse-charge
+		// key on VAT. Record the Stripe tax as-is below, without the key — forcing the
+		// key would make GOBL reject the line.
 	}
 
 	taxDate := newDateFromTS(taxAmount.TaxRate.Created, regimeDef.TimeLocation())
@@ -385,7 +388,10 @@ func FromCreditNoteTaxAmountToTaxCombo(taxAmount *stripe.CreditNoteTaxAmount, re
 			tc.Key = tax.KeyReverseCharge
 			return tc
 		}
-		// The regime defines neither the reported category nor VAT; record the tax as-is below.
+		// The regime defines no reverse-charge-capable category (no VAT), so a valid
+		// reverse charge can't be expressed here: GOBL only accepts the reverse-charge
+		// key on VAT. Record the Stripe tax as-is below, without the key — forcing the
+		// key would make GOBL reject the line.
 	}
 
 	taxDate := newDateFromTS(taxAmount.TaxRate.Created, regimeDef.TimeLocation())
