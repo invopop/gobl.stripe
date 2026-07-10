@@ -1,6 +1,6 @@
 module github.com/invopop/gobl.stripe
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/invopop/gobl v0.308.0
@@ -29,6 +29,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/spf13/pflag v1.0.6 // indirect
 	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
-	golang.org/x/crypto v0.47.0 // indirect
+	golang.org/x/crypto v0.52.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
