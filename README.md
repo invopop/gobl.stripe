@@ -229,9 +229,14 @@ For the moment, we consider there are no discounts on the general invoice, but o
 - For the moment, we are not including the payment instructions for already paid invoices. We could add it by expanding the `payment_method` field in `charge`.
 - For the advances there is no a straightforward way to get them as another API request is required. Currently we are handling it as a unique advancement on the `amount_paid`.
 
+### Taxes without a GOBL category
+Stripe reports a `tax_type` on every tax rate, and only some of them have an equivalent GOBL tax category (`vat`, `jct`, `gst`, `hst`, `igst` and `sales_tax`). The rest — local US taxes such as `lease_tax` (Chicago Lease Tax) or `amusement_tax`, Canadian `pst`/`qst`/`rst`, and the types without a constant in `stripe-go` — are listed in `unsupportedTaxes` and imported as document charges (`*bill.Charge`) keyed as `tax`, so that the invoice total still matches Stripe. The same applies when the tax maps to a category the applicable regime does not define, for instance a GST rate on a US invoice.
+
+Inclusive taxes are not charged, as their amount is already part of the line prices, and tax rates that were not expanded in the request are ignored because there is no way to tell what they represent.
+
 ### Not supported yet
 - Proration
-- Charges (*bill.Charge). If needed for delivering goods we could add the shipping charges. 
+- Charges (*bill.Charge) other than the taxes described above. If needed for delivering goods we could add the shipping charges. 
 
 ## Handling tags/extensions
 To handle tags and extensions different approaches are possible:

@@ -187,9 +187,11 @@ func FromInvoiceTaxAmountsToTaxSet(taxAmounts []*stripe.InvoiceTotalTaxAmount, r
 // FromInvoiceTaxAmountToTaxCombo creates a new GOBL tax combo from a Stripe invoice tax amount.
 func FromInvoiceTaxAmountToTaxCombo(taxAmount *stripe.InvoiceTotalTaxAmount, regimeDef *tax.RegimeDef) *tax.Combo {
 	tc := new(tax.Combo)
-	tc.Category = extractTaxCat(taxAmount.TaxRate)
+	tc.Category = extractTaxCat(taxAmount.TaxRate, regimeDef)
 
 	if tc.Category == "" {
+		// The tax has no category in the regime, so it is recorded as a document
+		// charge by chargesFromInvoiceTaxAmounts instead of as a tax on the line.
 		return nil
 	}
 
@@ -367,9 +369,11 @@ func FromCreditNoteTaxAmountsToTaxSet(taxAmounts []*stripe.CreditNoteTaxAmount, 
 // FromCreditNoteTaxAmountToTaxCombo creates a new GOBL tax combo from a Stripe credit note tax amount.
 func FromCreditNoteTaxAmountToTaxCombo(taxAmount *stripe.CreditNoteTaxAmount, regimeDef *tax.RegimeDef) *tax.Combo {
 	tc := new(tax.Combo)
-	tc.Category = extractTaxCat(taxAmount.TaxRate)
+	tc.Category = extractTaxCat(taxAmount.TaxRate, regimeDef)
 
 	if tc.Category == "" {
+		// The tax has no category in the regime, so it is recorded as a document
+		// charge by chargesFromCreditNoteTaxAmounts instead of as a tax on the line.
 		return nil
 	}
 

@@ -1,0 +1,117 @@
+{
+	"$schema": "https://gobl.org/draft-0/envelope",
+	"head": {
+		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
+		"dig": {
+			"alg": "sha256",
+			"val": "e36e9112494e7de34b086f6470bdd11ff1ee2a5f18a477fa62fd6c75b12889e4"
+		}
+	},
+	"doc": {
+		"$schema": "https://gobl.org/draft-0/bill/invoice",
+		"$regime": "DE",
+		"$tags": [
+			"simplified"
+		],
+		"uuid": "019860fc-7d4c-7922-a371-e848ca5141d3",
+		"type": "standard",
+		"code": "in_1UFuNOQdfZQld7oOB8qTRUUZ",
+		"issue_date": "2026-01-01",
+		"currency": "USD",
+		"exchange_rates": [
+			{
+				"from": "USD",
+				"to": "EUR",
+				"amount": "0.935"
+			}
+		],
+		"supplier": {
+			"name": "Test Account",
+			"tax_id": {
+				"country": "DE",
+				"code": "813495425"
+			},
+			"addresses": [
+				{
+					"street": "Test Street 123",
+					"locality": "Munich",
+					"state": "BY",
+					"code": "80331",
+					"country": "DE"
+				}
+			],
+			"emails": [
+				{
+					"addr": "support@testaccount.com"
+				}
+			],
+			"telephones": [
+				{
+					"num": "+4989123456"
+				}
+			]
+		},
+		"customer": {
+			"name": "Miguel Torres",
+			"addresses": [
+				{
+					"street": "233 S Wacker Dr",
+					"street_extra": "Suite 8400",
+					"locality": "Chicago",
+					"state": "IL",
+					"code": "60606",
+					"country": "US"
+				}
+			],
+			"emails": [
+				{
+					"addr": "miguel.torres@invopop.com"
+				}
+			]
+		},
+		"lines": [
+			{
+				"i": 1,
+				"quantity": "1",
+				"period": {
+					"start": "2026-09-15",
+					"end": "2026-10-15"
+				},
+				"item": {
+					"name": "Invopop Platform - monthly subscription",
+					"currency": "USD",
+					"price": "100.00"
+				},
+				"sum": "100.00",
+				"total": "100.00"
+			}
+		],
+		"charges": [
+			{
+				"i": 1,
+				"key": "tax",
+				"code": "lease_tax",
+				"reason": "Chicago Lease Tax",
+				"amount": "15.00"
+			}
+		],
+		"ordering": {
+			"period": {
+				"start": "2026-09-15",
+				"end": "2026-10-15"
+			}
+		},
+		"totals": {
+			"sum": "100.00",
+			"charge": "15.00",
+			"total": "115.00",
+			"tax": "0.00",
+			"total_with_tax": "115.00",
+			"payable": "115.00"
+		},
+		"meta": {
+			"stripe-document-id": "in_1UFuNOQdfZQld7oOB8qTRUUZ",
+			"stripe-document-type": "invoice"
+		}
+	}
+}

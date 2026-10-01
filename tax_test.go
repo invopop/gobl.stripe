@@ -550,8 +550,9 @@ func TestExtractTaxCat(t *testing.T) {
 
 		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
-		require.NotNil(t, gi.Tax)
-		// Should return empty code for unknown tax types
-		assert.Equal(t, "Unknown Tax", string(gi.Tax.PricesInclude))
+		// Unknown taxes have no GOBL category, and an inclusive one is already part
+		// of the line prices, so neither a tax nor a charge is recorded.
+		assert.Nil(t, gi.Tax)
+		assert.Empty(t, gi.Charges)
 	})
 }
