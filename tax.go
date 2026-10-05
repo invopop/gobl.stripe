@@ -107,7 +107,7 @@ func taxCatFromCreditNoteLines(lines []*stripe.CreditNoteLineItem, regimeDef *ta
 // extractTaxCat extracts the tax category from a Stripe tax rate, using the
 // display name when the tax type is not set. It returns an empty code when the
 // tax has no category in the regime that will validate it, in which case the
-// caller records the tax as a document charge instead.
+// caller records the tax as a line charge instead.
 func extractTaxCat(taxRate *stripe.TaxRate, regimeDef *tax.RegimeDef) cbc.Code {
 	if taxRate == nil {
 		return ""
@@ -121,18 +121,13 @@ func extractTaxCat(taxRate *stripe.TaxRate, regimeDef *tax.RegimeDef) cbc.Code {
 		return ""
 	}
 
-	if taxRegimeDef(taxRate, regimeDef).CategoryDef(cat) == nil {
+	if taxRate.Country != "" {
+		// The combo takes the rate's country, so that is the regime that validates it.
+		regimeDef = tax.RegimeDefFor(l10n.Code(taxRate.Country))
+	}
+	if regimeDef.CategoryDef(cat) == nil {
 		return ""
 	}
 
 	return cat
-}
-
-// taxRegimeDef resolves the regime that will validate a tax combo built from the
-// given rate, which is the rate's own country whenever Stripe provides one.
-func taxRegimeDef(taxRate *stripe.TaxRate, regimeDef *tax.RegimeDef) *tax.RegimeDef {
-	if taxRate.Country != "" {
-		return tax.RegimeDefFor(l10n.Code(taxRate.Country))
-	}
-	return regimeDef
 }
