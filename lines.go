@@ -43,6 +43,7 @@ func FromInvoiceLine(line *stripe.InvoiceLineItem, regimeDef *tax.RegimeDef) *bi
 	}
 
 	invLine.Taxes = FromInvoiceTaxAmountsToTaxSet(line.TaxAmounts, regimeDef)
+	invLine.Charges = lineChargesFromInvoiceTaxAmounts(line.TaxAmounts, FromCurrency(line.Currency), regimeDef)
 
 	if line.Period != nil {
 		invLine.Period = &cal.Period{
@@ -267,6 +268,7 @@ func creditNoteLineFromTotals(doc *stripe.CreditNote, curr currency.Code, regime
 		},
 	}
 	line.Taxes = FromCreditNoteTaxAmountsToTaxSet(doc.TaxAmounts, regimeDef)
+	line.Charges = lineChargesFromCreditNoteTaxAmounts(doc.TaxAmounts, curr, regimeDef)
 	return line
 }
 
@@ -296,6 +298,7 @@ func FromCreditNoteLine(line *stripe.CreditNoteLineItem, curr currency.Code, reg
 	}
 
 	invLine.Taxes = FromCreditNoteTaxAmountsToTaxSet(line.TaxAmounts, regimeDef)
+	invLine.Charges = lineChargesFromCreditNoteTaxAmounts(line.TaxAmounts, curr, regimeDef)
 
 	return invLine
 }

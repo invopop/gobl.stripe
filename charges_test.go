@@ -48,8 +48,8 @@ func TestChargesFromUnsupportedTaxes(t *testing.T) {
 		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 
-		require.Len(t, gi.Charges, 1)
-		charge := gi.Charges[0]
+		require.Len(t, gi.Lines[0].Charges, 1)
+		charge := gi.Lines[0].Charges[0]
 		assert.Equal(t, bill.ChargeKeyTax, charge.Key)
 		assert.Equal(t, "lease_tax", charge.Code.String())
 		assert.Equal(t, "Chicago Lease Tax", charge.Reason)
@@ -70,9 +70,9 @@ func TestChargesFromUnsupportedTaxes(t *testing.T) {
 		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 
-		require.Len(t, gi.Charges, 1)
-		assert.Equal(t, "Gross Receipts Tax", gi.Charges[0].Reason)
-		assert.Equal(t, "1.00", gi.Charges[0].Amount.String())
+		require.Len(t, gi.Lines[0].Charges, 1)
+		assert.Equal(t, "Gross Receipts Tax", gi.Lines[0].Charges[0].Reason)
+		assert.Equal(t, "1.00", gi.Lines[0].Charges[0].Amount.String())
 	})
 
 	t.Run("category missing from the regime becomes a charge", func(t *testing.T) {
@@ -86,8 +86,8 @@ func TestChargesFromUnsupportedTaxes(t *testing.T) {
 		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 
-		require.Len(t, gi.Charges, 1)
-		assert.Equal(t, "GST", gi.Charges[0].Reason)
+		require.Len(t, gi.Lines[0].Charges, 1)
+		assert.Equal(t, "GST", gi.Lines[0].Charges[0].Reason)
 		assert.Empty(t, gi.Lines[0].Taxes)
 	})
 
@@ -97,7 +97,7 @@ func TestChargesFromUnsupportedTaxes(t *testing.T) {
 		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 
-		assert.Empty(t, gi.Charges)
+		assert.Empty(t, gi.Lines[0].Charges)
 		assert.Equal(t, "20.00", gi.Totals.TotalWithTax.String())
 	})
 
@@ -107,7 +107,7 @@ func TestChargesFromUnsupportedTaxes(t *testing.T) {
 		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 
-		assert.Empty(t, gi.Charges)
+		assert.Empty(t, gi.Lines[0].Charges)
 	})
 
 	t.Run("supported tax is still a tax", func(t *testing.T) {
@@ -122,7 +122,7 @@ func TestChargesFromUnsupportedTaxes(t *testing.T) {
 		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 
-		assert.Empty(t, gi.Charges)
+		assert.Empty(t, gi.Lines[0].Charges)
 		require.Len(t, gi.Lines[0].Taxes, 1)
 		assert.Equal(t, tax.CategoryVAT, gi.Lines[0].Taxes[0].Category)
 	})
@@ -139,7 +139,7 @@ func TestChargesFromUnsupportedTaxes(t *testing.T) {
 		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
 		require.NoError(t, err)
 
-		assert.Empty(t, gi.Charges)
+		assert.Empty(t, gi.Lines[0].Charges)
 		require.Len(t, gi.Lines[0].Taxes, 1)
 		assert.Equal(t, tax.CategoryVAT, gi.Lines[0].Taxes[0].Category)
 	})
@@ -162,8 +162,8 @@ func TestChargesFromCreditNoteUnsupportedTaxes(t *testing.T) {
 	gi, err := goblstripe.FromCreditNote(s, validStripeAccount())
 	require.NoError(t, err)
 
-	require.Len(t, gi.Charges, 1)
-	assert.Equal(t, bill.ChargeKeyTax, gi.Charges[0].Key)
-	assert.Equal(t, "Chicago Lease Tax", gi.Charges[0].Reason)
-	assert.Equal(t, "3.00", gi.Charges[0].Amount.String())
+	require.Len(t, gi.Lines[0].Charges, 1)
+	assert.Equal(t, bill.ChargeKeyTax, gi.Lines[0].Charges[0].Key)
+	assert.Equal(t, "Chicago Lease Tax", gi.Lines[0].Charges[0].Reason)
+	assert.Equal(t, "3.00", gi.Lines[0].Charges[0].Amount.String())
 }

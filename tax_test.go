@@ -553,6 +553,6 @@ func TestExtractTaxCat(t *testing.T) {
 		// Unknown taxes have no GOBL category, and an inclusive one is already part
 		// of the line prices, so neither a tax nor a charge is recorded.
 		assert.Nil(t, gi.Tax)
-		assert.Empty(t, gi.Charges)
+		assert.Empty(t, gi.Lines[0].Charges)
 	})
 }

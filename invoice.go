@@ -94,7 +94,6 @@ func FromInvoice(doc *stripe.Invoice, account *stripe.Account) (*bill.Invoice, e
 
 	inv.Lines = FromInvoiceLines(doc.Lines.Data, regimeDef)
 	inv.Tax = taxFromInvoiceTaxAmounts(doc.TotalTaxAmounts, doc.Lines.Data, regimeDef)
-	inv.Charges = chargesFromInvoiceTaxAmounts(doc.TotalTaxAmounts, inv.Currency, regimeDef)
 	inv.Ordering = newOrdering(doc, inv.Lines, regimeDef)
 	inv.Delivery = newDelivery(doc)
 	inv.Payment = newPayment(doc, regimeDef)
@@ -179,7 +178,6 @@ func FromCreditNote(doc *stripe.CreditNote, account *stripe.Account, opts ...Cre
 		inv.Lines = []*bill.Line{creditNoteLineFromTotals(doc, inv.Currency, regimeDef)}
 	}
 	inv.Tax = taxFromCreditNoteTaxAmounts(doc.TaxAmounts, doc.Lines.Data, regimeDef)
-	inv.Charges = chargesFromCreditNoteTaxAmounts(doc.TaxAmounts, inv.Currency, regimeDef)
 	if options.precedingInvoice != nil {
 		inv.Preceding = []*org.DocumentRef{newPrecedingFromGOBLInvoice(options.precedingInvoice, string(doc.Reason))}
 	} else {

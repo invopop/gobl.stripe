@@ -9,8 +9,8 @@ import (
 )
 
 // unsupportedTax describes a Stripe tax type that GOBL has no tax category for.
-// Taxes of these types are imported as document charges so that the invoice
-// total still reconciles with Stripe.
+// Taxes of these types are imported as line charges so that the invoice total
+// still reconciles with Stripe.
 type unsupportedTax struct {
 	// TaxType is the value Stripe reports in the tax rate's tax_type field.
 	TaxType stripe.TaxRateTaxType
@@ -19,28 +19,18 @@ type unsupportedTax struct {
 	Name string
 }
 
-// unsupportedTaxes lists every Stripe tax type without a GOBL tax category.
-// The types missing a constant in stripe-go are declared as literals, as Stripe
-// returns them regardless of whether the SDK knows about them.
+// unsupportedTaxes lists the Stripe tax types that stripe-go defines and GOBL has
+// no tax category for. Stripe reports further types that are charged just the
+// same, using the display name on the tax rate to describe them.
 var unsupportedTaxes = []unsupportedTax{
-	{TaxType: "admissions_tax", Name: "Admissions Tax"},
 	{TaxType: stripe.TaxRateTaxTypeAmusementTax, Name: "Amusement Tax"},
-	{TaxType: "attendance_tax", Name: "Attendance Tax"},
 	{TaxType: stripe.TaxRateTaxTypeCommunicationsTax, Name: "Communications Tax"},
-	{TaxType: "entertainment_tax", Name: "Entertainment Tax"},
-	{TaxType: "gross_receipts_tax", Name: "Gross Receipts Tax"},
-	{TaxType: "hospitality_tax", Name: "Hospitality Tax"},
 	{TaxType: stripe.TaxRateTaxTypeLeaseTax, Name: "Chicago Lease Tax"},
-	{TaxType: "luxury_tax", Name: "Luxury Tax"},
-	{TaxType: "mass_transit_parking_tax", Name: "Mass Transit Parking Tax"},
-	{TaxType: "parking_tax", Name: "Parking Tax"},
 	{TaxType: stripe.TaxRateTaxTypePST, Name: "Provincial Sales Tax"},
 	{TaxType: stripe.TaxRateTaxTypeQST, Name: "Quebec Sales Tax"},
-	{TaxType: "resort_tax", Name: "Resort Tax"},
 	{TaxType: stripe.TaxRateTaxTypeRetailDeliveryFee, Name: "Retail Delivery Fee"},
 	{TaxType: stripe.TaxRateTaxTypeRST, Name: "Retail Sales Tax"},
 	{TaxType: stripe.TaxRateTaxTypeServiceTax, Name: "Service Tax"},
-	{TaxType: "tourism_tax", Name: "Tourism Tax"},
 }
 
 // unsupportedTaxFor returns the definition of a Stripe tax type that cannot be
@@ -54,12 +44,12 @@ func unsupportedTaxFor(taxType stripe.TaxRateTaxType) *unsupportedTax {
 	return nil
 }
 
-// chargesFromInvoiceTaxAmounts converts the Stripe taxes that GOBL cannot express
-// as tax combos into document charges.
-func chargesFromInvoiceTaxAmounts(taxAmounts []*stripe.InvoiceTotalTaxAmount, curr currency.Code, regimeDef *tax.RegimeDef) []*bill.Charge {
-	var charges []*bill.Charge
+// lineChargesFromInvoiceTaxAmounts converts the taxes on an invoice line that
+// GOBL cannot express as tax combos into line charges.
+func lineChargesFromInvoiceTaxAmounts(taxAmounts []*stripe.InvoiceTotalTaxAmount, curr currency.Code, regimeDef *tax.RegimeDef) []*bill.LineCharge {
+	var charges []*bill.LineCharge
 	for _, ta := range taxAmounts {
-		charge := newChargeFromTax(ta.TaxRate, ta.Amount, ta.Inclusive, curr, regimeDef)
+		charge := newLineChargeFromTax(ta.TaxRate, ta.Amount, ta.Inclusive, curr, regimeDef)
 		if charge != nil {
 			charges = append(charges, charge)
 		}
@@ -67,12 +57,12 @@ func chargesFromInvoiceTaxAmounts(taxAmounts []*stripe.InvoiceTotalTaxAmount, cu
 	return charges
 }
 
-// chargesFromCreditNoteTaxAmounts converts the Stripe taxes that GOBL cannot
-// express as tax combos into document charges.
-func chargesFromCreditNoteTaxAmounts(taxAmounts []*stripe.CreditNoteTaxAmount, curr currency.Code, regimeDef *tax.RegimeDef) []*bill.Charge {
-	var charges []*bill.Charge
+// lineChargesFromCreditNoteTaxAmounts converts the taxes on a credit note line
+// that GOBL cannot express as tax combos into line charges.
+func lineChargesFromCreditNoteTaxAmounts(taxAmounts []*stripe.CreditNoteTaxAmount, curr currency.Code, regimeDef *tax.RegimeDef) []*bill.LineCharge {
+	var charges []*bill.LineCharge
 	for _, ta := range taxAmounts {
-		charge := newChargeFromTax(ta.TaxRate, ta.Amount, ta.Inclusive, curr, regimeDef)
+		charge := newLineChargeFromTax(ta.TaxRate, ta.Amount, ta.Inclusive, curr, regimeDef)
 		if charge != nil {
 			charges = append(charges, charge)
 		}
@@ -80,10 +70,10 @@ func chargesFromCreditNoteTaxAmounts(taxAmounts []*stripe.CreditNoteTaxAmount, c
 	return charges
 }
 
-// newChargeFromTax builds a document charge for a Stripe tax with no GOBL tax
+// newLineChargeFromTax builds a line charge for a Stripe tax with no GOBL tax
 // category. It returns nil when the tax maps to a category, when the amount is
-// already part of the line prices, or when there is nothing to charge.
-func newChargeFromTax(taxRate *stripe.TaxRate, amount int64, inclusive bool, curr currency.Code, regimeDef *tax.RegimeDef) *bill.Charge {
+// already part of the line price, or when there is nothing to charge.
+func newLineChargeFromTax(taxRate *stripe.TaxRate, amount int64, inclusive bool, curr currency.Code, regimeDef *tax.RegimeDef) *bill.LineCharge {
 	if taxRate == nil || amount == 0 || inclusive {
 		return nil
 	}
@@ -98,7 +88,7 @@ func newChargeFromTax(taxRate *stripe.TaxRate, amount int64, inclusive bool, cur
 		return nil
 	}
 
-	return &bill.Charge{
+	return &bill.LineCharge{
 		Key:    bill.ChargeKeyTax,
 		Code:   cbc.Code(taxRate.TaxType),
 		Reason: chargeReasonFromTax(taxRate),
