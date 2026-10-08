@@ -6,6 +6,7 @@ import (
 
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/l10n"
+	"github.com/invopop/gobl/norm"
 	"github.com/invopop/gobl/org"
 	"github.com/invopop/gobl/regimes/de"
 	"github.com/invopop/gobl/regimes/us"
@@ -219,7 +220,10 @@ func FromTaxIDToOrg(taxID *stripe.TaxID) *org.Identity {
 			Code:    cbc.Code(taxID.Value),
 		}
 	}
-	oid.Normalize()
+	if oid == nil {
+		return nil
+	}
+	norm.Normalize(oid)
 	return oid
 }
 

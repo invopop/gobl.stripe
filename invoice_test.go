@@ -14,6 +14,7 @@ import (
 	"github.com/invopop/gobl/l10n"
 	"github.com/invopop/gobl/num"
 	"github.com/invopop/gobl/org"
+	"github.com/invopop/gobl/rules"
 	"github.com/invopop/gobl/tax"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -373,10 +374,9 @@ func TestCustomerWithMetadata(t *testing.T) {
 	assert.Equal(t, "me.unselfish@me.com", c.Emails[0].Address)
 	assert.Equal(t, "+4915155555555", c.Telephones[0].Number)
 
-	require.NotNil(t, c.Ext)
-	assert.Equal(t, cbc.Code("my-value"), c.Ext[cbc.Key("my-key")])
-	_, ok := c.Ext[cbc.Key("another-key")]
-	assert.False(t, ok)
+	require.False(t, c.Ext.IsZero())
+	assert.Equal(t, cbc.Code("my-value"), c.Ext.Get(cbc.Key("my-key")))
+	assert.False(t, c.Ext.Has(cbc.Key("another-key")))
 }
 
 func TestCustomerExpansionCondition(t *testing.T) {
@@ -545,7 +545,7 @@ func TestValidate(t *testing.T) {
 	err = gi.Calculate()
 	require.NoError(t, err)
 
-	err = gi.Validate()
+	err = rules.Validate(gi)
 	require.NoError(t, err)
 }
 
@@ -865,7 +865,7 @@ func TestUnexpandedTax(t *testing.T) {
 
 	assert.Equal(t, goblstripe.ExpectedInvoiceTotal(s), gi.Totals.Payable)
 
-	err = gi.Validate()
+	err = rules.Validate(gi)
 	require.NoError(t, err)
 }
 
@@ -883,7 +883,7 @@ func TestStripeCoupon(t *testing.T) {
 
 	assert.Equal(t, goblstripe.ExpectedInvoiceTotal(s), gi.Totals.Payable)
 
-	err = gi.Validate()
+	err = rules.Validate(gi)
 	require.NoError(t, err)
 }
 

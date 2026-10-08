@@ -317,27 +317,28 @@ func newOrdering(doc *stripe.Invoice, lines []*bill.Line, regimeDef *tax.RegimeD
 	// Try to determine period from line items first
 	var earliestStart, latestEnd *cal.Date
 	for _, line := range lines {
-		if line.Period != nil {
-			if earliestStart == nil || line.Period.Start.Time().Before(earliestStart.Time()) {
-				earliestStart = &line.Period.Start
-			}
-			if latestEnd == nil || line.Period.End.Time().After(latestEnd.Time()) {
-				latestEnd = &line.Period.End
-			}
+		if line.Period == nil {
+			continue
+		}
+		if line.Period.Start != nil && (earliestStart == nil || line.Period.Start.Time().Before(earliestStart.Time())) {
+			earliestStart = line.Period.Start
+		}
+		if line.Period.End != nil && (latestEnd == nil || line.Period.End.Time().After(latestEnd.Time())) {
+			latestEnd = line.Period.End
 		}
 	}
 
 	// If we found periods in line items, use them
 	if earliestStart != nil && latestEnd != nil {
 		ordering.Period = &cal.Period{
-			Start: *earliestStart,
-			End:   *latestEnd,
+			Start: earliestStart,
+			End:   latestEnd,
 		}
 	} else {
 		// Otherwise, fall back to document period
 		ordering.Period = &cal.Period{
-			Start: *newDateFromTS(doc.PeriodStart, regimeDef.TimeLocation()),
-			End:   *newDateFromTS(doc.PeriodEnd, regimeDef.TimeLocation()),
+			Start: newDateFromTS(doc.PeriodStart, regimeDef.TimeLocation()),
+			End:   newDateFromTS(doc.PeriodEnd, regimeDef.TimeLocation()),
 		}
 	}
 

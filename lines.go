@@ -47,8 +47,8 @@ func FromInvoiceLine(line *stripe.InvoiceLineItem, regimeDef *tax.RegimeDef) *bi
 
 	if line.Period != nil {
 		invLine.Period = &cal.Period{
-			Start: *newDateFromTS(line.Period.Start, regimeDef.TimeLocation()),
-			End:   *newDateFromTS(line.Period.End, regimeDef.TimeLocation()),
+			Start: newDateFromTS(line.Period.Start, regimeDef.TimeLocation()),
+			End:   newDateFromTS(line.Period.End, regimeDef.TimeLocation()),
 		}
 	}
 
