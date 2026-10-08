@@ -5,14 +5,38 @@ import (
 
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/cbc"
+	"github.com/invopop/gobl/l10n"
+	"github.com/invopop/gobl/regimes/ca"
+	"github.com/invopop/gobl/regimes/in"
 	"github.com/invopop/gobl/tax"
 	"github.com/stripe/stripe-go/v81"
 )
 
+// taxCategories maps the Stripe tax types that have an equivalent GOBL tax
+// category. Types missing from this map have no category and are recorded as
+// line charges, see unsupportedTaxes.
+var taxCategories = map[stripe.TaxRateTaxType]cbc.Code{
+	stripe.TaxRateTaxTypeVAT:      tax.CategoryVAT,
+	stripe.TaxRateTaxTypeGST:      tax.CategoryGST,
+	stripe.TaxRateTaxTypeHST:      ca.TaxCategoryHST,
+	stripe.TaxRateTaxTypePST:      ca.TaxCategoryPST,
+	stripe.TaxRateTaxTypeIGST:     in.TaxCategoryIGST,
+	stripe.TaxRateTaxTypeSalesTax: tax.CategoryST,
+}
+
+// displayNameTaxCategories maps the tax rate display names we recognise, used
+// when Stripe reports no tax type at all.
+var displayNameTaxCategories = map[string]cbc.Code{
+	"vat":       tax.CategoryVAT,
+	"iva":       tax.CategoryVAT,
+	"sales tax": tax.CategoryST,
+	"gst":       tax.CategoryGST,
+}
+
 // taxFromInvoiceTaxAmounts creates a tax object from the tax amounts in an invoice.
 // When a tax category can't be determined from the root-level tax rate,
 // it falls back to line-level tax amounts to find a valid category.
-func taxFromInvoiceTaxAmounts(taxAmounts []*stripe.InvoiceTotalTaxAmount, lines []*stripe.InvoiceLineItem) *bill.Tax {
+func taxFromInvoiceTaxAmounts(taxAmounts []*stripe.InvoiceTotalTaxAmount, lines []*stripe.InvoiceLineItem, regimeDef *tax.RegimeDef) *bill.Tax {
 	if len(taxAmounts) == 0 {
 		return nil
 	}
@@ -22,9 +46,9 @@ func taxFromInvoiceTaxAmounts(taxAmounts []*stripe.InvoiceTotalTaxAmount, lines 
 		return nil
 	}
 
-	cat := extractTaxCat(taxAmounts[0].TaxRate)
+	cat := extractTaxCat(taxAmounts[0].TaxRate, regimeDef)
 	if cat == "" {
-		cat = taxCatFromInvoiceLines(lines)
+		cat = taxCatFromInvoiceLines(lines, regimeDef)
 	}
 	if cat == "" {
 		return nil
@@ -36,7 +60,7 @@ func taxFromInvoiceTaxAmounts(taxAmounts []*stripe.InvoiceTotalTaxAmount, lines 
 // taxFromCreditNoteTaxAmounts creates a tax object from the tax amounts in a credit note.
 // When a tax category can't be determined from the root-level tax rate,
 // it falls back to line-level tax amounts to find a valid category.
-func taxFromCreditNoteTaxAmounts(taxAmounts []*stripe.CreditNoteTaxAmount, lines []*stripe.CreditNoteLineItem) *bill.Tax {
+func taxFromCreditNoteTaxAmounts(taxAmounts []*stripe.CreditNoteTaxAmount, lines []*stripe.CreditNoteLineItem, regimeDef *tax.RegimeDef) *bill.Tax {
 	if len(taxAmounts) == 0 {
 		return nil
 	}
@@ -46,9 +70,9 @@ func taxFromCreditNoteTaxAmounts(taxAmounts []*stripe.CreditNoteTaxAmount, lines
 		return nil
 	}
 
-	cat := extractTaxCat(taxAmounts[0].TaxRate)
+	cat := extractTaxCat(taxAmounts[0].TaxRate, regimeDef)
 	if cat == "" {
-		cat = taxCatFromCreditNoteLines(lines)
+		cat = taxCatFromCreditNoteLines(lines, regimeDef)
 	}
 	if cat == "" {
 		return nil
@@ -58,10 +82,10 @@ func taxFromCreditNoteTaxAmounts(taxAmounts []*stripe.CreditNoteTaxAmount, lines
 }
 
 // taxCatFromInvoiceLines iterates over invoice line items to find a valid tax category.
-func taxCatFromInvoiceLines(lines []*stripe.InvoiceLineItem) cbc.Code {
+func taxCatFromInvoiceLines(lines []*stripe.InvoiceLineItem, regimeDef *tax.RegimeDef) cbc.Code {
 	for _, line := range lines {
 		for _, ta := range line.TaxAmounts {
-			if cat := extractTaxCat(ta.TaxRate); cat != "" {
+			if cat := extractTaxCat(ta.TaxRate, regimeDef); cat != "" {
 				return cat
 			}
 		}
@@ -70,10 +94,10 @@ func taxCatFromInvoiceLines(lines []*stripe.InvoiceLineItem) cbc.Code {
 }
 
 // taxCatFromCreditNoteLines iterates over credit note line items to find a valid tax category.
-func taxCatFromCreditNoteLines(lines []*stripe.CreditNoteLineItem) cbc.Code {
+func taxCatFromCreditNoteLines(lines []*stripe.CreditNoteLineItem, regimeDef *tax.RegimeDef) cbc.Code {
 	for _, line := range lines {
 		for _, ta := range line.TaxAmounts {
-			if cat := extractTaxCat(ta.TaxRate); cat != "" {
+			if cat := extractTaxCat(ta.TaxRate, regimeDef); cat != "" {
 				return cat
 			}
 		}
@@ -81,29 +105,30 @@ func taxCatFromCreditNoteLines(lines []*stripe.CreditNoteLineItem) cbc.Code {
 	return ""
 }
 
-// extractTaxCat extracts the tax category from a Stripe tax rate.
-// If the tax type is not set, we use the display name to determine the tax category.
-func extractTaxCat(taxRate *stripe.TaxRate) cbc.Code {
+// extractTaxCat extracts the tax category from a Stripe tax rate, using the
+// display name when the tax type is not set. It returns an empty code when the
+// tax has no category in the regime that will validate it, in which case the
+// caller records the tax as a line charge instead.
+func extractTaxCat(taxRate *stripe.TaxRate, regimeDef *tax.RegimeDef) cbc.Code {
 	if taxRate == nil {
 		return ""
 	}
-	switch taxRate.TaxType {
-	case stripe.TaxRateTaxTypeVAT:
-		return tax.CategoryVAT
-	case stripe.TaxRateTaxTypeSalesTax:
-		return tax.CategoryST
-	case stripe.TaxRateTaxTypeGST:
-		return tax.CategoryGST
+
+	cat, ok := taxCategories[taxRate.TaxType]
+	if !ok {
+		cat = displayNameTaxCategories[strings.ToLower(strings.TrimSpace(taxRate.DisplayName))]
+	}
+	if cat == "" {
+		return ""
 	}
 
-	switch strings.ToLower(strings.TrimSpace(taxRate.DisplayName)) {
-	case "vat", "iva":
-		return tax.CategoryVAT
-	case "sales tax":
-		return tax.CategoryST
-	case "gst":
-		return tax.CategoryGST
+	if taxRate.Country != "" {
+		// The combo takes the rate's country, so that is the regime that validates it.
+		regimeDef = tax.RegimeDefFor(l10n.Code(taxRate.Country))
+	}
+	if regimeDef.CategoryDef(cat) == nil {
+		return ""
 	}
 
-	return cbc.Code(taxRate.DisplayName)
+	return cat
 }

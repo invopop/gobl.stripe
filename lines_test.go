@@ -7,6 +7,7 @@ import (
 	goblstripe "github.com/invopop/gobl.stripe"
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/cal"
+	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/currency"
 	"github.com/invopop/gobl/l10n"
 	"github.com/invopop/gobl/num"
@@ -236,8 +237,8 @@ func TestSeveralLines(t *testing.T) {
 				},
 			},
 			Period: &cal.Period{
-				Start: *cal.NewDate(2025, 1, 8),
-				End:   *cal.NewDate(2025, 2, 8),
+				Start: cal.NewDate(2025, 1, 8),
+				End:   cal.NewDate(2025, 2, 8),
 			},
 		},
 		{
@@ -255,8 +256,8 @@ func TestSeveralLines(t *testing.T) {
 				},
 			},
 			Period: &cal.Period{
-				Start: *cal.NewDate(2025, 1, 8),
-				End:   *cal.NewDate(2025, 2, 8),
+				Start: cal.NewDate(2025, 1, 8),
+				End:   cal.NewDate(2025, 2, 8),
 			},
 		},
 		{
@@ -274,8 +275,8 @@ func TestSeveralLines(t *testing.T) {
 				},
 			},
 			Period: &cal.Period{
-				Start: *cal.NewDate(2025, 1, 8),
-				End:   *cal.NewDate(2025, 2, 8),
+				Start: cal.NewDate(2025, 1, 8),
+				End:   cal.NewDate(2025, 2, 8),
 			},
 		},
 		{
@@ -293,8 +294,8 @@ func TestSeveralLines(t *testing.T) {
 				},
 			},
 			Period: &cal.Period{
-				Start: *cal.NewDate(2025, 1, 8),
-				End:   *cal.NewDate(2025, 2, 8),
+				Start: cal.NewDate(2025, 1, 8),
+				End:   cal.NewDate(2025, 2, 8),
 			},
 		},
 		{
@@ -303,14 +304,14 @@ func TestSeveralLines(t *testing.T) {
 				Name:     "Line with extension",
 				Currency: currency.EUR,
 				Price:    num.NewAmount(5000, 2),
-				Ext: tax.Extensions{
+				Ext: tax.ExtensionsOf(cbc.CodeMap{
 					"foo": "bar",
-				},
+				}),
 			},
 			Taxes: nil,
 			Period: &cal.Period{
-				Start: *cal.NewDate(2025, 1, 8),
-				End:   *cal.NewDate(2025, 2, 8),
+				Start: cal.NewDate(2025, 1, 8),
+				End:   cal.NewDate(2025, 2, 8),
 			},
 		},
 	}

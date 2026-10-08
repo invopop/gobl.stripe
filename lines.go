@@ -43,11 +43,12 @@ func FromInvoiceLine(line *stripe.InvoiceLineItem, regimeDef *tax.RegimeDef) *bi
 	}
 
 	invLine.Taxes = FromInvoiceTaxAmountsToTaxSet(line.TaxAmounts, regimeDef)
+	invLine.Charges = lineChargesFromInvoiceTaxAmounts(line.TaxAmounts, FromCurrency(line.Currency), regimeDef)
 
 	if line.Period != nil {
 		invLine.Period = &cal.Period{
-			Start: *newDateFromTS(line.Period.Start, regimeDef.TimeLocation()),
-			End:   *newDateFromTS(line.Period.End, regimeDef.TimeLocation()),
+			Start: newDateFromTS(line.Period.Start, regimeDef.TimeLocation()),
+			End:   newDateFromTS(line.Period.End, regimeDef.TimeLocation()),
 		}
 	}
 
@@ -187,9 +188,11 @@ func FromInvoiceTaxAmountsToTaxSet(taxAmounts []*stripe.InvoiceTotalTaxAmount, r
 // FromInvoiceTaxAmountToTaxCombo creates a new GOBL tax combo from a Stripe invoice tax amount.
 func FromInvoiceTaxAmountToTaxCombo(taxAmount *stripe.InvoiceTotalTaxAmount, regimeDef *tax.RegimeDef) *tax.Combo {
 	tc := new(tax.Combo)
-	tc.Category = extractTaxCat(taxAmount.TaxRate)
+	tc.Category = extractTaxCat(taxAmount.TaxRate, regimeDef)
 
 	if tc.Category == "" {
+		// The tax has no category in the regime, so it is recorded as a document
+		// charge by chargesFromInvoiceTaxAmounts instead of as a tax on the line.
 		return nil
 	}
 
@@ -265,6 +268,7 @@ func creditNoteLineFromTotals(doc *stripe.CreditNote, curr currency.Code, regime
 		},
 	}
 	line.Taxes = FromCreditNoteTaxAmountsToTaxSet(doc.TaxAmounts, regimeDef)
+	line.Charges = lineChargesFromCreditNoteTaxAmounts(doc.TaxAmounts, curr, regimeDef)
 	return line
 }
 
@@ -294,6 +298,7 @@ func FromCreditNoteLine(line *stripe.CreditNoteLineItem, curr currency.Code, reg
 	}
 
 	invLine.Taxes = FromCreditNoteTaxAmountsToTaxSet(line.TaxAmounts, regimeDef)
+	invLine.Charges = lineChargesFromCreditNoteTaxAmounts(line.TaxAmounts, curr, regimeDef)
 
 	return invLine
 }
@@ -367,9 +372,11 @@ func FromCreditNoteTaxAmountsToTaxSet(taxAmounts []*stripe.CreditNoteTaxAmount, 
 // FromCreditNoteTaxAmountToTaxCombo creates a new GOBL tax combo from a Stripe credit note tax amount.
 func FromCreditNoteTaxAmountToTaxCombo(taxAmount *stripe.CreditNoteTaxAmount, regimeDef *tax.RegimeDef) *tax.Combo {
 	tc := new(tax.Combo)
-	tc.Category = extractTaxCat(taxAmount.TaxRate)
+	tc.Category = extractTaxCat(taxAmount.TaxRate, regimeDef)
 
 	if tc.Category == "" {
+		// The tax has no category in the regime, so it is recorded as a document
+		// charge by chargesFromCreditNoteTaxAmounts instead of as a tax on the line.
 		return nil
 	}
 

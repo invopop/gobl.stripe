@@ -174,13 +174,13 @@ func newPaymentInstructions(doc *stripe.Invoice) *pay.Instructions {
 }
 
 // newPaymentAdvances creates a payment advances object from a Stripe invoice.
-func newPaymentAdvances(doc *stripe.Invoice, regimeDef *tax.RegimeDef) []*pay.Advance {
+func newPaymentAdvances(doc *stripe.Invoice, regimeDef *tax.RegimeDef) []*pay.Record {
 	if doc.AmountPaid == 0 {
 		return nil
 	}
 
 	// For the moment we can create an advance object with the amount paid
-	advance := &pay.Advance{
+	advance := &pay.Record{
 		Amount:      CurrencyAmount(doc.AmountPaid, FromCurrency(doc.Currency)),
 		Description: "Advance payment",
 	}
@@ -201,5 +201,5 @@ func newPaymentAdvances(doc *stripe.Invoice, regimeDef *tax.RegimeDef) []*pay.Ad
 		}
 	}
 
-	return []*pay.Advance{advance}
+	return []*pay.Record{advance}
 }
