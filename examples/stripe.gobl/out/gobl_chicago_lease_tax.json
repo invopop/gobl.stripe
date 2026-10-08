@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "ac7f961e41572a7b510872fee09add9d04095ecb43c93a2387189c56544800a8"
+			"val": "1c570aed6b01bedd5019f6acd4659fca43095f405086ea476c02a951fe5dabf1"
 		}
 	},
 	"doc": {
@@ -52,7 +52,7 @@
 			]
 		},
 		"customer": {
-			"name": "Miguel Torres",
+			"name": "John Doe",
 			"addresses": [
 				{
 					"street": "233 S Wacker Dr",
@@ -65,7 +65,7 @@
 			],
 			"emails": [
 				{
-					"addr": "miguel.torres@invopop.com"
+					"addr": "customer@example.com"
 				}
 			]
 		},
