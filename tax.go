@@ -6,6 +6,7 @@ import (
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/l10n"
+	"github.com/invopop/gobl/regimes/ca"
 	"github.com/invopop/gobl/regimes/in"
 	"github.com/invopop/gobl/tax"
 	"github.com/stripe/stripe-go/v81"
@@ -13,12 +14,12 @@ import (
 
 // taxCategories maps the Stripe tax types that have an equivalent GOBL tax
 // category. Types missing from this map have no category and are recorded as
-// document charges, see unsupportedTaxes.
+// line charges, see unsupportedTaxes.
 var taxCategories = map[stripe.TaxRateTaxType]cbc.Code{
 	stripe.TaxRateTaxTypeVAT:      tax.CategoryVAT,
-	stripe.TaxRateTaxTypeJCT:      tax.CategoryVAT,
 	stripe.TaxRateTaxTypeGST:      tax.CategoryGST,
-	stripe.TaxRateTaxTypeHST:      tax.CategoryGST,
+	stripe.TaxRateTaxTypeHST:      ca.TaxCategoryHST,
+	stripe.TaxRateTaxTypePST:      ca.TaxCategoryPST,
 	stripe.TaxRateTaxTypeIGST:     in.TaxCategoryIGST,
 	stripe.TaxRateTaxTypeSalesTax: tax.CategoryST,
 }

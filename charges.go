@@ -8,40 +8,48 @@ import (
 	"github.com/stripe/stripe-go/v81"
 )
 
-// unsupportedTax describes a Stripe tax type that GOBL has no tax category for.
-// Taxes of these types are imported as line charges so that the invoice total
-// still reconciles with Stripe.
-type unsupportedTax struct {
-	// TaxType is the value Stripe reports in the tax rate's tax_type field.
-	TaxType stripe.TaxRateTaxType
-	// Name describes the tax, and is used as the charge reason when the Stripe
-	// tax rate carries no display name.
-	Name string
-}
+// Stripe tax types that the API documents but stripe-go has no constant for, see
+// https://docs.stripe.com/api/tax_rates/object#tax_rate_object-tax_type.
+const (
+	taxRateTaxTypeAdmissionsTax         stripe.TaxRateTaxType = "admissions_tax"
+	taxRateTaxTypeAttendanceTax         stripe.TaxRateTaxType = "attendance_tax"
+	taxRateTaxTypeDigitalExciseTax      stripe.TaxRateTaxType = "digital_excise_tax"
+	taxRateTaxTypeEntertainmentTax      stripe.TaxRateTaxType = "entertainment_tax"
+	taxRateTaxTypeGrossReceiptsTax      stripe.TaxRateTaxType = "gross_receipts_tax"
+	taxRateTaxTypeHospitalityTax        stripe.TaxRateTaxType = "hospitality_tax"
+	taxRateTaxTypeLuxuryTax             stripe.TaxRateTaxType = "luxury_tax"
+	taxRateTaxTypeMassTransitParkingTax stripe.TaxRateTaxType = "mass_transit_parking_tax"
+	taxRateTaxTypeParkingTax            stripe.TaxRateTaxType = "parking_tax"
+	taxRateTaxTypeResortTax             stripe.TaxRateTaxType = "resort_tax"
+	taxRateTaxTypeTourismTax            stripe.TaxRateTaxType = "tourism_tax"
+	taxRateTaxTypeUtilityUsersTax       stripe.TaxRateTaxType = "utility_users_tax"
+)
 
-// unsupportedTaxes lists the Stripe tax types that stripe-go defines and GOBL has
-// no tax category for. Stripe reports further types that are charged just the
-// same, using the display name on the tax rate to describe them.
-var unsupportedTaxes = []unsupportedTax{
-	{TaxType: stripe.TaxRateTaxTypeAmusementTax, Name: "Amusement Tax"},
-	{TaxType: stripe.TaxRateTaxTypeCommunicationsTax, Name: "Communications Tax"},
-	{TaxType: stripe.TaxRateTaxTypeLeaseTax, Name: "Chicago Lease Tax"},
-	{TaxType: stripe.TaxRateTaxTypePST, Name: "Provincial Sales Tax"},
-	{TaxType: stripe.TaxRateTaxTypeQST, Name: "Quebec Sales Tax"},
-	{TaxType: stripe.TaxRateTaxTypeRetailDeliveryFee, Name: "Retail Delivery Fee"},
-	{TaxType: stripe.TaxRateTaxTypeRST, Name: "Retail Sales Tax"},
-	{TaxType: stripe.TaxRateTaxTypeServiceTax, Name: "Service Tax"},
-}
-
-// unsupportedTaxFor returns the definition of a Stripe tax type that cannot be
-// expressed as a GOBL tax category, or nil when the type is not listed.
-func unsupportedTaxFor(taxType stripe.TaxRateTaxType) *unsupportedTax {
-	for _, ut := range unsupportedTaxes {
-		if ut.TaxType == taxType {
-			return &ut
-		}
-	}
-	return nil
+// unsupportedTaxes maps every Stripe tax type that GOBL has no tax category for
+// to the name Stripe documents for it, which describes the charge when the tax
+// rate carries no display name. Taxes of these types are imported as line
+// charges so that the invoice total still reconciles with Stripe.
+var unsupportedTaxes = map[stripe.TaxRateTaxType]string{
+	taxRateTaxTypeAdmissionsTax:            "Admissions Tax",
+	stripe.TaxRateTaxTypeAmusementTax:      "Amusement Tax",
+	taxRateTaxTypeAttendanceTax:            "Attendance Tax",
+	stripe.TaxRateTaxTypeCommunicationsTax: "Communications Tax",
+	taxRateTaxTypeDigitalExciseTax:         "Digital Excise Tax",
+	taxRateTaxTypeEntertainmentTax:         "Entertainment Tax",
+	taxRateTaxTypeGrossReceiptsTax:         "Gross Receipts Tax",
+	taxRateTaxTypeHospitalityTax:           "Hospitality Tax",
+	stripe.TaxRateTaxTypeJCT:               "Japanese Consumption Tax",
+	stripe.TaxRateTaxTypeLeaseTax:          "Chicago Lease Tax",
+	taxRateTaxTypeLuxuryTax:                "Luxury Tax",
+	taxRateTaxTypeMassTransitParkingTax:    "Mass Transit Parking Tax",
+	taxRateTaxTypeParkingTax:               "Parking Tax",
+	stripe.TaxRateTaxTypeQST:               "Quebec Sales Tax",
+	taxRateTaxTypeResortTax:                "Resort Tax",
+	stripe.TaxRateTaxTypeRetailDeliveryFee: "Retail Delivery Fee",
+	stripe.TaxRateTaxTypeRST:               "Retail Sales Tax",
+	stripe.TaxRateTaxTypeServiceTax:        "Service Tax",
+	taxRateTaxTypeTourismTax:               "Tourism Tax",
+	taxRateTaxTypeUtilityUsersTax:          "Utility Users Tax",
 }
 
 // lineChargesFromInvoiceTaxAmounts converts the taxes on an invoice line that
@@ -102,8 +110,8 @@ func chargeReasonFromTax(taxRate *stripe.TaxRate) string {
 	if taxRate.DisplayName != "" {
 		return taxRate.DisplayName
 	}
-	if ut := unsupportedTaxFor(taxRate.TaxType); ut != nil {
-		return ut.Name
+	if name, ok := unsupportedTaxes[taxRate.TaxType]; ok {
+		return name
 	}
 	return "Tax"
 }
