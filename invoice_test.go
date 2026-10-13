@@ -849,24 +849,90 @@ func TestNewOrdering(t *testing.T) {
 }
 
 func TestUnexpandedTax(t *testing.T) {
-	data, _ := os.ReadFile("examples/stripe.gobl/unexpanded_invoice.json")
-	s := new(stripe.Invoice)
-	err := json.Unmarshal(data, s)
-	require.NoError(t, err)
-	s.AccountCountry = "DE"
-	customerExempt := stripe.CustomerTaxExemptNone
-	s.CustomerTaxExempt = &customerExempt
+	t.Run("an unexpanded rate carrying tax is caught by the totals check", func(t *testing.T) {
+		s := minimalStripeInvoice()
+		ta := &stripe.InvoiceTotalTaxAmount{
+			Amount:    380,
+			Inclusive: false,
+			TaxRate:   &stripe.TaxRate{ID: "txr_1QhUPLQhcl5B85YlX1loyeFs"},
+		}
+		s.TotalTaxAmounts = []*stripe.InvoiceTotalTaxAmount{ta}
+		s.Lines.Data[0].TaxAmounts = []*stripe.InvoiceTotalTaxAmount{ta}
+		s.Total = 2380
 
-	gi, err := goblstripe.FromInvoice(s, validStripeAccount())
-	require.NoError(t, err)
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "totals calculated in GOBL differ from Stripe by")
+		require.NotNil(t, gi)
+		assert.Empty(t, gi.Lines[0].Taxes)
+	})
 
-	err = gi.Calculate()
-	require.NoError(t, err)
+	t.Run("a credit note with an unexpanded rate carrying tax is caught too", func(t *testing.T) {
+		s := validCreditNote()
+		ta := &stripe.CreditNoteTaxAmount{
+			Amount:  2162,
+			TaxRate: &stripe.TaxRate{ID: "txr_1QhUPLQhcl5B85YlX1loyeFs"},
+		}
+		s.TaxAmounts = []*stripe.CreditNoteTaxAmount{ta}
+		for _, line := range s.Lines.Data {
+			line.TaxAmounts = []*stripe.CreditNoteTaxAmount{ta}
+		}
 
-	assert.Equal(t, goblstripe.ExpectedInvoiceTotal(s), gi.Totals.Payable)
+		gi, err := goblstripe.FromCreditNote(s, validStripeAccount())
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "totals calculated in GOBL differ from Stripe by")
+		require.NotNil(t, gi)
+	})
 
-	err = rules.Validate(gi)
-	require.NoError(t, err)
+	t.Run("an unexpanded rate carrying no tax still converts", func(t *testing.T) {
+		s := minimalStripeInvoice()
+		ta := &stripe.InvoiceTotalTaxAmount{
+			Amount:    0,
+			Inclusive: false,
+			TaxRate:   &stripe.TaxRate{ID: "txr_zero_rated"},
+		}
+		s.TotalTaxAmounts = []*stripe.InvoiceTotalTaxAmount{ta}
+		s.Lines.Data[0].TaxAmounts = []*stripe.InvoiceTotalTaxAmount{ta}
+		s.Total = 2000
+
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
+		require.NoError(t, err)
+		require.NotNil(t, gi)
+		assert.Empty(t, gi.Lines[0].Taxes)
+	})
+
+	t.Run("an unexpanded invoice-level rate is resolved from the lines", func(t *testing.T) {
+		s := minimalStripeInvoice()
+		s.TotalTaxAmounts = []*stripe.InvoiceTotalTaxAmount{
+			{Amount: 380, TaxRate: &stripe.TaxRate{ID: "txr_summary"}},
+		}
+		s.Lines.Data[0].TaxAmounts = []*stripe.InvoiceTotalTaxAmount{
+			{Amount: 380, TaxRate: &stripe.TaxRate{ID: "txr_summary", TaxType: stripe.TaxRateTaxTypeVAT, DisplayName: "VAT", Country: "DE", Percentage: 19.0, EffectivePercentage: 19.0}},
+		}
+		s.Total = 2380
+
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
+		require.NoError(t, err)
+		require.Len(t, gi.Lines[0].Taxes, 1)
+		assert.Equal(t, tax.CategoryVAT, gi.Lines[0].Taxes[0].Category)
+	})
+
+	t.Run("a rate with only a display name is still accepted", func(t *testing.T) {
+		s := minimalStripeInvoice()
+		ta := &stripe.InvoiceTotalTaxAmount{
+			Amount:    380,
+			Inclusive: false,
+			TaxRate:   &stripe.TaxRate{ID: "txr_manual", DisplayName: "VAT", Country: "DE", Percentage: 19.0, EffectivePercentage: 19.0},
+		}
+		s.TotalTaxAmounts = []*stripe.InvoiceTotalTaxAmount{ta}
+		s.Lines.Data[0].TaxAmounts = []*stripe.InvoiceTotalTaxAmount{ta}
+		s.Total = 2380
+
+		gi, err := goblstripe.FromInvoice(s, validStripeAccount())
+		require.NoError(t, err)
+		require.Len(t, gi.Lines[0].Taxes, 1)
+		assert.Equal(t, tax.CategoryVAT, gi.Lines[0].Taxes[0].Category)
+	})
 }
 
 func TestStripeCoupon(t *testing.T) {

@@ -236,7 +236,9 @@ A type is only mapped to a category when a GOBL regime actually defines that cat
 
 `unsupportedTaxes` covers every tax type Stripe documents, including the ones `stripe-go` has no constant for. Any type Stripe adds later is charged the same way, described by the display name on the tax rate.
 
-Inclusive taxes are not charged, as their amount is already part of the line prices, and tax rates that were not expanded in the request are ignored because there is no way to tell what they represent.
+Inclusive taxes are not charged, as their amount is already part of the line prices.
+
+Line tax rates should always be expanded before converting. A rate that arrives as a bare reference says nothing about the tax it represents, so that tax is dropped from the imported document; where it carried an amount, the totals check then fails. Invoice-level rates may be left unexpanded, as the conversion resolves them from the lines.
 
 ### Not supported yet
 - Proration
@@ -259,5 +261,5 @@ To handle tags and extensions different approaches are possible:
 
 ## Steps to include in Workflows
 
-- If using Stripe Webhooks to fetch the invoice, the payload contains some unexpanded fields. To expand these fields, we recommend to include the `Expand with Stripe data` step.
+- If using Stripe Webhooks to fetch the invoice, the payload contains some unexpanded fields. To expand these fields, include the `Expand with Stripe data` step: without it a line's `tax_amounts.tax_rate` arrives as a bare reference and its tax is dropped from the result.
 - When converting from Stripe to GOBL, the Stripe invoice does not include any exchange rates. We add some default ones. To have updated ones you should include the exchange rates step in the workflow.
