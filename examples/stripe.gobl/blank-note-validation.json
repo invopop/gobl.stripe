@@ -464,12 +464,12 @@
               "taxability_reason": "",
               "taxable_amount": 63573,
               "tax_rate": {
-                "active": false,
-                "country": "",
+                "active": true,
+                "country": "ES",
                 "created": 0,
                 "description": "",
-                "display_name": "",
-                "effective_percentage": 0,
+                "display_name": "VAT",
+                "effective_percentage": 21.0,
                 "flat_amount": null,
                 "id": "txr_1ExAmPlE0000000000000001",
                 "inclusive": false,
@@ -477,11 +477,11 @@
                 "jurisdiction_level": "",
                 "livemode": false,
                 "metadata": null,
-                "object": "",
-                "percentage": 0,
-                "rate_type": "",
+                "object": "tax_rate",
+                "percentage": 21.0,
+                "rate_type": "percentage",
                 "state": "",
-                "tax_type": ""
+                "tax_type": "vat"
               }
             }
           ],
@@ -721,12 +721,12 @@
               "taxability_reason": "",
               "taxable_amount": 22227,
               "tax_rate": {
-                "active": false,
-                "country": "",
+                "active": true,
+                "country": "ES",
                 "created": 0,
                 "description": "",
-                "display_name": "",
-                "effective_percentage": 0,
+                "display_name": "VAT",
+                "effective_percentage": 21.0,
                 "flat_amount": null,
                 "id": "txr_1ExAmPlE0000000000000001",
                 "inclusive": false,
@@ -734,11 +734,11 @@
                 "jurisdiction_level": "",
                 "livemode": false,
                 "metadata": null,
-                "object": "",
-                "percentage": 0,
-                "rate_type": "",
+                "object": "tax_rate",
+                "percentage": 21.0,
+                "rate_type": "percentage",
                 "state": "",
-                "tax_type": ""
+                "tax_type": "vat"
               }
             }
           ],
@@ -936,12 +936,12 @@
         "taxability_reason": "",
         "taxable_amount": 85800,
         "tax_rate": {
-          "active": false,
-          "country": "",
+          "active": true,
+          "country": "ES",
           "created": 0,
           "description": "",
-          "display_name": "",
-          "effective_percentage": 0,
+          "display_name": "VAT",
+          "effective_percentage": 21.0,
           "flat_amount": null,
           "id": "txr_1ExAmPlE0000000000000001",
           "inclusive": false,
@@ -949,11 +949,11 @@
           "jurisdiction_level": "",
           "livemode": false,
           "metadata": null,
-          "object": "",
-          "percentage": 0,
-          "rate_type": "",
+          "object": "tax_rate",
+          "percentage": 21.0,
+          "rate_type": "percentage",
           "state": "",
-          "tax_type": ""
+          "tax_type": "vat"
         }
       }
     ],

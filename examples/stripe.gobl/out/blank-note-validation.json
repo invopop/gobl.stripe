@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "3b7abf930a3db1db226ce83f1848c7adce450c10cb279e892d598404599a41b2"
+			"val": "7688ac8c83b093a2deffb9bff4b334a62f33d0771f123010fb56a0f195b96c23"
 		}
 	},
 	"doc": {
@@ -83,6 +83,14 @@
 						"amount": "359.55"
 					}
 				],
+				"taxes": [
+					{
+						"cat": "VAT",
+						"country": "ES",
+						"key": "standard",
+						"percent": "21.0%"
+					}
+				],
 				"total": "635.73"
 			},
 			{
@@ -103,6 +111,14 @@
 						"amount": "125.73"
 					}
 				],
+				"taxes": [
+					{
+						"cat": "VAT",
+						"country": "ES",
+						"key": "standard",
+						"percent": "21.0%"
+					}
+				],
 				"total": "222.27"
 			}
 		],
@@ -118,7 +134,7 @@
 				"due_dates": [
 					{
 						"date": "2026-04-02",
-						"amount": "858.00",
+						"amount": "1038.18",
 						"percent": "100%"
 					}
 				]
@@ -127,9 +143,27 @@
 		"totals": {
 			"sum": "858.00",
 			"total": "858.00",
-			"tax": "0.00",
-			"total_with_tax": "858.00",
-			"payable": "858.00"
+			"taxes": {
+				"categories": [
+					{
+						"code": "VAT",
+						"rates": [
+							{
+								"country": "ES",
+								"key": "standard",
+								"base": "858.00",
+								"percent": "21.0%",
+								"amount": "180.18"
+							}
+						],
+						"amount": "180.18"
+					}
+				],
+				"sum": "180.18"
+			},
+			"tax": "180.18",
+			"total_with_tax": "1038.18",
+			"payable": "1038.18"
 		},
 		"notes": [
 			{

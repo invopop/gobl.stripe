@@ -15,11 +15,11 @@ const (
 // newExtensionsWithPrefix checks if the key starts with the provided prefix and returns a
 // tax.Extensions object with the key and value if it does.
 func newExtensionsWithPrefix(metadata map[string]string, prefix string) tax.Extensions {
-	extensions := tax.Extensions{}
+	extensions := tax.MakeExtensions()
 	for key, value := range metadata {
 		if strings.HasPrefix(key, prefix) {
 			key = strings.TrimPrefix(key, prefix)
-			extensions[cbc.Key(key)] = cbc.Code(value)
+			extensions = extensions.Set(cbc.Key(key), cbc.Code(value))
 		}
 	}
 	return extensions

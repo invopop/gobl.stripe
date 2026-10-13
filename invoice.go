@@ -93,7 +93,7 @@ func FromInvoice(doc *stripe.Invoice, account *stripe.Account) (*bill.Invoice, e
 	inv.Tags = newTags(isInvoiceReverseCharge(doc), inv.Customer)
 
 	inv.Lines = FromInvoiceLines(doc.Lines.Data, regimeDef)
-	inv.Tax = taxFromInvoiceTaxAmounts(doc.TotalTaxAmounts, doc.Lines.Data)
+	inv.Tax = taxFromInvoiceTaxAmounts(doc.TotalTaxAmounts, doc.Lines.Data, regimeDef)
 	inv.Ordering = newOrdering(doc, inv.Lines, regimeDef)
 	inv.Delivery = newDelivery(doc)
 	inv.Payment = newPayment(doc, regimeDef)
@@ -177,7 +177,7 @@ func FromCreditNote(doc *stripe.CreditNote, account *stripe.Account, opts ...Cre
 	if len(inv.Lines) == 0 {
 		inv.Lines = []*bill.Line{creditNoteLineFromTotals(doc, inv.Currency, regimeDef)}
 	}
-	inv.Tax = taxFromCreditNoteTaxAmounts(doc.TaxAmounts, doc.Lines.Data)
+	inv.Tax = taxFromCreditNoteTaxAmounts(doc.TaxAmounts, doc.Lines.Data, regimeDef)
 	if options.precedingInvoice != nil {
 		inv.Preceding = []*org.DocumentRef{newPrecedingFromGOBLInvoice(options.precedingInvoice, string(doc.Reason))}
 	} else {
@@ -317,27 +317,28 @@ func newOrdering(doc *stripe.Invoice, lines []*bill.Line, regimeDef *tax.RegimeD
 	// Try to determine period from line items first
 	var earliestStart, latestEnd *cal.Date
 	for _, line := range lines {
-		if line.Period != nil {
-			if earliestStart == nil || line.Period.Start.Time().Before(earliestStart.Time()) {
-				earliestStart = &line.Period.Start
-			}
-			if latestEnd == nil || line.Period.End.Time().After(latestEnd.Time()) {
-				latestEnd = &line.Period.End
-			}
+		if line.Period == nil {
+			continue
+		}
+		if line.Period.Start != nil && (earliestStart == nil || line.Period.Start.Time().Before(earliestStart.Time())) {
+			earliestStart = line.Period.Start
+		}
+		if line.Period.End != nil && (latestEnd == nil || line.Period.End.Time().After(latestEnd.Time())) {
+			latestEnd = line.Period.End
 		}
 	}
 
 	// If we found periods in line items, use them
 	if earliestStart != nil && latestEnd != nil {
 		ordering.Period = &cal.Period{
-			Start: *earliestStart,
-			End:   *latestEnd,
+			Start: earliestStart,
+			End:   latestEnd,
 		}
 	} else {
 		// Otherwise, fall back to document period
 		ordering.Period = &cal.Period{
-			Start: *newDateFromTS(doc.PeriodStart, regimeDef.TimeLocation()),
-			End:   *newDateFromTS(doc.PeriodEnd, regimeDef.TimeLocation()),
+			Start: newDateFromTS(doc.PeriodStart, regimeDef.TimeLocation()),
+			End:   newDateFromTS(doc.PeriodEnd, regimeDef.TimeLocation()),
 		}
 	}
 

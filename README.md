@@ -229,9 +229,20 @@ For the moment, we consider there are no discounts on the general invoice, but o
 - For the moment, we are not including the payment instructions for already paid invoices. We could add it by expanding the `payment_method` field in `charge`.
 - For the advances there is no a straightforward way to get them as another API request is required. Currently we are handling it as a unique advancement on the `amount_paid`.
 
+### Taxes without a GOBL category
+Stripe reports a `tax_type` on every tax rate, and only some of them have an equivalent GOBL tax category: `vat` becomes VAT, `gst` becomes GST, `hst` and `pst` the Canadian HST and PST categories, `igst` the Indian IGST one, and `sales_tax` becomes ST. The rest — local US taxes such as `lease_tax` (Chicago Lease Tax) or `amusement_tax`, Canadian `qst` and `rst`, and `jct` — are listed in `unsupportedTaxes` and imported as line charges (`*bill.LineCharge`) keyed as `tax` on the line that carries them, so that the invoice total still matches Stripe. The same applies when the tax maps to a category the applicable regime does not define, for instance a GST rate on a US invoice.
+
+A type is only mapped to a category when a GOBL regime actually defines that category for the country the rate belongs to. Japan's consumption tax (`jct`) is a VAT in substance, but GOBL has no JP regime, so mapping it to VAT would produce a combo no regime validates; it is charged instead until a JP regime exists.
+
+`unsupportedTaxes` covers every tax type Stripe documents, including the ones `stripe-go` has no constant for. Any type Stripe adds later is charged the same way, described by the display name on the tax rate.
+
+Inclusive taxes are not charged, as their amount is already part of the line prices.
+
+Line tax rates should always be expanded before converting. A rate that arrives as a bare reference says nothing about the tax it represents, so that tax is dropped from the imported document; where it carried an amount, the totals check then fails. Invoice-level rates may be left unexpanded, as the conversion resolves them from the lines.
+
 ### Not supported yet
 - Proration
-- Charges (*bill.Charge). If needed for delivering goods we could add the shipping charges. 
+- Charges (*bill.Charge, *bill.LineCharge) other than the taxes described above. If needed for delivering goods we could add the shipping charges. 
 
 ## Handling tags/extensions
 To handle tags and extensions different approaches are possible:
@@ -250,5 +261,5 @@ To handle tags and extensions different approaches are possible:
 
 ## Steps to include in Workflows
 
-- If using Stripe Webhooks to fetch the invoice, the payload contains some unexpanded fields. To expand these fields, we recommend to include the `Expand with Stripe data` step.
+- If using Stripe Webhooks to fetch the invoice, the payload contains some unexpanded fields. To expand these fields, include the `Expand with Stripe data` step: without it a line's `tax_amounts.tax_rate` arrives as a bare reference and its tax is dropped from the result.
 - When converting from Stripe to GOBL, the Stripe invoice does not include any exchange rates. We add some default ones. To have updated ones you should include the exchange rates step in the workflow.

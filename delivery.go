@@ -3,6 +3,7 @@ package goblstripe
 import (
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/org"
+	"github.com/invopop/gobl/rules"
 	"github.com/stripe/stripe-go/v81"
 )
 
@@ -23,7 +24,7 @@ func newDelivery(doc *stripe.Invoice) *bill.DeliveryDetails {
 // FromShippingDetailsToDeliveryDetails converts a stripe shipping details object into a GOBL delivery object.
 func FromShippingDetailsToDeliveryDetails(shipping *stripe.ShippingDetails) *bill.DeliveryDetails {
 	receiver := newReceiver(shipping)
-	if receiver.Validate() != nil {
+	if rules.Validate(receiver) != nil {
 		return nil
 	}
 	return &bill.DeliveryDetails{

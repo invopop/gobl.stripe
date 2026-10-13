@@ -357,9 +357,9 @@ func TestFromCustomer(t *testing.T) {
 			},
 			expected: &org.Party{
 				Name: "Test Company",
-				Ext: tax.Extensions{
+				Ext: tax.ExtensionsOf(cbc.CodeMap{
 					"foo": "bar",
-				},
+				}),
 			},
 		},
 	}
